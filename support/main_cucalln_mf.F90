@@ -156,6 +156,9 @@ CHARACTER (LEN=*), PARAMETER :: CLARCH = 'unkwown'
 
 REAL (KIND=JPHOOK) :: ZHOOK_HANDLE
 
+INTEGER(KIND=8) :: NGPTOT 
+
+
 IF (LHOOK) CALL DR_HOOK ('MAIN_CUCALLN_MF', 0, ZHOOK_HANDLE)
 
 YLD => NULL ()
@@ -235,24 +238,24 @@ DO ITIME = 1, NTIME
 
   IF (TRIM (CLMETHOD) == 'openmp') THEN
   
-!$OMP PARALLEL DO PRIVATE (JBLK) 
-    DO JBLK = 1, NGPBLKS
+!$OMP PARALLEL DO PRIVATE (IBL) 
+    DO IBL = 1, NGPBLKS
     
       CALL CUCALLN_MF   (PPLDARE, PPLRG, KSTEP, YDTHF, YDCST, YDERAD, YDML_PHY_SLIN, YDML_PHY_EC, YGFL,               &
-      & YDCHEM, YDSPP_CONFIG, YDPERTPAR, 1_JPIM, NPROMA, NPROMA, KSMAX, KLEV, PDX (:, JBLK), KSPPN2D,                 &
-      & LDMCAPEA, LDLAND (:, JBLK), LDSLPHY, PTSPHY, PVDIFTS, PTM1 (:, :, JBLK), PQM1 (:, :, JBLK), PUM1 (:, :, JBLK),&
-      & PVM1 (:, :, JBLK), PLITOT (:, :, JBLK), PVERVEL (:, :, JBLK), PQHFL (:, :, JBLK), PAHFS (:, :, JBLK),         &
-      & PAPHM1 (:, :, JBLK), PAP (:, :, JBLK), PAPH (:, :, JBLK), PGEO (:, :, JBLK), PGEOH (:, :, JBLK),              &
-      & PGAW (:, JBLK), PCUCONVCA (:, JBLK), PGP2DSPP (:, :, JBLK), PTENT (:, :, JBLK), PTENQ (:, :, JBLK),           &
-      & PTENU (:, :, JBLK), PTENV (:, :, JBLK), PTENTA (:, :, JBLK), PTENQA (:, :, JBLK), PARPRC (:, JBLK),           &
-      & KTOPC (:, JBLK), KBASEC (:, JBLK), KTYPE (:, JBLK), KCBOT (:, JBLK), KCTOP (:, JBLK), KBOTSC (:, JBLK),       &
-      & LDCUM (:, JBLK), LDSC (:, JBLK), KCBOT_LIG (:, JBLK), KCTOP_LIG (:, JBLK), LDCUM_LIG (:, JBLK),               &
-      & LDSHCV (:, JBLK), PLCRIT_AER (:, :, JBLK), PLU (:, :, JBLK), PLUDE (:, :, JBLK), PLUDELI (:, :, :, JBLK),     &
-      & PSNDE (:, :, :, JBLK), PMFU (:, :, JBLK), PMFD (:, :, JBLK), PLGLAC (:, :, JBLK), PDIFCQ (:, :, JBLK),        &
-      & PDIFCS (:, :, JBLK), PFHPCL (:, :, JBLK), PFHPCN (:, :, JBLK), PFPLCL (:, :, JBLK), PFPLCN (:, :, JBLK),      &
-      & PLRAIN (:, :, JBLK), PRSUD (:, :, :, JBLK), PSTRCU (:, :, JBLK), PSTRCV (:, :, JBLK), PFCQLF (:, :, JBLK),    &
-      & PFCQIF (:, :, JBLK), PMFUDE_RATE (:, :, JBLK), PMFDDE_RATE (:, :, JBLK), PCAPE (:, JBLK), PWU (:, :, JBLK),   &
-      & PWMEAN (:, JBLK), PVDISCU (:, JBLK), PDISS (:, :, JBLK), KTRAC, PCM1 (:, :, :, JBLK), PTENC (:, :, :, JBLK),  &
+      & YDCHEM, YDSPP_CONFIG, YDPERTPAR, 1_JPIM, NPROMA, NPROMA, KSMAX, KLEV, PDX (:, IBL), KSPPN2D,                 &
+      & LDMCAPEA, LDLAND (:, IBL), LDSLPHY, PTSPHY, PVDIFTS, PTM1 (:, :, IBL), PQM1 (:, :, IBL), PUM1 (:, :, IBL),&
+      & PVM1 (:, :, IBL), PLITOT (:, :, IBL), PVERVEL (:, :, IBL), PQHFL (:, :, IBL), PAHFS (:, :, IBL),         &
+      & PAPHM1 (:, :, IBL), PAP (:, :, IBL), PAPH (:, :, IBL), PGEO (:, :, IBL), PGEOH (:, :, IBL),              &
+      & PGAW (:, IBL), PCUCONVCA (:, IBL), PGP2DSPP (:, :, IBL), PTENT (:, :, IBL), PTENQ (:, :, IBL),           &
+      & PTENU (:, :, IBL), PTENV (:, :, IBL), PTENTA (:, :, IBL), PTENQA (:, :, IBL), PARPRC (:, IBL),           &
+      & KTOPC (:, IBL), KBASEC (:, IBL), KTYPE (:, IBL), KCBOT (:, IBL), KCTOP (:, IBL), KBOTSC (:, IBL),       &
+      & LDCUM (:, IBL), LDSC (:, IBL), KCBOT_LIG (:, IBL), KCTOP_LIG (:, IBL), LDCUM_LIG (:, IBL),               &
+      & LDSHCV (:, IBL), PLCRIT_AER (:, :, IBL), PLU (:, :, IBL), PLUDE (:, :, IBL), PLUDELI (:, :, :, IBL),     &
+      & PSNDE (:, :, :, IBL), PMFU (:, :, IBL), PMFD (:, :, IBL), PLGLAC (:, :, IBL), PDIFCQ (:, :, IBL),        &
+      & PDIFCS (:, :, IBL), PFHPCL (:, :, IBL), PFHPCN (:, :, IBL), PFPLCL (:, :, IBL), PFPLCN (:, :, IBL),      &
+      & PLRAIN (:, :, IBL), PRSUD (:, :, :, IBL), PSTRCU (:, :, IBL), PSTRCV (:, :, IBL), PFCQLF (:, :, IBL),    &
+      & PFCQIF (:, :, IBL), PMFUDE_RATE (:, :, IBL), PMFDDE_RATE (:, :, IBL), PCAPE (:, IBL), PWU (:, :, IBL),   &
+      & PWMEAN (:, IBL), PVDISCU (:, IBL), PDISS (:, :, IBL), KTRAC, PCM1 (:, :, :, IBL), PTENC (:, :, :, IBL),  &
       & PSCAV, PSCAV0)
     
     ENDDO
@@ -263,31 +266,36 @@ DO ITIME = 1, NTIME
     IF (ISIZE4 > 0) ALLOCATE (YSTACK%ZDATA4 (NPROMA, KLEV, ISIZE4, NGPBLKS))
     IF (ISIZE8 > 0) ALLOCATE (YSTACK%ZDATA8 (NPROMA, KLEV, ISIZE8, NGPBLKS))
     
-!$OMP PARALLEL DO PRIVATE (JBLK, JLON, YLSTACK)
-    DO JBLK = 1, NGPBLKS
-      DO JLON = 1, NPROMA
+    NGPTOT = NGPBLKS*NPROMA
+!$OMP PARALLEL DO PRIVATE (JKGLO, IBL, KIDIA, KFDIA, IOFF, YLSTACK)
+    DO JKGLO=1,NGPTOT,NPROMA
+       KIDIA = 1
+       KFDIA = MIN(NPROMA, NGPTOT - JKGLO + 1)
+       IBL = (JKGLO - 1) / NPROMA + 1
+       !#YLSTACK_L = LOC(ZSTACK(1, IBL))
+       IOFF = JKGLO
     
-        YLSTACK%L8 = stack_l8 (YSTACK, JBLK, NGPBLKS)
-        YLSTACK%U8 = stack_u8 (YSTACK, JBLK, NGPBLKS)
-        YLSTACK%L4 = stack_l4 (YSTACK, JBLK, NGPBLKS)
-        YLSTACK%U4 = stack_u4 (YSTACK, JBLK, NGPBLKS)
-        
-        CALL CUCALLN_MF_OPENACC (PPLDARE, PPLRG, KSTEP, YDTHF, YDCST, YDERAD, YDML_PHY_SLIN, YDML_PHY_EC, YGFL,         &
-        & YDCHEM, YDSPP_CONFIG, YDPERTPAR, JLON, JLON, NPROMA, KSMAX, KLEV, PDX (:, JBLK), KSPPN2D,                     &
-        & LDMCAPEA, LDLAND (:, JBLK), LDSLPHY, PTSPHY, PVDIFTS, PTM1 (:, :, JBLK), PQM1 (:, :, JBLK), PUM1 (:, :, JBLK),&
-        & PVM1 (:, :, JBLK), PLITOT (:, :, JBLK), PVERVEL (:, :, JBLK), PQHFL (:, :, JBLK), PAHFS (:, :, JBLK),         &
-        & PAPHM1 (:, :, JBLK), PAP (:, :, JBLK), PAPH (:, :, JBLK), PGEO (:, :, JBLK), PGEOH (:, :, JBLK),              &
-        & PGAW (:, JBLK), PCUCONVCA (:, JBLK), PGP2DSPP (:, :, JBLK), PTENT (:, :, JBLK), PTENQ (:, :, JBLK),           &
-        & PTENU (:, :, JBLK), PTENV (:, :, JBLK), PTENTA (:, :, JBLK), PTENQA (:, :, JBLK), PARPRC (:, JBLK),           &
-        & KTOPC (:, JBLK), KBASEC (:, JBLK), KTYPE (:, JBLK), KCBOT (:, JBLK), KCTOP (:, JBLK), KBOTSC (:, JBLK),       &
-        & LDCUM (:, JBLK), LDSC (:, JBLK), KCBOT_LIG (:, JBLK), KCTOP_LIG (:, JBLK), LDCUM_LIG (:, JBLK),               &
-        & LDSHCV (:, JBLK), PLCRIT_AER (:, :, JBLK), PLU (:, :, JBLK), PLUDE (:, :, JBLK), PLUDELI (:, :, :, JBLK),     &
-        & PSNDE (:, :, :, JBLK), PMFU (:, :, JBLK), PMFD (:, :, JBLK), PLGLAC (:, :, JBLK), PDIFCQ (:, :, JBLK),        &
-        & PDIFCS (:, :, JBLK), PFHPCL (:, :, JBLK), PFHPCN (:, :, JBLK), PFPLCL (:, :, JBLK), PFPLCN (:, :, JBLK),      &
-        & PLRAIN (:, :, JBLK), PRSUD (:, :, :, JBLK), PSTRCU (:, :, JBLK), PSTRCV (:, :, JBLK), PFCQLF (:, :, JBLK),    &
-        & PFCQIF (:, :, JBLK), PMFUDE_RATE (:, :, JBLK), PMFDDE_RATE (:, :, JBLK), PCAPE (:, JBLK), PWU (:, :, JBLK),   &
-        & PWMEAN (:, JBLK), PVDISCU (:, JBLK), PDISS (:, :, JBLK), KTRAC, PCM1 (:, :, :, JBLK), PTENC (:, :, :, JBLK),  &
-        & PSCAV, PSCAV0, YDSTACK=YLSTACK)
+        YLSTACK%L8 = stack_l8 (YSTACK, IBL, NGPBLKS)
+        YLSTACK%U8 = stack_u8 (YSTACK, IBL, NGPBLKS)
+        YLSTACK%L4 = stack_l4 (YSTACK, IBL, NGPBLKS)
+        YLSTACK%U4 = stack_u4 (YSTACK, IBL, NGPBLKS)
+
+        CALL CUCALLN_MF_LOKI(PPLDARE, PPLRG, KSTEP, YDTHF, YDCST, YDERAD, YDML_PHY_SLIN, YDML_PHY_EC, YGFL,         &
+        & YDCHEM, YDSPP_CONFIG, YDPERTPAR, KIDIA, KFDIA, NPROMA, KSMAX, KLEV, PDX (:, IBL), KSPPN2D,                     &
+        & LDMCAPEA, LDLAND (:, IBL), LDSLPHY, PTSPHY, PVDIFTS, PTM1 (:, :, IBL), PQM1 (:, :, IBL), PUM1 (:, :, IBL),&
+        & PVM1 (:, :, IBL), PLITOT (:, :, IBL), PVERVEL (:, :, IBL), PQHFL (:, :, IBL), PAHFS (:, :, IBL),         &
+        & PAPHM1 (:, :, IBL), PAP (:, :, IBL), PAPH (:, :, IBL), PGEO (:, :, IBL), PGEOH (:, :, IBL),              &
+        & PGAW (:, IBL), PCUCONVCA (:, IBL), PGP2DSPP (:, :, IBL), PTENT (:, :, IBL), PTENQ (:, :, IBL),           &
+        & PTENU (:, :, IBL), PTENV (:, :, IBL), PTENTA (:, :, IBL), PTENQA (:, :, IBL), PARPRC (:, IBL),           &
+        & KTOPC (:, IBL), KBASEC (:, IBL), KTYPE (:, IBL), KCBOT (:, IBL), KCTOP (:, IBL), KBOTSC (:, IBL),       &
+        & LDCUM (:, IBL), LDSC (:, IBL), KCBOT_LIG (:, IBL), KCTOP_LIG (:, IBL), LDCUM_LIG (:, IBL),               &
+        & LDSHCV (:, IBL), PLCRIT_AER (:, :, IBL), PLU (:, :, IBL), PLUDE (:, :, IBL), PLUDELI (:, :, :, IBL),     &
+        & PSNDE (:, :, :, IBL), PMFU (:, :, IBL), PMFD (:, :, IBL), PLGLAC (:, :, IBL), PDIFCQ (:, :, IBL),        &
+        & PDIFCS (:, :, IBL), PFHPCL (:, :, IBL), PFHPCN (:, :, IBL), PFPLCL (:, :, IBL), PFPLCN (:, :, IBL),      &
+        & PLRAIN (:, :, IBL), PRSUD (:, :, :, IBL), PSTRCU (:, :, IBL), PSTRCV (:, :, IBL), PFCQLF (:, :, IBL),    &
+        & PFCQIF (:, :, IBL), PMFUDE_RATE (:, :, IBL), PMFDDE_RATE (:, :, IBL), PCAPE (:, IBL), PWU (:, :, IBL),   &
+        & PWMEAN (:, IBL), PVDISCU (:, IBL), PDISS (:, :, IBL), KTRAC, PCM1 (:, :, :, IBL), PTENC (:, :, :, IBL),  &
+        & PSCAV, PSCAV0, YDSTACK_L=YLSTACK%L8)
     
       ENDDO
     
@@ -307,52 +315,47 @@ DO ITIME = 1, NTIME
 !$ACC ENTER DATA ATTACH (YSTACK%ZDATA4)
 !$ACC ENTER DATA ATTACH (YSTACK%ZDATA8)
     
-!$ACC PARALLEL LOOP GANG &
-!$ACC&PRESENT (YDTHF, YDCST, YDERAD, YDML_PHY_SLIN, YDML_PHY_EC, YGFL, YDCHEM, YDSPP_CONFIG, YDPERTPAR, YSTACK, &
-!$ACC&         PDX, LDLAND, PTM1, PQM1, PUM1, PVM1, PLITOT, PVERVEL, PQHFL, PAHFS, PAPHM1, PAP, PAPH, PGEO, PGEOH, &
-!$ACC&         PGAW, PCUCONVCA, PGP2DSPP, PTENT, PTENQ, PTENU, PTENV, PTENTA, PTENQA, PARPRC, KTOPC, KBASEC, KTYPE, &
-!$ACC&         KCBOT, KCTOP, KBOTSC, LDCUM, LDSC, KCBOT_LIG, KCTOP_LIG, LDCUM_LIG, LDSHCV, PLCRIT_AER, PLU, PLUDE, &
-!$ACC&         PLUDELI, PSNDE, PMFU, PMFD, PLGLAC, PDIFCQ, PDIFCS, PFHPCL, PFHPCN, PFPLCL, PFPLCN, PLRAIN, PRSUD, &
-!$ACC&         PSTRCU, PSTRCV, PFCQLF, PFCQIF, PMFUDE_RATE, PMFDDE_RATE, PCAPE, PWU, PWMEAN, PVDISCU, PDISS, PCM1, &
-!$ACC&         PTENC, PSCAV, PSCAV0) &
-!$ACC&PRIVATE (JBLK) &
-!$ACC&VECTOR_LENGTH (NPROMA)
-    DO JBLK = 1, NGPBLKS
-!$ACC LOOP VECTOR &
-!$ACC&PRIVATE (JLON, YLSTACK) 
-    
-      DO JLON = 1, NPROMA
-    
-        YLSTACK%L8 = stack_l8 (YSTACK, JBLK, NGPBLKS)
-        YLSTACK%U8 = stack_u8 (YSTACK, JBLK, NGPBLKS)
-        YLSTACK%L4 = stack_l4 (YSTACK, JBLK, NGPBLKS)
-        YLSTACK%U4 = stack_u4 (YSTACK, JBLK, NGPBLKS)
 
 
- !$acc parallel loop gang vector_length( KLON ) private( YLSTACK_L )
+    
+!#    !$acc&present (YDTHF, YDCST, YDERAD, YDML_PHY_SLIN, YDML_PHY_EC, YGFL, YDCHEM, YDSPP_CONFIG, YDPERTPAR, YSTACK, &
+!#    !$acc&         PDX, LDLAND, PTM1, PQM1, PUM1, PVM1, PLITOT, PVERVEL, PQHFL, PAHFS, PAPHM1, PAP, PAPH, PGEO, PGEOH, &
+!#    !$acc&         PGAW, PCUCONVCA, PGP2DSPP, PTENT, PTENQ, PTENU, PTENV, PTENTA, PTENQA, PARPRC, KTOPC, KBASEC, KTYPE, &
+!#    !$acc&         KCBOT, KCTOP, KBOTSC, LDCUM, LDSC, KCBOT_LIG, KCTOP_LIG, LDCUM_LIG, LDSHCV, PLCRIT_AER, PLU, PLUDE, &
+!#    !$acc&         PLUDELI, PSNDE, PMFU, PMFD, PLGLAC, PDIFCQ, PDIFCS, PFHPCL, PFHPCN, PFPLCL, PFPLCN, PLRAIN, PRSUD, &
+!#    !$acc&         PSTRCU, PSTRCV, PFCQLF, PFCQIF, PMFUDE_RATE, PMFDDE_RATE, PCAPE, PWU, PWMEAN, PVDISCU, PDISS, PCM1, &
+!#    !$acc&         PTENC, PSCAV, PSCAV0) &
+     NGPTOT = NGPBLKS*NPROMA
+    !$acc parallel loop gang vector_length( KLON ) &
+    !$acc private( YLSTACK, JKGLO, KIDIA, KFDIA, IBL, IOFF)
      DO JKGLO=1,NGPTOT,NPROMA
-       KIDIA = 1
-       KFDIA = MIN(NPROMA, NGPTOT - JKGLO + 1)
-       IBL = (JKGLO - 1) / NPROMA + 1
-       YLSTACK_L = LOC(ZSTACK(1, IBL))
-       IOFF = JKGLO
+        KIDIA = 1
+        KFDIA = MIN(NPROMA, NGPTOT - JKGLO + 1)
+        IBL = (JKGLO - 1) / NPROMA + 1
+        !#YLSTACK_L = LOC(ZSTACK(1, IBL))
+        IOFF = JKGLO
 
-        CALL CUCALLN_MF_OPENACC (PPLDARE, PPLRG, KSTEP, YDTHF, YDCST, YDERAD, YDML_PHY_SLIN, YDML_PHY_EC, YGFL,         &
-        & YDCHEM, YDSPP_CONFIG, YDPERTPAR, JLON, JLON, NPROMA, KSMAX, KLEV, PDX (:, JBLK), KSPPN2D,                     &
-        & LDMCAPEA, LDLAND (:, JBLK), LDSLPHY, PTSPHY, PVDIFTS, PTM1 (:, :, JBLK), PQM1 (:, :, JBLK), PUM1 (:, :, JBLK),&
-        & PVM1 (:, :, JBLK), PLITOT (:, :, JBLK), PVERVEL (:, :, JBLK), PQHFL (:, :, JBLK), PAHFS (:, :, JBLK),         &
-        & PAPHM1 (:, :, JBLK), PAP (:, :, JBLK), PAPH (:, :, JBLK), PGEO (:, :, JBLK), PGEOH (:, :, JBLK),              &
-        & PGAW (:, JBLK), PCUCONVCA (:, JBLK), PGP2DSPP (:, :, JBLK), PTENT (:, :, JBLK), PTENQ (:, :, JBLK),           &
-        & PTENU (:, :, JBLK), PTENV (:, :, JBLK), PTENTA (:, :, JBLK), PTENQA (:, :, JBLK), PARPRC (:, JBLK),           &
-        & KTOPC (:, JBLK), KBASEC (:, JBLK), KTYPE (:, JBLK), KCBOT (:, JBLK), KCTOP (:, JBLK), KBOTSC (:, JBLK),       &
-        & LDCUM (:, JBLK), LDSC (:, JBLK), KCBOT_LIG (:, JBLK), KCTOP_LIG (:, JBLK), LDCUM_LIG (:, JBLK),               &
-        & LDSHCV (:, JBLK), PLCRIT_AER (:, :, JBLK), PLU (:, :, JBLK), PLUDE (:, :, JBLK), PLUDELI (:, :, :, JBLK),     &
-        & PSNDE (:, :, :, JBLK), PMFU (:, :, JBLK), PMFD (:, :, JBLK), PLGLAC (:, :, JBLK), PDIFCQ (:, :, JBLK),        &
-        & PDIFCS (:, :, JBLK), PFHPCL (:, :, JBLK), PFHPCN (:, :, JBLK), PFPLCL (:, :, JBLK), PFPLCN (:, :, JBLK),      &
-        & PLRAIN (:, :, JBLK), PRSUD (:, :, :, JBLK), PSTRCU (:, :, JBLK), PSTRCV (:, :, JBLK), PFCQLF (:, :, JBLK),    &
-        & PFCQIF (:, :, JBLK), PMFUDE_RATE (:, :, JBLK), PMFDDE_RATE (:, :, JBLK), PCAPE (:, JBLK), PWU (:, :, JBLK),   &
-        & PWMEAN (:, JBLK), PVDISCU (:, JBLK), PDISS (:, :, JBLK), KTRAC, PCM1 (:, :, :, JBLK), PTENC (:, :, :, JBLK),  &
-        & PSCAV, PSCAV0, YDSTACK=YLSTACK)
+        YLSTACK%L8 = stack_l8 (YSTACK, IBL, NGPBLKS)
+        YLSTACK%U8 = stack_u8 (YSTACK, IBL, NGPBLKS)
+        YLSTACK%L4 = stack_l4 (YSTACK, IBL, NGPBLKS)
+        YLSTACK%U4 = stack_u4 (YSTACK, IBL, NGPBLKS)
+
+        CALL CUCALLN_MF_LOKI(PPLDARE, PPLRG, KSTEP, YDTHF, YDCST, YDERAD, YDML_PHY_SLIN, YDML_PHY_EC, YGFL,         &
+        & YDCHEM, YDSPP_CONFIG, YDPERTPAR, KIDIA, KFDIA, NPROMA, KSMAX, KLEV, PDX (:, IBL), KSPPN2D,                     &
+        & LDMCAPEA, LDLAND (:, IBL), LDSLPHY, PTSPHY, PVDIFTS, PTM1 (:, :, IBL), PQM1 (:, :, IBL), PUM1 (:, :, IBL),&
+        & PVM1 (:, :, IBL), PLITOT (:, :, IBL), PVERVEL (:, :, IBL), PQHFL (:, :, IBL), PAHFS (:, :, IBL),         &
+        & PAPHM1 (:, :, IBL), PAP (:, :, IBL), PAPH (:, :, IBL), PGEO (:, :, IBL), PGEOH (:, :, IBL),              &
+        & PGAW (:, IBL), PCUCONVCA (:, IBL), PGP2DSPP (:, :, IBL), PTENT (:, :, IBL), PTENQ (:, :, IBL),           &
+        & PTENU (:, :, IBL), PTENV (:, :, IBL), PTENTA (:, :, IBL), PTENQA (:, :, IBL), PARPRC (:, IBL),           &
+        & KTOPC (:, IBL), KBASEC (:, IBL), KTYPE (:, IBL), KCBOT (:, IBL), KCTOP (:, IBL), KBOTSC (:, IBL),       &
+        & LDCUM (:, IBL), LDSC (:, IBL), KCBOT_LIG (:, IBL), KCTOP_LIG (:, IBL), LDCUM_LIG (:, IBL),               &
+        & LDSHCV (:, IBL), PLCRIT_AER (:, :, IBL), PLU (:, :, IBL), PLUDE (:, :, IBL), PLUDELI (:, :, :, IBL),     &
+        & PSNDE (:, :, :, IBL), PMFU (:, :, IBL), PMFD (:, :, IBL), PLGLAC (:, :, IBL), PDIFCQ (:, :, IBL),        &
+        & PDIFCS (:, :, IBL), PFHPCL (:, :, IBL), PFHPCN (:, :, IBL), PFPLCL (:, :, IBL), PFPLCN (:, :, IBL),      &
+        & PLRAIN (:, :, IBL), PRSUD (:, :, :, IBL), PSTRCU (:, :, IBL), PSTRCV (:, :, IBL), PFCQLF (:, :, IBL),    &
+        & PFCQIF (:, :, IBL), PMFUDE_RATE (:, :, IBL), PMFDDE_RATE (:, :, IBL), PCAPE (:, IBL), PWU (:, :, IBL),   &
+        & PWMEAN (:, IBL), PVDISCU (:, IBL), PDISS (:, :, IBL), KTRAC, PCM1 (:, :, :, IBL), PTENC (:, :, :, IBL),  &
+        & PSCAV, PSCAV0, YDSTACK_L=YLSTACK%L8)
     
       ENDDO
     
