@@ -9,3 +9,4 @@ compile.*
 slurm-*.out
 *.db
 cucalln*.dat
+venv

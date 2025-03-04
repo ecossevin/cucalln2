@@ -1,0 +1,7 @@
+../venv/bin/loki-transform.py convert -m scc-stack -b . --config ./loki_cucalln.config -s . -h cuadjtq.F90 -h cubasen.F90 -h cucalln_mf.F90 -h cuddrafn.F90 -h cududv.F90 -h cuinin.F90 -h cuadjtqs.F90 -h cubasmcn.F90 -h cuccdia.F90 -h cudlfsn.F90 -h cuentr.F90 -h cumastrn.F90 -h cuascn.F90 -h cubidiag.F90 -h cuctracer.F90 -h cudtdqn.F90 -h cuflxn.F90 -h satur.F90
+../venv/bin/loki-transform.py convert -m scc-stack -b . --config ./loki_cucalln.config -s .
+../venv/bin/loki-transform.py convert --help
+
+
+--log-level=debug
+--log-level=detail

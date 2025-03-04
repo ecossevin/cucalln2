@@ -1,0 +1,35 @@
+Usage: loki-transform.py convert [OPTIONS]
+
+  Batch-processing mode for Fortran-to-Fortran transformations that employs a
+  :class:`Scheduler` to process large numbers of source files.
+
+  Based on the given "mode" string, configuration file, source file paths and
+  build arguments the :any:`Scheduler` will perform automatic call-tree
+  exploration and apply a set of :any:`Transformation` objects to this call
+  tree.
+
+Options:
+  -m, --mode TEXT                 Transformation mode, selecting which code
+                                  transformations to apply.
+  --config PATH                   Path to custom scheduler configuration file
+  -b, --build, --out-path PATH    Path to build directory for source
+                                  generation.
+  -s, --source, --path PATH       Path to search during source exploration.
+  -h, --header PATH               Path for additional header file(s).
+  --cpp / --no-cpp                Trigger C-preprocessing of source files.
+  -I, --include PATH              Path for additional header file(s)
+  -D, --define TEXT               Additional symbol definitions for the
+                                  C-preprocessor
+  --omni-include PATH             Additional path for header files,
+                                  specifically for OMNI
+  -M, --xmod PATH                 Path for additional .xmod file(s) for OMNI
+  --frontend [fp|ofp|omni]        Frontend parser to use (default FP)
+  --plan-file PATH                Process pipeline in planning mode and
+                                  generate CMake "plan" file.
+  -g, --callgraph PATH            Generate and display the subroutine
+                                  callgraph.
+  --root PATH                     Root path to which all paths are relative
+                                  to.
+  -l, --log-level [debug|detail|perf|info|warning|error]
+                                  Log level to output during batch processing
+  --help                          Show this message and exit.

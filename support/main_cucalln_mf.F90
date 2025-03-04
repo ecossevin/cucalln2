@@ -328,6 +328,15 @@ DO ITIME = 1, NTIME
         YLSTACK%L4 = stack_l4 (YSTACK, JBLK, NGPBLKS)
         YLSTACK%U4 = stack_u4 (YSTACK, JBLK, NGPBLKS)
 
+
+ !$acc parallel loop gang vector_length( KLON ) private( YLSTACK_L )
+     DO JKGLO=1,NGPTOT,NPROMA
+       KIDIA = 1
+       KFDIA = MIN(NPROMA, NGPTOT - JKGLO + 1)
+       IBL = (JKGLO - 1) / NPROMA + 1
+       YLSTACK_L = LOC(ZSTACK(1, IBL))
+       IOFF = JKGLO
+
         CALL CUCALLN_MF_OPENACC (PPLDARE, PPLRG, KSTEP, YDTHF, YDCST, YDERAD, YDML_PHY_SLIN, YDML_PHY_EC, YGFL,         &
         & YDCHEM, YDSPP_CONFIG, YDPERTPAR, JLON, JLON, NPROMA, KSMAX, KLEV, PDX (:, JBLK), KSPPN2D,                     &
         & LDMCAPEA, LDLAND (:, JBLK), LDSLPHY, PTSPHY, PVDIFTS, PTM1 (:, :, JBLK), PQM1 (:, :, JBLK), PUM1 (:, :, JBLK),&

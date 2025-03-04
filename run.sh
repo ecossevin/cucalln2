@@ -14,9 +14,13 @@ export OMP_NUM_THREADS=8
 
 cd $SLURM_SUBMIT_DIR
 
-./compile.gpu_nvhpc_d/main_cucalln_mf.x \
+#/home/gmap/mrpm/cossevine/cucalln2/compile.gpu_nvhpc_d/main_cucalln_mf.x \
+#  --case-out . \
+#  --ngpblks 3 \
+#  --case-in /scratch/work/cossevine/tmp/cucalln/000001 \
+#  --verbose --diff --method openmp
+/home/gmap/mrpm/cossevine/cucalln2/compile.gpu_nvhpc_d/main_cucalln_mf.x \
   --case-out . \
-  --ngpblks 3 \
-  --case-in /scratch/work/marguina/tmp/arp.18277215/nominal/000001 \
-  --verbose --diff --method openmp
+  --case-in /scratch/work/cossevine/tmp/cucalln/000001 \
+  --verbose --method openmp
 
