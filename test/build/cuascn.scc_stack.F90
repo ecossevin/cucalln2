@@ -213,7 +213,7 @@ MODULE CUASCN_LOKI_MOD
     REAL(KIND=JPRB), INTENT(OUT) :: PWU(KLON, KLEV)
     REAL(KIND=JPRB), INTENT(OUT) :: PWMEAN(KLON)
     
-    REAL(KIND=JPRB) :: ZDMFEN(KLON), ZDMFDE(KLON), ZQOLD, ZPRECIP(KLON), ZBUO(KLON, KLEV), ZLUOLD(KLON)
+    REAL(KIND=JPRB) :: ZDMFEN(KLON), ZDMFDE(KLON), ZQOLD(KLON), ZPRECIP(KLON), ZBUO(KLON, KLEV), ZLUOLD(KLON)
     REAL(KIND=JPRB) :: ZDPMEAN(KLON)
     REAL(KIND=JPRB) :: ZOENTR(KLON), ZPH(KLON)
     LOGICAL :: LLFLAG(KLON), LLFLAGUV, LLO1(KLON), LLO3
@@ -246,6 +246,7 @@ MODULE CUASCN_LOKI_MOD
     INTEGER(KIND=8), INTENT(INOUT) :: YDSTACK_L
     POINTER(IP_ZDMFEN, ZDMFEN)
     POINTER(IP_ZDMFDE, ZDMFDE)
+    POINTER(IP_ZQOLD, ZQOLD)
     POINTER(IP_ZPRECIP, ZPRECIP)
     POINTER(IP_ZBUO, ZBUO)
     POINTER(IP_ZLUOLD, ZLUOLD)
@@ -258,6 +259,8 @@ MODULE CUASCN_LOKI_MOD
     IP_ZDMFEN = YLSTACK_L
     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
     IP_ZDMFDE = YLSTACK_L
+    YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+    IP_ZQOLD = YLSTACK_L
     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
     IP_ZPRECIP = YLSTACK_L
     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
@@ -479,74 +482,71 @@ MODULE CUASCN_LOKI_MOD
         
 !$acc loop vector
         DO JL=KIDIA,KFDIA
-          ZQOLD = 0.0_JPRB
-!$acc loop seq
-          DO JLL=1,JLM
-            !JL=JLX(JLL)
-            IF (LLFLAG(JL)) THEN
-              ZDMFDE(JL) = MIN(ZDMFDE(JL), 0.75_JPRB*PMFU(JL, JK + 1))
-              IF (JK == KCBOT(JL)) THEN
-                IF (YDSPP_CONFIG%LSPP .and. LLPERT_ENTRORG) THEN
-                  ZXENTRORG = YDECUMF%ENTRORG*EXP(PN1ENTRORG%MU(1) + PN1ENTRORG%XMAG(1)*PGP2DSPP(JL, IPENTRORG))
-                ELSE
-                  ZXENTRORG = YDECUMF%ENTRORG
-                END IF
-                ZOENTR(JL) = -ZXENTRORG*(MIN(1.0_JPRB, PQEN(JL, JK) / PQSEN(JL, JK)) - YDECUMF%ENTR_RH)*(PGEOH(JL, JK) -  &
-                & PGEOH(JL, JK + 1))*ZRG
-                ZOENTR(JL) = MIN(0.4_JPRB, ZOENTR(JL))*PMFU(JL, JK + 1)
-              END IF
-              IF (JK < KCBOT(JL)) THEN
-                ZMFMAX = (PAPH(JL, JK) - PAPH(JL, JK - 1))*ZCONS2
-                ZXS = MAX(PMFU(JL, JK + 1) - ZMFMAX, 0.0_JPRB)
-                PWMEAN(JL) = PWMEAN(JL) + PKINEU(JL, JK + 1)*(PAP(JL, JK + 1) - PAP(JL, JK))
-                ZDPMEAN(JL) = ZDPMEAN(JL) + PAP(JL, JK + 1) - PAP(JL, JK)
-                ZDMFEN(JL) = ZOENTR(JL)
-                IF (KTYPE(JL) >= 2) THEN
-                  IF (YDSPP_CONFIG%LSPP .and. LLPERT_ENTSHALP) THEN
-                    ZXENTSHALP = YDECUMF%ENTSHALP*EXP(PN1ENTSHALP%MU(1) + PN1ENTSHALP%XMAG(1)*PGP2DSPP(JL, IPENTSHALP))
-                  ELSE
-                    ZXENTSHALP = YDECUMF%ENTSHALP
-                  END IF
-                  ZDMFEN(JL) = ZXENTSHALP*ZDMFEN(JL)
-                  ZDMFDE(JL) = ZDMFEN(JL)
-                  ! ZDMFDE(JL)=MAX(ZDMFDE(JL),ZDMFEN(JL))
-                END IF
-                ZDMFDE(JL) = ZDMFDE(JL)*(1.6_JPRB - MIN(1.0_JPRB, PQEN(JL, JK) / PQSEN(JL, JK)))
-                ZMFTEST = PMFU(JL, JK + 1) + ZDMFEN(JL) - ZDMFDE(JL)
-                ZCHANGE = MAX(ZMFTEST - ZMFMAX, 0.0_JPRB)
-                ZXE = MAX(ZCHANGE - ZXS, 0.0_JPRB)
-                ZDMFEN(JL) = ZDMFEN(JL) - ZXE
-                ZCHANGE = ZCHANGE - ZXE
-                ZDMFDE(JL) = ZDMFDE(JL) + ZCHANGE
-              END IF
-              
-              PDMFEN(JL, JK) = ZDMFEN(JL) - ZDMFDE(JL)
-              
-              PMFU(JL, JK) = PMFU(JL, JK + 1) + ZDMFEN(JL) - ZDMFDE(JL)
-              ZQEEN = PQENH(JL, JK + 1)*ZDMFEN(JL)
-              ZSEEN = (YDCST%RCPD*PTENH(JL, JK + 1) + PGEOH(JL, JK + 1))*ZDMFEN(JL)
-              IF (PLITOT(JL, JK) > YDECLDP%RLMIN) THEN
-                ZLEEN = PLITOT(JL, JK)*ZDMFEN(JL)
+          ZQOLD(JL) = 0.0_JPRB
+          !JL=JLX(JLL)
+          IF (LLFLAG(JL)) THEN
+            ZDMFDE(JL) = MIN(ZDMFDE(JL), 0.75_JPRB*PMFU(JL, JK + 1))
+            IF (JK == KCBOT(JL)) THEN
+              IF (YDSPP_CONFIG%LSPP .and. LLPERT_ENTRORG) THEN
+                ZXENTRORG = YDECUMF%ENTRORG*EXP(PN1ENTRORG%MU(1) + PN1ENTRORG%XMAG(1)*PGP2DSPP(JL, IPENTRORG))
               ELSE
-                ZLEEN = 0.0_JPRB
+                ZXENTRORG = YDECUMF%ENTRORG
               END IF
-              ZSCDE = (YDCST%RCPD*PTU(JL, JK + 1) + PGEOH(JL, JK + 1))*ZDMFDE(JL)
-              ZQUDE = PQU(JL, JK + 1)*ZDMFDE(JL)
-              PLUDE(JL, JK) = PLU(JL, JK + 1)*ZDMFDE(JL)
-              ZMFUSK = PMFUS(JL, JK + 1) + ZSEEN - ZSCDE
-              ZMFUQK = PMFUQ(JL, JK + 1) + ZQEEN - ZQUDE
-              ZMFULK = PMFUL(JL, JK + 1) + ZLEEN - PLUDE(JL, JK)
-              ZFAC = 1.0_JPRB / MAX(YDECUMF%RMFCMIN, PMFU(JL, JK))
-              PLU(JL, JK) = ZMFULK*ZFAC
-              PQU(JL, JK) = ZMFUQK*ZFAC
-              PTU(JL, JK) = (ZMFUSK*ZFAC - PGEOH(JL, JK))*ZORCPD
-              PTU(JL, JK) = MAX(100._JPRB, PTU(JL, JK))
-              PTU(JL, JK) = MIN(400._JPRB, PTU(JL, JK))
-              ZQOLD = PQU(JL, JK)
-              PLRAIN(JL, JK) = PLRAIN(JL, JK + 1)*MAX(0.0_JPRB, PMFU(JL, JK + 1) - ZDMFDE(JL))*ZFAC
-              ZLUOLD(JL) = PLU(JL, JK)
+              ZOENTR(JL) = -ZXENTRORG*(MIN(1.0_JPRB, PQEN(JL, JK) / PQSEN(JL, JK)) - YDECUMF%ENTR_RH)*(PGEOH(JL, JK) - PGEOH(JL,  &
+              & JK + 1))*ZRG
+              ZOENTR(JL) = MIN(0.4_JPRB, ZOENTR(JL))*PMFU(JL, JK + 1)
             END IF
-          END DO
+            IF (JK < KCBOT(JL)) THEN
+              ZMFMAX = (PAPH(JL, JK) - PAPH(JL, JK - 1))*ZCONS2
+              ZXS = MAX(PMFU(JL, JK + 1) - ZMFMAX, 0.0_JPRB)
+              PWMEAN(JL) = PWMEAN(JL) + PKINEU(JL, JK + 1)*(PAP(JL, JK + 1) - PAP(JL, JK))
+              ZDPMEAN(JL) = ZDPMEAN(JL) + PAP(JL, JK + 1) - PAP(JL, JK)
+              ZDMFEN(JL) = ZOENTR(JL)
+              IF (KTYPE(JL) >= 2) THEN
+                IF (YDSPP_CONFIG%LSPP .and. LLPERT_ENTSHALP) THEN
+                  ZXENTSHALP = YDECUMF%ENTSHALP*EXP(PN1ENTSHALP%MU(1) + PN1ENTSHALP%XMAG(1)*PGP2DSPP(JL, IPENTSHALP))
+                ELSE
+                  ZXENTSHALP = YDECUMF%ENTSHALP
+                END IF
+                ZDMFEN(JL) = ZXENTSHALP*ZDMFEN(JL)
+                ZDMFDE(JL) = ZDMFEN(JL)
+                ! ZDMFDE(JL)=MAX(ZDMFDE(JL),ZDMFEN(JL))
+              END IF
+              ZDMFDE(JL) = ZDMFDE(JL)*(1.6_JPRB - MIN(1.0_JPRB, PQEN(JL, JK) / PQSEN(JL, JK)))
+              ZMFTEST = PMFU(JL, JK + 1) + ZDMFEN(JL) - ZDMFDE(JL)
+              ZCHANGE = MAX(ZMFTEST - ZMFMAX, 0.0_JPRB)
+              ZXE = MAX(ZCHANGE - ZXS, 0.0_JPRB)
+              ZDMFEN(JL) = ZDMFEN(JL) - ZXE
+              ZCHANGE = ZCHANGE - ZXE
+              ZDMFDE(JL) = ZDMFDE(JL) + ZCHANGE
+            END IF
+            
+            PDMFEN(JL, JK) = ZDMFEN(JL) - ZDMFDE(JL)
+            
+            PMFU(JL, JK) = PMFU(JL, JK + 1) + ZDMFEN(JL) - ZDMFDE(JL)
+            ZQEEN = PQENH(JL, JK + 1)*ZDMFEN(JL)
+            ZSEEN = (YDCST%RCPD*PTENH(JL, JK + 1) + PGEOH(JL, JK + 1))*ZDMFEN(JL)
+            IF (PLITOT(JL, JK) > YDECLDP%RLMIN) THEN
+              ZLEEN = PLITOT(JL, JK)*ZDMFEN(JL)
+            ELSE
+              ZLEEN = 0.0_JPRB
+            END IF
+            ZSCDE = (YDCST%RCPD*PTU(JL, JK + 1) + PGEOH(JL, JK + 1))*ZDMFDE(JL)
+            ZQUDE = PQU(JL, JK + 1)*ZDMFDE(JL)
+            PLUDE(JL, JK) = PLU(JL, JK + 1)*ZDMFDE(JL)
+            ZMFUSK = PMFUS(JL, JK + 1) + ZSEEN - ZSCDE
+            ZMFUQK = PMFUQ(JL, JK + 1) + ZQEEN - ZQUDE
+            ZMFULK = PMFUL(JL, JK + 1) + ZLEEN - PLUDE(JL, JK)
+            ZFAC = 1.0_JPRB / MAX(YDECUMF%RMFCMIN, PMFU(JL, JK))
+            PLU(JL, JK) = ZMFULK*ZFAC
+            PQU(JL, JK) = ZMFUQK*ZFAC
+            PTU(JL, JK) = (ZMFUSK*ZFAC - PGEOH(JL, JK))*ZORCPD
+            PTU(JL, JK) = MAX(100._JPRB, PTU(JL, JK))
+            PTU(JL, JK) = MIN(400._JPRB, PTU(JL, JK))
+            ZQOLD(JL) = PQU(JL, JK)
+            PLRAIN(JL, JK) = PLRAIN(JL, JK + 1)*MAX(0.0_JPRB, PMFU(JL, JK + 1) - ZDMFDE(JL))*ZFAC
+            ZLUOLD(JL) = PLU(JL, JK)
+          END IF
           ! reset to environmental values if below departure level
           IF (JK > KDPL(JL)) THEN
             PTU(JL, JK) = PTENH(JL, JK)
@@ -572,169 +572,166 @@ MODULE CUASCN_LOKI_MOD
           END IF
         END IF
         
-        IF (YDEPHLI%LPHYLIN) THEN
-          
-          !DIR$ IVDEP
-          !NEC$ IVDEP
-          !OCL NOVREC
-!$acc loop seq
-          DO JLL=1,JLM
-            JL = JLX
-            IF (PQU(JL, JK) /= ZQOLD) THEN
-              ZOEALFA = MIN(1.0_JPRB, 0.545_JPRB*(TANH(0.17_JPRB*(PTU(JL, JK) - YDEPHLI%RLPTRC)) + 1.0_JPRB))
-              ZOEALFAP = MIN(1.0_JPRB, 0.545_JPRB*(TANH(0.17_JPRB*(PTU(JL, JK + 1) - YDEPHLI%RLPTRC)) + 1.0_JPRB))
-              PLGLAC(JL, JK) = PLU(JL, JK)*((1.0_JPRB - ZOEALFA) - (1.0_JPRB - ZOEALFAP))
-              ! add glaciation of rain
-              ZFAC = 0.545_JPRB*(TANH(0.17_JPRB*(PTEN(JL, JK) - YDEPHLI%RLPTRC)) + 1.0_JPRB)
-              PLGLAC(JL, JK) = PLGLAC(JL, JK) + ZFAC*PDMFUP(JL, JK + 1) / MAX(YDECUMF%RMFCMIN, PMFU(JL, JK + 1))*(0.5_JPRB +  &
-              & SIGN(0.5_JPRB, YDCST%RTT - PTEN(JL, JK)))*ZGLAC
-              PTU(JL, JK) = PTU(JL, JK) + YDTHF%RALFDCP*PLGLAC(JL, JK)
-            END IF
-          END DO
-          
-        ELSE
-          
-          !DIR$ IVDEP
-          !NEC$ IVDEP
-          !OCL NOVREC
-!$acc loop seq
-          DO JLL=1,JLM
-            JL = JLX
-            IF (PQU(JL, JK) /= ZQOLD) THEN
-              PLGLAC(JL, JK) = PLU(JL, JK)*((1.0_JPRB - FOEALFCU(PTU(JL, JK))) - (1.0_JPRB - FOEALFCU(PTU(JL, JK + 1))))
-              IF (LSCVFLAG(JL)) PLGLAC(JL, JK) = 0.0_JPRB
-              ! add glaciation of rain, only fraction added to updraught heat
-              ZFAC = FOEALFCU(PTEN(JL, JK))
-              PLGLAC(JL, JK) = PLGLAC(JL, JK) + ZFAC*PDMFUP(JL, JK + 1) / MAX(YDECUMF%RMFCMIN, PMFU(JL, JK + 1))*(0.5_JPRB +  &
-              & SIGN(0.5_JPRB, YDCST%RTT - PTEN(JL, JK)))*ZGLAC
-              PTU(JL, JK) = PTU(JL, JK) + YDTHF%RALFDCP*PLGLAC(JL, JK)
-            END IF
-          END DO
-          
-        END IF
-        
-!$acc loop seq
-        DO JLL=1,JLM
-          JL = JLX
-          IF (PQU(JL, JK) /= ZQOLD) THEN
-            KLAB(JL, JK) = 2
-            PLU(JL, JK) = PLU(JL, JK) + ZQOLD - PQU(JL, JK)
-            ZBC = PTU(JL, JK)*(1.0_JPRB + YDCST%RETV*PQU(JL, JK) - PLU(JL, JK + 1) - PLRAIN(JL, JK + 1))
-            ZBE = PTENH(JL, JK)*(1.0_JPRB + YDCST%RETV*PQENH(JL, JK))
-            ZBUO(JL, JK) = ZBC - ZBE
-            
-            ! set flags in case of midlevel convection
-            
-            IF (KTYPE(JL) == 3 .and. KLAB(JL, 1 + JK) == 1) THEN
-              IF (ZBUO(JL, JK) > -0.5_JPRB) THEN
-                LDCUM(JL) = .true.
-                KCTOP(JL) = JK
-                PKINEU(JL, JK) = 0.5_JPRB
-              ELSE
-                KLAB(JL, JK) = 0
-                PMFU(JL, JK) = 0.0_JPRB
-                PLUDE(JL, JK) = 0.0_JPRB
-                PLU(JL, JK) = 0.0_JPRB
-              END IF
-            END IF
-            
-            IF (KLAB(JL, 1 + JK) == 2) THEN
-              
-              !IF(ZBUO(JL,JK) < 0.0_JPRB.AND.KTYPE(JL)==1) THEN
-              IF (ZBUO(JL, JK) < -0.1_JPRB) THEN
-                PTENH(JL, JK) = 0.5_JPRB*(PTEN(JL, JK) + PTEN(JL, JK - 1))
-                PQENH(JL, JK) = 0.5_JPRB*(PQEN(JL, JK) + PQEN(JL, JK - 1))
-                ZBUO(JL, JK) = ZBC - PTENH(JL, JK)*(1.0_JPRB + YDCST%RETV*PQENH(JL, JK))
-              END IF
-              ZBUOC = 0.5*(ZBUO(JL, JK) + ZBUO(JL, JK + 1)) / (PTENH(JL, JK)*(1.0_JPRB + YDCST%RETV*PQENH(JL, JK)))
-              ZDKBUO = (PGEOH(JL, JK) - PGEOH(JL, JK + 1))*ZFACBUO*ZBUOC
-              
-              ! either use entrainment rate or if zero
-              ! use detrainmnet rate as a substitute for
-              ! mixing and "pressure" gradient term in upper
-              ! troposphere
-              
-              IF (ZDMFEN(JL) > 0.0_JPRB) THEN
-                ZDKEN = MIN(1.0_JPRB, (1 + Z_CWDRAG)*ZDMFEN(JL) / MAX(YDECUMF%RMFCMIN, PMFU(JL, JK + 1)))
-              ELSE
-                ZDKEN = MIN(1.0_JPRB, (1 + Z_CWDRAG)*ZDMFDE(JL) / MAX(YDECUMF%RMFCMIN, PMFU(JL, JK + 1)))
-              END IF
-              
-              IF (LDTDKMF) THEN
-                PKINEU(JL, JK) = (PKINEU(JL, JK + 1)*(1 - ZDKEN) + ZDKBUO) / (1 + ZDKEN)
-                ZBUOC = ZBUO(JL, JK)
-              ELSE
-                PKINEU(JL, JK) = MAX(-1.E3_JPRB, (PKINEU(JL, JK + 1)*(1 - ZDKEN) + ZDKBUO) / (1 + ZDKEN))
-              END IF
-              IF (ZBUOC < 0.0_JPRB) THEN
-                ZKEDKE = PKINEU(JL, JK) / MAX(1.E-3_JPRB, PKINEU(JL, JK + 1))
-                ZKEDKE = MAX(0.0_JPRB, MIN(1.0_JPRB, ZKEDKE))
-                ZOCUDET = (1.6_JPRB - MIN(1.0_JPRB, PQEN(JL, JK) / PQSEN(JL, JK)))
-                ZMFUN = ZOCUDET*SQRT(ZKEDKE)
-                ZDMFDE(JL) = MAX(ZDMFDE(JL), PMFU(JL, JK + 1)*(1.0_JPRB - ZMFUN))
-                PLUDE(JL, JK) = PLU(JL, JK + 1)*ZDMFDE(JL)
-                PMFU(JL, JK) = PMFU(JL, JK + 1) + ZDMFEN(JL) - ZDMFDE(JL)
-              END IF
-              
-              IF (ZBUO(JL, JK) > -0.2_JPRB) THEN
-                IKB = KCBOT(JL)
-                IF (YDSPP_CONFIG%LSPP .and. LLPERT_ENTRORG) THEN
-                  ZXENTRORG = YDECUMF%ENTRORG*EXP(PN1ENTRORG%MU(1) + PN1ENTRORG%XMAG(1)*PGP2DSPP(JL, IPENTRORG))
-                ELSE
-                  ZXENTRORG = YDECUMF%ENTRORG
-                END IF
-                ZOENTR(JL) = ZXENTRORG*(0.3_JPRB - (MIN(1.0_JPRB, PQEN(JL, JK - 1) / PQSEN(JL, JK - 1)) - YDECUMF%ENTR_RH)) &
-                & *(PGEOH(JL, JK - 1) - PGEOH(JL, JK))*ZRG*MIN(1.0_JPRB, PQSEN(JL, JK) / PQSEN(JL, IKB))**3
-                ZOENTR(JL) = MIN(0.4_JPRB, ZOENTR(JL))*PMFU(JL, JK)
-              ELSE
-                ZOENTR(JL) = 0.0_JPRB
-              END IF
-              
-              ! Erase values if below departure level
-              IF (JK > KDPL(JL)) THEN
-                PMFU(JL, JK) = PMFU(JL, JK + 1)
-                PKINEU(JL, JK) = 0.5_JPRB
-              END IF
-              IF (PKINEU(JL, JK) > 0.0_JPRB .and. PMFU(JL, JK) > 0.0_JPRB .and. (ZBUO(JL, JK) > -2._JPRB .or. PTEN(JL, -1 + JK) / &
-              &  (PGEO(JL, -1 + JK)*ZRG - PGEO(JL, JK)*ZRG) - PTEN(JL, JK) / (PGEO(JL, -1 + JK)*ZRG - PGEO(JL, JK)*ZRG) <  &
-              & -3.E-3_JPRB)) THEN
-                ! add overshoot limiter for convective top evaluation
-                KCTOP(JL) = JK
-                LLO1(JL) = .true.
-              ELSE
-                KLAB(JL, JK) = 0
-                PMFU(JL, JK) = 0.0_JPRB
-                PKINEU(JL, JK) = 0.0_JPRB
-                ZDMFDE(JL) = PMFU(JL, JK + 1)
-                PLUDE(JL, JK) = PLU(JL, JK + 1)*ZDMFDE(JL)
-              END IF
-              
-              ! store detrainment rates for updraught
-              
-              IF (PMFU(JL, 1 + JK) > 0.0_JPRB) THEN
-                PMFUDE_RATE(JL, JK) = ZDMFDE(JL)
-              END IF
-              
-            END IF
-            
-            !     ELSEIF(LLFLAG(JL).AND.KTYPE(JL)==2.AND.PQU(JL,JK) == ZQOLD(JL)) THEN
-          ELSE IF (KTYPE(JL) == 2 .and. PQU(JL, JK) == ZQOLD) THEN
-            KLAB(JL, JK) = 0
-            PMFU(JL, JK) = 0.0_JPRB
-            PKINEU(JL, JK) = 0.0_JPRB
-            ZDMFDE(JL) = PMFU(JL, JK + 1)
-            PLUDE(JL, JK) = PLU(JL, JK + 1)*ZDMFDE(JL)
-            PMFUDE_RATE(JL, JK) = ZDMFDE(JL)
-            
-          END IF
-        END DO
-        
-        !              CALCULATE PRECIPITATION RATE BY
-        !              ANALYTIC INTEGRATION OF EQUATION FOR L
-        
         
 !$acc loop vector
         DO JL=KIDIA,KFDIA
+          IF (YDEPHLI%LPHYLIN) THEN
+            
+            !DIR$ IVDEP
+            !NEC$ IVDEP
+            !OCL NOVREC
+            !JL=JLX(JLL)
+            IF (LLFLAG(JL)) THEN
+              IF (PQU(JL, JK) /= ZQOLD(JL)) THEN
+                ZOEALFA = MIN(1.0_JPRB, 0.545_JPRB*(TANH(0.17_JPRB*(PTU(JL, JK) - YDEPHLI%RLPTRC)) + 1.0_JPRB))
+                ZOEALFAP = MIN(1.0_JPRB, 0.545_JPRB*(TANH(0.17_JPRB*(PTU(JL, JK + 1) - YDEPHLI%RLPTRC)) + 1.0_JPRB))
+                PLGLAC(JL, JK) = PLU(JL, JK)*((1.0_JPRB - ZOEALFA) - (1.0_JPRB - ZOEALFAP))
+                ! add glaciation of rain
+                ZFAC = 0.545_JPRB*(TANH(0.17_JPRB*(PTEN(JL, JK) - YDEPHLI%RLPTRC)) + 1.0_JPRB)
+                PLGLAC(JL, JK) = PLGLAC(JL, JK) + ZFAC*PDMFUP(JL, JK + 1) / MAX(YDECUMF%RMFCMIN, PMFU(JL, JK + 1))*(0.5_JPRB +  &
+                & SIGN(0.5_JPRB, YDCST%RTT - PTEN(JL, JK)))*ZGLAC
+                PTU(JL, JK) = PTU(JL, JK) + YDTHF%RALFDCP*PLGLAC(JL, JK)
+              END IF
+            END IF
+            
+          ELSE
+            
+            !DIR$ IVDEP
+            !NEC$ IVDEP
+            !OCL NOVREC
+            !JL=JLX(JLL)
+            IF (LLFLAG(JL)) THEN
+              IF (PQU(JL, JK) /= ZQOLD(JL)) THEN
+                PLGLAC(JL, JK) = PLU(JL, JK)*((1.0_JPRB - FOEALFCU(PTU(JL, JK))) - (1.0_JPRB - FOEALFCU(PTU(JL, JK + 1))))
+                IF (LSCVFLAG(JL)) PLGLAC(JL, JK) = 0.0_JPRB
+                ! add glaciation of rain, only fraction added to updraught heat
+                ZFAC = FOEALFCU(PTEN(JL, JK))
+                PLGLAC(JL, JK) = PLGLAC(JL, JK) + ZFAC*PDMFUP(JL, JK + 1) / MAX(YDECUMF%RMFCMIN, PMFU(JL, JK + 1))*(0.5_JPRB +  &
+                & SIGN(0.5_JPRB, YDCST%RTT - PTEN(JL, JK)))*ZGLAC
+                PTU(JL, JK) = PTU(JL, JK) + YDTHF%RALFDCP*PLGLAC(JL, JK)
+              END IF
+            END IF
+            
+          END IF
+          
+          !JL=JLX(JLL)
+          IF (LLFLAG(JL)) THEN
+            IF (PQU(JL, JK) /= ZQOLD(JL)) THEN
+              KLAB(JL, JK) = 2
+              PLU(JL, JK) = PLU(JL, JK) + ZQOLD(JL) - PQU(JL, JK)
+              ZBC = PTU(JL, JK)*(1.0_JPRB + YDCST%RETV*PQU(JL, JK) - PLU(JL, JK + 1) - PLRAIN(JL, JK + 1))
+              ZBE = PTENH(JL, JK)*(1.0_JPRB + YDCST%RETV*PQENH(JL, JK))
+              ZBUO(JL, JK) = ZBC - ZBE
+              
+              ! set   flags in case of midlevel convection
+              
+              IF (KTYPE(JL) == 3 .and. KLAB(JL, 1 + JK) == 1) THEN
+                IF (ZBUO(JL, JK) > -0.5_JPRB) THEN
+                  LDCUM(JL) = .true.
+                  KCTOP(JL) = JK
+                  PKINEU(JL, JK) = 0.5_JPRB
+                ELSE
+                  KLAB(JL, JK) = 0
+                  PMFU(JL, JK) = 0.0_JPRB
+                  PLUDE(JL, JK) = 0.0_JPRB
+                  PLU(JL, JK) = 0.0_JPRB
+                END IF
+              END IF
+              
+              IF (KLAB(JL, 1 + JK) == 2) THEN
+                
+                !IF(ZBUO(JL,JK) < 0.0_JPRB.AND.KTYPE(JL)==1) THEN
+                IF (ZBUO(JL, JK) < -0.1_JPRB) THEN
+                  PTENH(JL, JK) = 0.5_JPRB*(PTEN(JL, JK) + PTEN(JL, JK - 1))
+                  PQENH(JL, JK) = 0.5_JPRB*(PQEN(JL, JK) + PQEN(JL, JK - 1))
+                  ZBUO(JL, JK) = ZBC - PTENH(JL, JK)*(1.0_JPRB + YDCST%RETV*PQENH(JL, JK))
+                END IF
+                ZBUOC = 0.5*(ZBUO(JL, JK) + ZBUO(JL, JK + 1)) / (PTENH(JL, JK)*(1.0_JPRB + YDCST%RETV*PQENH(JL, JK)))
+                ZDKBUO = (PGEOH(JL, JK) - PGEOH(JL, JK + 1))*ZFACBUO*ZBUOC
+                
+                ! eith  er use entrainment rate or if zero
+                ! use   detrainmnet rate as a substitute for
+                ! mixi  ng and "pressure" gradient term in upper
+                ! trop  osphere
+                
+                IF (ZDMFEN(JL) > 0.0_JPRB) THEN
+                  ZDKEN = MIN(1.0_JPRB, (1 + Z_CWDRAG)*ZDMFEN(JL) / MAX(YDECUMF%RMFCMIN, PMFU(JL, JK + 1)))
+                ELSE
+                  ZDKEN = MIN(1.0_JPRB, (1 + Z_CWDRAG)*ZDMFDE(JL) / MAX(YDECUMF%RMFCMIN, PMFU(JL, JK + 1)))
+                END IF
+                
+                IF (LDTDKMF) THEN
+                  PKINEU(JL, JK) = (PKINEU(JL, JK + 1)*(1 - ZDKEN) + ZDKBUO) / (1 + ZDKEN)
+                  ZBUOC = ZBUO(JL, JK)
+                ELSE
+                  PKINEU(JL, JK) = MAX(-1.E3_JPRB, (PKINEU(JL, JK + 1)*(1 - ZDKEN) + ZDKBUO) / (1 + ZDKEN))
+                END IF
+                IF (ZBUOC < 0.0_JPRB) THEN
+                  ZKEDKE = PKINEU(JL, JK) / MAX(1.E-3_JPRB, PKINEU(JL, JK + 1))
+                  ZKEDKE = MAX(0.0_JPRB, MIN(1.0_JPRB, ZKEDKE))
+                  ZOCUDET = (1.6_JPRB - MIN(1.0_JPRB, PQEN(JL, JK) / PQSEN(JL, JK)))
+                  ZMFUN = ZOCUDET*SQRT(ZKEDKE)
+                  ZDMFDE(JL) = MAX(ZDMFDE(JL), PMFU(JL, JK + 1)*(1.0_JPRB - ZMFUN))
+                  PLUDE(JL, JK) = PLU(JL, JK + 1)*ZDMFDE(JL)
+                  PMFU(JL, JK) = PMFU(JL, JK + 1) + ZDMFEN(JL) - ZDMFDE(JL)
+                END IF
+                
+                IF (ZBUO(JL, JK) > -0.2_JPRB) THEN
+                  IKB = KCBOT(JL)
+                  IF (YDSPP_CONFIG%LSPP .and. LLPERT_ENTRORG) THEN
+                    ZXENTRORG = YDECUMF%ENTRORG*EXP(PN1ENTRORG%MU(1) + PN1ENTRORG%XMAG(1)*PGP2DSPP(JL, IPENTRORG))
+                  ELSE
+                    ZXENTRORG = YDECUMF%ENTRORG
+                  END IF
+                  ZOENTR(JL) = ZXENTRORG*(0.3_JPRB - (MIN(1.0_JPRB, PQEN(JL, JK - 1) / PQSEN(JL, JK - 1)) - YDECUMF%ENTR_RH)) &
+                  & *(PGEOH(JL, JK - 1) - PGEOH(JL, JK))*ZRG*MIN(1.0_JPRB, PQSEN(JL, JK) / PQSEN(JL, IKB))**3
+                  ZOENTR(JL) = MIN(0.4_JPRB, ZOENTR(JL))*PMFU(JL, JK)
+                ELSE
+                  ZOENTR(JL) = 0.0_JPRB
+                END IF
+                
+                ! Erase values if below departure level
+                IF (JK > KDPL(JL)) THEN
+                  PMFU(JL, JK) = PMFU(JL, JK + 1)
+                  PKINEU(JL, JK) = 0.5_JPRB
+                END IF
+                IF (PKINEU(JL, JK) > 0.0_JPRB .and. PMFU(JL, JK) > 0.0_JPRB .and. (ZBUO(JL, JK) > -2._JPRB .or. PTEN(JL, -1 + JK) &
+                &  / (PGEO(JL, -1 + JK)*ZRG - PGEO(JL, JK)*ZRG) - PTEN(JL, JK) / (PGEO(JL, -1 + JK)*ZRG - PGEO(JL, JK)*ZRG) <  &
+                & -3.E-3_JPRB)) THEN
+                  ! add overshoot limiter for convective top evaluation
+                  KCTOP(JL) = JK
+                  LLO1(JL) = .true.
+                ELSE
+                  KLAB(JL, JK) = 0
+                  PMFU(JL, JK) = 0.0_JPRB
+                  PKINEU(JL, JK) = 0.0_JPRB
+                  ZDMFDE(JL) = PMFU(JL, JK + 1)
+                  PLUDE(JL, JK) = PLU(JL, JK + 1)*ZDMFDE(JL)
+                END IF
+                
+                ! stor  e detrainment rates for updraught
+                
+                IF (PMFU(JL, 1 + JK) > 0.0_JPRB) THEN
+                  PMFUDE_RATE(JL, JK) = ZDMFDE(JL)
+                END IF
+                
+              END IF
+              
+              !       ELSEIF(LLFLAG(JL).AND.KTYPE(JL)==2.AND.PQU(JL,JK) == ZQOLD(JL)) THEN
+            ELSE IF (KTYPE(JL) == 2 .and. PQU(JL, JK) == ZQOLD(JL)) THEN
+              KLAB(JL, JK) = 0
+              PMFU(JL, JK) = 0.0_JPRB
+              PKINEU(JL, JK) = 0.0_JPRB
+              ZDMFDE(JL) = PMFU(JL, JK + 1)
+              PLUDE(JL, JK) = PLU(JL, JK + 1)*ZDMFDE(JL)
+              PMFUDE_RATE(JL, JK) = ZDMFDE(JL)
+              
+            END IF
+          END IF
+          
+          !              CALCULATE PRECIPITATION RATE BY
+          !              ANALYTIC INTEGRATION OF EQUATION FOR L
+          
           IF (LLO1(JL)) THEN
             IF (PLU(JL, JK) > ZDNOPRC) THEN
               PWU(JL, JK) = MIN(15._JPRB, SQRT(2.0_JPRB*MAX(0.5_JPRB, PKINEU(JL, JK + 1))))
@@ -833,20 +830,19 @@ MODULE CUASCN_LOKI_MOD
             END IF
             
           END IF
+          
+          !JL=JLX(JLL)
+          IF (LLFLAG(JL)) THEN
+            PMFUL(JL, JK) = PLU(JL, JK)*PMFU(JL, JK)
+            PMFUS(JL, JK) = (YDCST%RCPD*PTU(JL, JK) + PGEOH(JL, JK))*PMFU(JL, JK)
+            PMFUQ(JL, JK) = PQU(JL, JK)*PMFU(JL, JK)
+            ZALFAW = FOEALFCU(PTU(JL, JK))
+            IF (LSCVFLAG(JL)) ZALFAW = 1.0_JPRB
+            PLUDELI(JL, JK, 1) = ZALFAW*PLUDE(JL, JK)
+            PLUDELI(JL, JK, 2) = (1.0_JPRB - ZALFAW)*PLUDE(JL, JK)
+          END IF
         END DO
         
-        
-!$acc loop seq
-        DO JLL=1,JLM
-          JL = JLX
-          PMFUL(JL, JK) = PLU(JL, JK)*PMFU(JL, JK)
-          PMFUS(JL, JK) = (YDCST%RCPD*PTU(JL, JK) + PGEOH(JL, JK))*PMFU(JL, JK)
-          PMFUQ(JL, JK) = PQU(JL, JK)*PMFU(JL, JK)
-          ZALFAW = FOEALFCU(PTU(JL, JK))
-          IF (LSCVFLAG(JL)) ZALFAW = 1.0_JPRB
-          PLUDELI(JL, JK, 1) = ZALFAW*PLUDE(JL, JK)
-          PLUDELI(JL, JK, 2) = (1.0_JPRB - ZALFAW)*PLUDE(JL, JK)
-        END DO
         
       END IF
     END DO

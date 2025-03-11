@@ -480,7 +480,7 @@ DO JK=KLEV-1,3,-1
     DO JL=KIDIA,KFDIA
       ZQOLD(JL)=0.0_JPRB
     ENDDO
-    DO JLL=1,JLM  
+    DO JL=KIDIA,KFDIA  
         !JL=JLX(JLL)
         IF (LLFLAG(JL)) THEN
           ZDMFDE(JL)=MIN(ZDMFDE(JL),0.75_JPRB*PMFU(JL,JK+1))
@@ -578,7 +578,7 @@ DO JK=KLEV-1,3,-1
 !DIR$ IVDEP
 !NEC$ IVDEP
 !OCL NOVREC
-      DO JLL=1,JLM  
+      DO JL=KIDIA,KFDIA 
         !JL=JLX(JLL)
         IF (LLFLAG(JL)) THEN
           IF(PQU(JL,JK) /= ZQOLD(JL)) THEN
@@ -599,7 +599,7 @@ DO JK=KLEV-1,3,-1
 !DIR$ IVDEP
 !NEC$ IVDEP
 !OCL NOVREC
-      DO JLL=1,JLM  
+      DO JL=KIDIA,KFDIA  
         !JL=JLX(JLL)
         IF (LLFLAG(JL)) THEN
           IF(PQU(JL,JK) /= ZQOLD(JL)) THEN
@@ -617,7 +617,7 @@ DO JK=KLEV-1,3,-1
 
     ENDIF
 
-    DO JLL=1,JLM  
+    DO JL=KIDIA,KFDIA 
       !JL=JLX(JLL)
       IF (LLFLAG(JL)) THEN
         IF(PQU(JL,JK) /= ZQOLD(JL)) THEN
@@ -844,7 +844,7 @@ DO JK=KLEV-1,3,-1
 
     ENDIF
 
-    DO JLL=1,JLM  
+    DO JL=KIDIA,KFDIA 
       !JL=JLX(JLL)
       IF (LLFLAG(JL)) THEN
         PMFUL(JL,JK)=PLU(JL,JK)*PMFU(JL,JK)
