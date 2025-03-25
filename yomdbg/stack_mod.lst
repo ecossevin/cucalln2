@@ -1,0 +1,480 @@
+Page 1           Source Listing                  STACK_INIT_OPTS
+2024-09-10 10:27                                 /tmp/ifortTqpKOU.i90
+
+      1 # 1 "stack_mod.F90"
+      2 MODULE STACK_MOD
+      3 
+      4 USE PARKIND1, ONLY : JPRB, JPIM, JPIA
+      5 USE DEV_ALLOC_MODULE
+      6 
+      7 IMPLICIT NONE
+      8 
+      9 TYPE STACK_DATA
+     10   REAL (KIND=4), POINTER :: ZDATA4 (:,:,:,:)
+     11   REAL (KIND=8), POINTER :: ZDATA8 (:,:,:,:)
+     12   INTEGER*8 :: IALIGN
+     13 CONTAINS
+     14   GENERIC :: INIT  => STACK_INIT, STACK_INIT_OPTS
+     15   PROCEDURE, PRIVATE :: STACK_INIT
+     16   PROCEDURE, PRIVATE :: STACK_INIT_OPTS
+     17   PROCEDURE :: FINAL => STACK_FINAL
+     18 END TYPE
+     19 
+     20 TYPE STACK
+     21   INTEGER*8 :: L4
+     22   INTEGER*8 :: U4
+     23   INTEGER*8 :: L8
+     24   INTEGER*8 :: U8
+     25 END TYPE
+     26 
+     27 TYPE PARALLEL_OPTS
+     28 
+     29   INTEGER(KIND=JPIM) :: ISTACKSIZE4     = 0
+     30   CHARACTER*32       :: CLSTACKSIZE4    = ''
+     31 
+     32   INTEGER(KIND=JPIM) :: ISTACKSIZE8     = 0
+     33   CHARACTER*32       :: CLSTACKSIZE8    = ''
+     34 
+     35   CHARACTER*3        :: CLSLCOMMACC     = ''
+     36   CHARACTER*3        :: CLSLEXTPOLACC   = ''
+     37   CHARACTER*3        :: CLPARALLEL      = ''
+     38   CHARACTER*3        :: CLPERSISTENT    = ''
+     39 
+     40   CHARACTER*3        :: CLHOST              = ''
+     41   CHARACTER*3        :: CLHOST_CPG_DRV      = ''
+     42   CHARACTER*3        :: CLHOST_LAPINEA_DRV  = ''
+     43   CHARACTER*3        :: CLHOST_LAPINEB_DRV  = ''
+     44   CHARACTER*3        :: CLHOST_CPGLAG_DRV   = ''
+     45   CHARACTER*3        :: CLLEGACY_SCAN2M     = ''
+     46   CHARACTER*3        :: CLSPNORM            = ''
+     47 
+     48   LOGICAL            :: LLSLCOMMACC     = .FALSE.
+     49   LOGICAL            :: LLSLEXTPOLACC   = .FALSE.
+     50   LOGICAL            :: LLPARALLEL      = .FALSE.
+     51   LOGICAL            :: LLPERSISTENT    = .FALSE.
+     52 
+     53   LOGICAL            :: LLHOST              = .FALSE.
+     54   LOGICAL            :: LLHOST_CPG_DRV      = .FALSE.
+     55   LOGICAL            :: LLHOST_LAPINEA_DRV  = .FALSE.
+     56   LOGICAL            :: LLHOST_LAPINEB_DRV  = .FALSE.
+     57   LOGICAL            :: LLHOST_CPGLAG_DRV   = .FALSE.
+
+Page 2           Source Listing                  STACK_INIT_OPTS
+2024-09-10 10:27                                 stack_mod.F90
+
+     58   LOGICAL            :: LLLEGACY_SCAN2M     = .FALSE.
+     59   LOGICAL            :: LLSPNORM            = .FALSE.
+     60 
+     61 
+     62   INTEGER(KIND=JPIM) :: NBLOMA          = 100000000
+     63   CHARACTER*32       :: CLBLOMA         = ''
+     64 CONTAINS
+     65   PROCEDURE :: INIT  => PARALLEL_OPTS_INIT
+     66   PROCEDURE :: FINAL => PARALLEL_OPTS_FINAL
+     67 END TYPE
+     68 
+     69 PRIVATE
+     70 
+     71 TYPE (STACK_DATA) :: YSTACK
+     72 PUBLIC :: STACK, YSTACK, PARALLEL_OPTS
+     73 
+     74 CONTAINS
+     75 
+     76 SUBROUTINE STACK_INIT_OPTS (SELF, YDPARALLEL_OPTS, YDGEOMETRY)
+     77 
+     78 USE GEOMETRY_MOD, ONLY : GEOMETRY
+     79 
+     80 CLASS (STACK_DATA) :: SELF
+     81 TYPE (PARALLEL_OPTS), INTENT (IN) :: YDPARALLEL_OPTS
+     82 TYPE (GEOMETRY)     , INTENT (IN) :: YDGEOMETRY
+     83 
+     84 INTEGER :: IGPBLKS
+     85 
+     86 IGPBLKS = MIN (YDGEOMETRY%YRDIM%NGPBLKS,YDPARALLEL_OPTS%NBLOMA)
+     87 
+     88 CALL SELF%INIT (YDGEOMETRY%YRDIM%NPROMA,             &
+     89               & YDGEOMETRY%YRDIMV%NFLEVG,            &
+     90               & IGPBLKS,                             &
+     91               & KSIZE4=YDPARALLEL_OPTS%ISTACKSIZE4,  &
+     92               & KSIZE8=YDPARALLEL_OPTS%ISTACKSIZE8)
+     93 
+     94 END SUBROUTINE
+
+Page 3           Source Listing                  STACK_INIT_OPTS
+2024-09-10 10:27 Entry Points                    stack_mod.F90
+
+
+
+ENTRY POINTS
+
+  Name                                     
+                                           
+ stack_mod_mp_stack_init_opts_             
+
+Page 4           Source Listing                  STACK_INIT_OPTS
+2024-09-10 10:27                                 stack_mod.F90
+
+     95 
+     96 SUBROUTINE STACK_INIT (SELF, KPROMA, KFLEVG, KGPBLKS, KSIZE4, KSIZE8)
+     97 
+     98 CLASS (STACK_DATA) :: SELF
+     99 INTEGER (KIND=JPIM), INTENT (IN) :: KPROMA, KFLEVG, KGPBLKS
+    100 INTEGER (KIND=JPIM), INTENT (IN), OPTIONAL :: KSIZE4, KSIZE8
+    101 
+    102 SELF%IALIGN = 8 
+    103 
+    104 IF (PRESENT (KSIZE4)) THEN
+    105 IF (KSIZE4 > 0) CALL DEV_ALLOCATE_DIM (SELF%ZDATA4, UBOUNDS=[KPROMA,KFLEVG,KSIZE4,KGPBLKS], MAP_DEVPTR=.TRUE.)
+    106 ENDIF
+    107 
+    108 IF (PRESENT (KSIZE8)) THEN
+    109 IF (KSIZE8 > 0) CALL DEV_ALLOCATE_DIM (SELF%ZDATA8, UBOUNDS=[KPROMA,KFLEVG,KSIZE8,KGPBLKS], MAP_DEVPTR=.TRUE.)
+    110 ENDIF
+    111 
+    112 !$acc enter data create (SELF)
+    113 !$acc update device (SELF)
+    114 
+    115 IF (ASSOCIATED (SELF%ZDATA4)) THEN
+    116 !$acc enter data attach (SELF%ZDATA4)
+    117 ENDIF
+    118 
+    119 IF (ASSOCIATED (SELF%ZDATA8)) THEN
+    120 !$acc enter data attach (SELF%ZDATA8)
+    121 ENDIF
+    122 
+    123 END SUBROUTINE
+
+Page 5           Source Listing                  STACK_INIT
+2024-09-10 10:27 Entry Points                    stack_mod.F90
+
+
+
+ENTRY POINTS
+
+  Name                                
+                                      
+ stack_mod_mp_stack_init_             
+
+Page 6           Source Listing                  STACK_INIT
+2024-09-10 10:27                                 stack_mod.F90
+
+    124 
+    125 SUBROUTINE STACK_FINAL (SELF)
+    126 
+    127 CLASS (STACK_DATA) :: SELF
+    128 
+    129 IF (ASSOCIATED (SELF%ZDATA4)) THEN
+    130 !$acc exit data detach (SELF%ZDATA4)
+    131   CALL DEV_DEALLOCATE (SELF%ZDATA4, MAP_DEVPTR=.TRUE.)
+    132 ENDIF
+    133 
+    134 IF (ASSOCIATED (SELF%ZDATA8)) THEN
+    135 !$acc exit data detach (SELF%ZDATA8)
+    136   CALL DEV_DEALLOCATE (SELF%ZDATA8, MAP_DEVPTR=.TRUE.)
+    137 ENDIF
+    138 
+    139 !$acc exit data delete (SELF)
+    140 
+    141 END SUBROUTINE
+
+
+ENTRY POINTS
+
+  Name                                 
+                                       
+ stack_mod_mp_stack_final_             
+
+Page 7           Source Listing                  STACK_FINAL
+2024-09-10 10:27                                 stack_mod.F90
+
+    142 
+    143 SUBROUTINE PARALLEL_OPTS_INIT (SELF)
+    144 
+    145 USE YOMLUN , ONLY : NULOUT
+    146 
+    147 CLASS (PARALLEL_OPTS) :: SELF
+    148 
+    149 CALL GETIVAR ('CLSTACKSIZE4'      , SELF%CLSTACKSIZE4      , SELF%ISTACKSIZE4                             )
+    150 CALL GETIVAR ('CLSTACKSIZE8'      , SELF%CLSTACKSIZE8      , SELF%ISTACKSIZE8                             )
+    151 CALL GETIVAR ('CLBLOMA'           , SELF%CLBLOMA           , SELF%NBLOMA                                  )
+    152 CALL GETLVAR ('PARALLEL'          , SELF%CLPARALLEL        , SELF%LLPARALLEL                              )
+    153 CALL GETLVAR ('PERSISTENT'        , SELF%CLPERSISTENT      , SELF%LLPERSISTENT      , SELF%LLPARALLEL     )
+    154 CALL GETLVAR ('SLCOMMACC'         , SELF%CLSLCOMMACC       , SELF%LLSLCOMMACC                             )
+    155 CALL GETLVAR ('SLEXTPOLACC'       , SELF%CLSLEXTPOLACC     , SELF%LLSLEXTPOLACC                           )
+    156 CALL GETLVAR ('CLHOST'            , SELF%CLHOST            , SELF%LLHOST                                  )
+    157 CALL GETLVAR ('CLHOST_CPG_DRV'    , SELF%CLHOST_CPG_DRV    , SELF%LLHOST_CPG_DRV    , SELF%LLHOST         )
+    158 CALL GETLVAR ('CLHOST_LAPINEA_DRV', SELF%CLHOST_LAPINEA_DRV, SELF%LLHOST_LAPINEA_DRV, SELF%LLHOST         )
+    159 CALL GETLVAR ('CLHOST_LAPINEB_DRV', SELF%CLHOST_LAPINEB_DRV, SELF%LLHOST_LAPINEB_DRV, SELF%LLHOST         )
+    160 CALL GETLVAR ('CLHOST_CPGLAG_DRV' , SELF%CLHOST_CPGLAG_DRV , SELF%LLHOST_CPGLAG_DRV , SELF%LLHOST         )
+    161 CALL GETLVAR ('CLLEGACY_SCAN2M'   , SELF%CLLEGACY_SCAN2M   , SELF%LLLEGACY_SCAN2M                         )
+    162 CALL GETLVAR ('CLSPNORM'          , SELF%CLSPNORM          , SELF%LLSPNORM          , SELF%LLLEGACY_SCAN2M)
+    163 
+    164 CONTAINS
+    165 
+    166 SUBROUTINE GETIVAR (CDNAME, CDVALUE, KVALUE)
+    167 
+    168 CHARACTER (LEN=*),   INTENT (IN)    :: CDNAME
+    169 CHARACTER (LEN=*),   INTENT (INOUT) :: CDVALUE
+    170 INTEGER (KIND=JPIM), INTENT (INOUT) :: KVALUE
+    171 
+    172 CHARACTER*20 :: CLNAME
+    173 
+    174 CDVALUE = ''
+    175 
+    176 CALL GETENV (TRIM (CDNAME), CDVALUE)
+    177 
+    178 IF (TRIM (CDVALUE) /= '') THEN
+    179   READ (CDVALUE, *) KVALUE
+    180 ENDIF
+    181 
+    182 CLNAME = CDNAME
+    183 
+    184 WRITE (NULOUT, '(A20," = ",I0)') CLNAME, KVALUE
+    185 
+    186 END SUBROUTINE
+
+Page 8           Source Listing                  GETIVAR
+2024-09-10 10:27 Entry Points                    stack_mod.F90
+
+
+
+ENTRY POINTS
+
+  Name                                               
+                                                     
+ stack_modparallel_opts_init_mp_getivar_             
+
+Page 9           Source Listing                  GETIVAR
+2024-09-10 10:27                                 stack_mod.F90
+
+    187 
+    188 SUBROUTINE GETLVAR (CDNAME, CDVALUE, LDVALUE, LDDEFAULT)
+    189 
+    190 CHARACTER (LEN=*),   INTENT (IN)    :: CDNAME
+    191 CHARACTER (LEN=*),   INTENT (INOUT) :: CDVALUE
+    192 LOGICAL,             INTENT (INOUT) :: LDVALUE
+    193 LOGICAL, OPTIONAL,   INTENT (INOUT) :: LDDEFAULT
+    194 
+    195 CHARACTER*20 :: CLNAME
+    196 
+    197 CDVALUE = ''
+    198 
+    199 CALL GETENV (TRIM (CDNAME), CDVALUE)
+    200 
+    201 IF (TRIM (CDVALUE) /= '' .AND. TRIM (CDVALUE) /= '0') THEN
+    202   LDVALUE = .TRUE.
+    203 ELSEIF (PRESENT (LDDEFAULT)) THEN
+    204   LDVALUE = LDDEFAULT
+    205 ENDIF
+    206 
+    207 CLNAME = CDNAME
+    208 
+    209 WRITE (NULOUT, '(A20," = ",L1)') CLNAME, LDVALUE
+    210 
+    211 END SUBROUTINE
+
+
+ENTRY POINTS
+
+  Name                                               
+                                                     
+ stack_modparallel_opts_init_mp_getlvar_             
+
+Page 10          Source Listing                  GETLVAR
+2024-09-10 10:27                                 stack_mod.F90
+
+    212 
+    213 END SUBROUTINE
+
+
+ENTRY POINTS
+
+  Name                                        
+                                              
+ stack_mod_mp_parallel_opts_init_             
+
+Page 11          Source Listing                  GETLVAR
+2024-09-10 10:27                                 stack_mod.F90
+
+    214 
+    215 SUBROUTINE PARALLEL_OPTS_FINAL (SELF)
+    216 
+    217 CLASS (PARALLEL_OPTS) :: SELF
+    218 
+    219 END SUBROUTINE
+
+
+ENTRY POINTS
+
+  Name                                         
+                                               
+ stack_mod_mp_parallel_opts_final_             
+
+Page 12          Source Listing                  PARALLEL_OPTS_FINAL
+2024-09-10 10:27                                 stack_mod.F90
+
+    220 
+    221 END MODULE
+    222 
+
+Page 13          Source Listing                  PARALLEL_OPTS_FINAL
+2024-09-10 10:27                                 stack_mod.F90
+
+
+COMPILER OPTIONS BEING USED
+
+       -align all                            -align nonone
+       -align nocommons                      -align dcommons
+       -align noqcommons                     -align nozcommons
+       -align norecords                      -align nosequence
+       -align norec1byte                     -align norec2byte
+       -align norec4byte                     -align norec8byte
+       -align rec16byte                      -align norec32byte
+       -align norec64byte                    -align noarray8byte
+       -align array16byte                    -align noarray32byte
+       -align array64byte                    -align noarray128byte
+       -align noarray256byte                 -altparam
+       -assume accuracy_sensitive            -assume nobscc
+       -assume nobuffered_io                 -assume nobuffered_stdout
+       -assume byterecl                      -assume nocontiguous_assumed_shape
+       -assume nocontiguous_pointer          -assume cc_omp
+       -assume nocstring                     -assume nodummy_aliases
+       -assume nofailed_images               -assume nofpe_summary
+       -assume noieee_compares               -assume noieee_fpe_flags
+       -assume nominus0                      -assume noold_boz
+       -assume old_complex_align             -assume old_e0g0_format
+       -assume old_unit_star                 -assume old_inquire_recl
+       -assume old_ldout_format              -assume old_ldout_zero
+       -assume noold_logical_assign          -assume noold_logical_ldio
+       -assume old_maxminloc                 -assume old_xor
+       -assume noprotect_allocates           -assume protect_constants
+       -assume protect_parens                -assume realloc_lhs
+       -assume norecursion                   -assume split_common
+       -assume source_include                -assume nostd_fp_fmt
+       -assume nostd_intent_in               -assume std_minus0_rounding
+       -assume nostd_mod_proc_name           -assume std_value
+       -assume underscore                    -assume no2underscores
+       -auto                            no   -auto_scalar
+  no   -bintext                              -ccdefault default
+       -check noarg_temp_created             -check noassume
+       -check nobounds                       -check nocontiguous
+       -check noformat                       -check nooutput_conversion
+       -check nooverflow                     -check nopointers
+       -check noshape                        -check nostack
+       -check noteams                        -check nouninitialized
+       -check noudio_iostat                  -coarray-num-procs 0
+  no   -coarray-config-file                  -convert big_endian
+       -D __INTEL_COMPILER=2021              -D __INTEL_COMPILER_UPDATE=10
+       -D __unix__                           -D __unix
+       -D __linux__                          -D __linux
+       -D __gnu_linux__                      -D unix
+       -D linux                              -D __ELF__
+       -D __x86_64                           -D __x86_64__
+       -D __amd64                            -D __amd64__
+       -D __INTEL_COMPILER_BUILD_DATE=20230609       -D __PIC__
+       -D __pic__                            -D _OPENMP=201611
+       -D __INTEL_OFFLOAD                    -D __MMX__
+       -D __SSE__                            -D __SSE_MATH__
+       -D __SSE2__                           -D __SSE2_MATH__
+       -D __SSE3__                           -D __SSSE3__
+
+Page 14          Source Listing                  PARALLEL_OPTS_FINAL
+2024-09-10 10:27                                 stack_mod.F90
+
+       -D __SSE4_1__                         -D __SSE4_2__
+       -D __POPCNT__                         -D __PCLMUL__
+       -D __AES__                            -D __AVX__
+       -D __F16C__                           -D __AVX_I__
+       -D __RDRND__                          -D __FMA__
+       -D __FP_FAST_FMA                      -D __FP_FAST_FMAF
+       -D __BMI__                            -D __LZCNT__
+       -D __AVX2__                           -D __haswell
+       -D __haswell__                        -D __tune_haswell__
+       -D __core_avx2                        -D __core_avx2__
+       -D __tune_core_avx2__                 -D LINUX
+       -D LITTLE_ENDIAN                      -D LITTLE
+       -D ADDRESS64                          -D GRIB_API_1
+       -D HIGHRES                            -D BLAS
+       -double_size 64                  no   -d_lines
+  no   -Qdyncom                              -error_limit 30
+  no   -f66                             no   -f77rtl
+  no   -fast                                 -fpscomp nofilesfromcmd
+       -fpscomp nogeneral                    -fpscomp noioformat
+       -fpscomp noldio_spacing               -fpscomp nologicals
+  no   -fpconstant                           -fpe3
+       -fprm nearest                         -ftz
+       -fp_model noprecise                   -fp_model nofast
+       -fp_model nostrict                    -fp_model source
+       -fp_model nodouble                    -fp_model noextended
+       -fp_model novery_fast                 -fp_model noexcept
+       -fp_model nono_except                 -fp_modbits nofp_contract
+       -fp_modbits no_fp_contract            -fp_modbits nofenv_access
+       -fp_modbits nono_fenv_access          -fp_modbits nocx_limited_range
+       -fp_modbits nono_cx_limited_range       -fp_modbits noprec_div
+       -fp_modbits nono_prec_div             -fp_modbits noprec_sqrt
+       -fp_modbits nono_prec_sqrt            -fp_modbits ftz
+       -fp_modbits nono_ftz                  -fp_modbits nointrin_limited_range
+       -fp_modbits nono_intrin_limited_range       -fp_modbits notrunc_compares
+       -fp_modbits nono_trunc_compares       -fp_modbits noieee_nan_compares
+       -fp_modbits nono_ieee_nan_compares       -fp_modbits nohonor_f32_conversion
+       -fp_modbits nono_honor_f32_conversion       -fp_modbits nohonor_f64_conversion
+       -fp_modbits nono_honor_f64_conversion       -fp_modbits nono_x87_copy
+       -fp_modbits nono_no_x87_copy          -fp_modbits noexception_semantics
+       -fp_modbits nono_exception_semantics       -fp_modbits noprecise_libm_functions
+       -fp_modbits no_precise_libm_functions       -heap_arrays 0
+       -threadprivate_compat                 -free
+       -g2                                   -iface nomixed_str_len_arg
+       -iface nono_mixed_str_len_arg         -init noarrays
+       -init nohuge                          -init noinfinity
+       -init nominus_huge                    -init nominus_infinity
+       -init nominus_tiny                    -init nonan
+       -init nosnan                          -init notiny
+       -init nozero                     no   -intconstant
+       -integer_size 32                 no   -mixed_str_len_arg
+  no   -module                               -names lowercase
+  no   -noinclude                       no   -o
+       -offload-build=host                   -qopenmp
+       -openmp-simd                          -O2
+  no   -pad_source                           -real_size 32
+  no   -recursive                            -reentrancy threaded
+       -vec=simd                             -show nofullpath
+
+Page 15          Source Listing                  PARALLEL_OPTS_FINAL
+2024-09-10 10:27                                 stack_mod.F90
+
+       -show noinclude                       -show nomap
+       -show options                    no   -syntax_only
+  no   -threadcom                       no   -U
+  no   -vms                                  -w noall
+       -w nonone                             -w alignments
+       -w nodeclarations                     -w noexternals
+       -w general                            -w noignore_bounds
+       -w noignore_loc                       -w nointerfaces
+       -w noshape                            -w notruncated_source
+       -w uncalled                           -w uninitialized
+       -w nounused                           -w usage
+  no   -wrap-margins
+
+       -includepath : .D[2]/,.D[7]/,.D[12]/,.D[17]/,.D[22]/,.D[27]/,.D[32]/,.D[37]/,.D[42]/,.D[47]/,.D[52]/,.D[57]/,
+           .D[62]/,.D[67]/,.D[72]/,.D[77]/,.D[82]/,.D[87]/,.D[92]/,/opt/softs/intel/oneapi/2023.2/mkl/2023.2.0/include/,
+           /usr/local/include/,.f90,./.f90,/opt/softs/intel/oneapi/2023.2/mpi/2021.10.0//include/.f90,/opt/softs/intel/oneapi/2023.2/mpi/2021.10.0/include/.f90,
+           .D[1]/.f90,.D[2]/.f90,.D[3]/.f90,.D[4]/.f90,.D[5]/.f90,.D[6]/.f90,.D[7]/.f90,.D[8]/.f90,.D[9]/.f90,.D[10]/.f90,
+           .D[11]/.f90,.D[12]/.f90,.D[13]/.f90,.D[14]/.f90,.D[15]/.f90,.D[16]/.f90,.D[17]/.f90,.D[18]/.f90,.D[19]/.f90,
+           .D[20]/.f90,.D[21]/.f90,.D[22]/.f90,.D[23]/.f90,.D[24]/.f90,.D[25]/.f90,.D[26]/.f90,.D[27]/.f90,.D[28]/.f90,
+           .D[29]/.f90,.D[30]/.f90,.D[31]/.f90,.D[32]/.f90,.D[33]/.f90,.D[34]/.f90,.D[35]/.f90,.D[36]/.f90,.D[37]/.f90,
+           .D[38]/.f90,.D[39]/.f90,.D[40]/.f90,.D[41]/.f90,.D[42]/.f90,.D[43]/.f90,.D[44]/.f90,.D[45]/.f90,.D[46]/.f90,
+           .D[47]/.f90,.D[48]/.f90,.D[49]/.f90,.D[50]/.f90,.D[51]/.f90,.D[52]/.f90,.D[53]/.f90,.D[54]/.f90,.D[55]/.f90,
+           .D[56]/.f90,.D[57]/.f90,.D[58]/.f90,.D[59]/.f90,.D[60]/.f90,.D[61]/.f90,.D[62]/.f90,.D[63]/.f90,.D[64]/.f90,
+           .D[65]/.f90,.D[66]/.f90,.D[67]/.f90,.D[68]/.f90,.D[69]/.f90,.D[70]/.f90,.D[71]/.f90,.D[72]/.f90,.D[73]/.f90,
+           .D[74]/.f90,.D[75]/.f90,.D[76]/.f90,.D[77]/.f90,.D[78]/.f90,.D[79]/.f90,.D[80]/.f90,.D[81]/.f90,.D[82]/.f90,
+           .D[83]/.f90,.D[84]/.f90,.D[85]/.f90,.D[86]/.f90,.D[87]/.f90,.D[88]/.f90,.D[89]/.f90,.D[90]/.f90,.D[91]/.f90,
+           .D[92]/.f90,.D[93]/.f90,/opt/softs/intel/oneapi/2023.2/mkl/2023.2.0/include/intel64/lp64/.f90,/opt/softs/intel/oneapi/2023.2/mkl/2023.2.0/include/.f90,
+           /opt/softs/intel/oneapi/2023.2/mpi/2021.10.0/include/.f90,/opt/softs/intel/oneapi/2023.2/mkl/2023.2.0/include/.f90,
+           /opt/softs/intel/oneapi/2023.2/tbb/latest/include/.f90,/opt/softs/intel/oneapi/2023.2/compiler/2023.2.0/linux/bin/intel64/../../compiler/include/intel64/.f90,
+           /opt/softs/intel/oneapi/2023.2/compiler/2023.2.0/linux/bin/intel64/../../compiler/include/icc/.f90,/opt/softs/intel/oneapi/2023.2/compiler/2023.2.0/linux/bin/intel64/../../compiler/include/.f90,
+           /usr/local/include/.f90,/opt/softs/gcc/5.3.0/lib/gcc/x86_64-unknown-linux-gnu/5.3.0/include/.f90,/opt/softs/gcc/5.3.0/lib/gcc/x86_64-unknown-linux-gnu/5.3.0/include-fixed/.f90,
+           /opt/softs/gcc/5.3.0/include/.f90,/usr/include/.f90,/usr/include/.f90
+       -list filename : stack_mod.lst
+  no   -o
+
+COMPILER: Intel(R) Fortran 2021.10.0-1769

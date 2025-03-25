@@ -1,0 +1,87 @@
+MODULE YOMRMSE
+
+USE PARKIND1
+USE YOMDATA
+
+IMPLICIT NONE
+
+#:set kinds = ['LM', 'RD', 'RM', 'IM']
+#:set ranks = [0, 1, 2, 3, 4, 5]
+
+INTERFACE RMSE
+#:for kind in kinds
+#:for rank in ranks
+MODULE PROCEDURE :: RMSE${kind}$${rank}$
+#:endfor
+#:endfor
+END INTERFACE
+
+CONTAINS
+
+#:for kind in kinds
+#:for rank in ranks
+
+#:if kind[0:1] == "L"
+  #:set type = "LOGICAL"
+#:elif kind[0:1] == "R"
+  #:set type = "REAL"
+#:elif kind[0:1] == "I"
+  #:set type = "INTEGER"
+#:endif
+
+#:if rank == 0
+SUBROUTINE RMSE${kind}$${rank}$ (CDNAME, P1, KLUN, YDD)
+
+CHARACTER (LEN=*) :: CDNAME
+${type}$ (KIND=JP${kind}$), INTENT (IN) :: P1
+INTEGER, INTENT (IN), OPTIONAL :: KLUN
+TYPE (DD12), INTENT (IN) :: YDD
+${type}$ (KIND=JP${kind}$) :: Z2
+
+WRITE (0, *) 'RMSE:', CDNAME, '=', 'SCALAR' 
+END SUBROUTINE
+#:else
+
+
+SUBROUTINE RMSE${kind}$${rank}$ (CDNAME, P1, KLUN, YDD)
+CHARACTER (LEN=*) :: CDNAME
+${type}$ (KIND=JP${kind}$), INTENT (IN) :: P1(${','.join ([':'] * rank)}$)
+${type}$ (KIND=JP${kind}$) :: S
+INTEGER, INTENT (IN) :: KLUN
+TYPE (DD12), INTENT (IN) :: YDD
+${type}$ (KIND=JP${kind}$), POINTER  :: Z2(${','.join ([':'] * rank)}$)
+INTEGER :: I
+#:set ind = ','.join (list (map (lambda i: "I" + str (i), range (1, rank+1))))
+
+INTEGER :: ${ind}$
+
+CALL LOAD (KLUN, Z2, KLBOUND=LBOUND (P1)) ! LBOUND (P1) = [1, 1, ...]
+
+#:if rank >= 2
+CALL YDD%SHUFFLE (Z2)
+#:endif
+
+#:for i in range (1, rank+1)
+IF (SIZE (P1, ${i}$) /= SIZE (Z2, ${i}$)) STOP 1
+#:endfor
+
+S = 0.0
+
+#:for i in range (rank)
+DO I${rank-i}$ = 1, SIZE (P1, ${rank-i}$)
+#:endfor
+        S = S + (P1(${ind}$) - Z2(${ind}$))**2       
+
+#:for i in range (rank)
+ENDDO
+#:endfor
+
+WRITE (0, *) 'RMSE:', CDNAME, '=', S
+
+END SUBROUTINE
+
+#:endif
+#:endfor
+#:endfor
+
+END

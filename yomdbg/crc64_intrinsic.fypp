@@ -1,0 +1,69 @@
+MODULE CRC64_INTRINSIC
+
+USE PARKIND1
+
+IMPLICIT NONE
+
+INTERFACE CRC64
+#:for rank in [0, 1, 2, 3, 4]
+#:for suff in ['RD', 'RM', 'IM', 'LM', 'CH']
+MODULE PROCEDURE CRC64_${rank}$${suff}$ 
+#:endfor
+#:endfor
+END INTERFACE
+
+PUBLIC :: CRC64
+PRIVATE 
+
+CONTAINS
+
+#:for rank in [0, 1, 2, 3, 4]
+#:for suff in ['RD', 'RM', 'IM', 'LM', 'CH']
+
+INTEGER*8 FUNCTION CRC64_${rank}$${suff}$ (P) RESULT (ICRC)
+  
+#:mute
+#:set kind= "JP" + suff
+#:set lend = ""
+#:set lens = ""
+#:set type = suff[0:1]
+
+#:if type == "R"
+#:set type = "REAL"
+#:elif type == "I"
+#:set type = "INTEGER"
+#:elif type == "L"
+#:set type = "LOGICAL"
+#:elif type == "C"
+#:set type = "CHARACTER"
+#:set kind = "1"
+#:set lend = ", LEN=*"
+#:set lens = " * LEN (P)"
+#:endif
+
+#:if rank > 0
+#:set size = "SIZE (P) * "
+#:set dims = "(" + (",".join ([':'] * rank)) + ")"
+#:else
+#:set size = ""
+#:set dims = ""
+#:endif
+#:endmute
+
+${type}$ (KIND=${kind}$${lend}$), INTENT (IN) :: P ${dims}$
+
+EXTERNAL :: CRC64
+INTEGER*8 :: ILEN
+
+ICRC = 0
+ILEN = ${size}$ KIND (P) ${lens}$
+
+CALL CRC64 (P, ILEN, ICRC)
+
+END FUNCTION
+
+#:endfor
+#:endfor
+
+
+END MODULE

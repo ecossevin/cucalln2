@@ -1,0 +1,1015 @@
+Page 1           Source Listing                  PP
+2024-09-10 10:13                                 /tmp/ifortxvUiMV.i90
+
+      1 # 1 "yomdbg.F90"
+      2 MODULE YOMDBG
+      3 
+      4 
+      5 
+      6 USE PARKIND1
+      7 USE IEEE_ARITHMETIC, ONLY : ISNAN => IEEE_IS_NAN
+      8 # 9
+      9 
+     10 
+     11 IMPLICIT NONE
+     12 
+     13 LOGICAL :: LLDBG = .FALSE.
+     14 LOGICAL :: LLFALSE = .FALSE.
+     15 
+     16 
+     17 INTEGER :: IBLOCK
+     18 !$OMP THREADPRIVATE (IBLOCK)
+     19 
+     20 # 24
+     21 
+     22 
+     23 INTERFACE PCRC
+     24   MODULE PROCEDURE :: PCRC1, PCRC2, PCRC3, PCRC4, PCRCI3, PCRCL1, PCRCL2, PCRCI1, PCRCI2
+     25 END INTERFACE
+     26 
+     27 INTERFACE PCRCPROM
+     28   MODULE PROCEDURE :: PCRCPROM2, PCRCPROM3, PCRCPROM4, PCRCPROMI4
+     29 END INTERFACE 
+     30 
+     31 INTERFACE PVAL
+     32   MODULE PROCEDURE :: PVAL1, PVAL2, PVAL3
+     33 END INTERFACE
+     34 
+     35 INTEGER, PRIVATE :: NGPBLKS, NGPTOT
+     36 
+     37 REAL(KIND=JPRB), POINTER :: ZPB1 (:,:)
+     38 REAL(KIND=JPRB), POINTER :: ZPB2 (:,:,:)
+     39 REAL(KIND=JPRB), POINTER :: ZPGMV (:,:,:,:)
+     40 REAL(KIND=JPRB), POINTER :: ZPGMVT1 (:,:,:,:)
+     41 REAL(KIND=JPRB), POINTER :: ZPGFL (:,:,:,:)
+     42 REAL(KIND=JPRB), POINTER :: ZPGFLT1 (:,:,:,:)
+     43 
+     44 CONTAINS
+     45 
+     46 SUBROUTINE PP (CDFILE, KLINE, CDMESS)
+     47 
+     48 USE MPL_BARRIER_MOD
+     49 
+     50 CHARACTER (LEN=*), INTENT (IN) :: CDFILE, CDMESS
+     51 INTEGER (KIND=JPIM), INTENT (IN) :: KLINE
+     52 
+     53 WRITE (0, *) "yomdbg.F90", ':', 56, " ZPB1    = ", LOC (ZPB1    (1,1)    )
+     54 WRITE (0, *) "yomdbg.F90", ':', 57, " ZPB2    = ", LOC (ZPB2    (1,1,1)  )
+     55 WRITE (0, *) "yomdbg.F90", ':', 58, " ZPGMV   = ", LOC (ZPGMV   (1,1,1,1))
+     56 WRITE (0, *) "yomdbg.F90", ':', 59, " ZPGMVT1 = ", LOC (ZPGMVT1 (1,1,1,1))
+     57 WRITE (0, *) "yomdbg.F90", ':', 60, " ZPGFL   = ", LOC (ZPGFL   (1,1,1,1))
+
+Page 2           Source Listing                  PP
+2024-09-10 10:13                                 yomdbg.F90
+
+     58 WRITE (0, *) "yomdbg.F90", ':', 61, " ZPGFLT1 = ", LOC (ZPGFLT1 (1,1,1,1))
+     59 
+     60 WRITE (0, *) "yomdbg.F90", ':', 63, " ZPB1    = ", UBOUND (ZPB1   )
+     61 WRITE (0, *) "yomdbg.F90", ':', 64, " ZPB2    = ", UBOUND (ZPB2   )
+     62 WRITE (0, *) "yomdbg.F90", ':', 65, " ZPGMV   = ", UBOUND (ZPGMV  )
+     63 WRITE (0, *) "yomdbg.F90", ':', 66, " ZPGMVT1 = ", UBOUND (ZPGMVT1)
+     64 WRITE (0, *) "yomdbg.F90", ':', 67, " ZPGFL   = ", UBOUND (ZPGFL  )
+     65 WRITE (0, *) "yomdbg.F90", ':', 68, " ZPGFLT1 = ", UBOUND (ZPGFLT1)
+     66 
+     67 
+     68 WRITE (0, *) "yomdbg.F90", ':', 71 
+     69 CALL FLUSH (0)
+     70 
+     71 CALL PCRC (CDFILE, KLINE, ZPB1, "ZPB1")
+     72 CALL PCRC (CDFILE, KLINE, ZPB2, "ZPB2")
+     73 CALL PCRC (CDFILE, KLINE, ZPGMV, "ZPGMV")
+     74 CALL PCRC (CDFILE, KLINE, ZPGMVT1, "ZPGMVT1")
+     75 CALL PCRC (CDFILE, KLINE, ZPGFL, "ZPGFL")
+     76 CALL PCRC (CDFILE, KLINE, ZPGFLT1, "ZPGFLT1")
+     77 
+     78 WRITE (0, *) "yomdbg.F90", ':', 81 
+     79 
+     80 CALL MPL_BARRIER ()
+     81 
+     82 END SUBROUTINE
+
+
+ENTRY POINTS
+
+  Name                     
+                           
+ yomdbg_mp_pp_             
+
+Page 3           Source Listing                  PP
+2024-09-10 10:13                                 yomdbg.F90
+
+     83 
+     84 SUBROUTINE PVAL1 (CDFILE, KLINE, P1, CDMESS)
+     85 
+     86 CHARACTER (LEN=*), INTENT (IN) :: CDFILE, CDMESS
+     87 INTEGER (KIND=JPIM), INTENT (IN) :: KLINE
+     88 REAL (KIND=JPRB), INTENT (IN) :: P1 (:)
+     89 
+     90 
+     91 WRITE (*, '(10E30.20)') P1 (1:10)
+     92 
+     93 END SUBROUTINE
+
+
+ENTRY POINTS
+
+  Name                        
+                              
+ yomdbg_mp_pval1_             
+
+Page 4           Source Listing                  PVAL1
+2024-09-10 10:13                                 yomdbg.F90
+
+     94 
+     95 SUBROUTINE PVAL2 (CDFILE, KLINE, P2, CDMESS)
+     96 
+     97 CHARACTER (LEN=*), INTENT (IN) :: CDFILE, CDMESS
+     98 INTEGER (KIND=JPIM), INTENT (IN) :: KLINE
+     99 REAL (KIND=JPRB), INTENT (IN) :: P2 (:,:)
+    100 
+    101 
+    102 WRITE (*, '(10E30.20)') P2 (1:10,1)
+    103 
+    104 END SUBROUTINE
+
+
+ENTRY POINTS
+
+  Name                        
+                              
+ yomdbg_mp_pval2_             
+
+Page 5           Source Listing                  PVAL2
+2024-09-10 10:13                                 yomdbg.F90
+
+    105 
+    106 SUBROUTINE PVAL3 (CDFILE, KLINE, P3, CDMESS)
+    107 
+    108 CHARACTER (LEN=*), INTENT (IN) :: CDFILE, CDMESS
+    109 INTEGER (KIND=JPIM), INTENT (IN) :: KLINE
+    110 REAL (KIND=JPRB), INTENT (IN) :: P3 (:,:,:)
+    111 
+    112 
+    113 WRITE (*, '(10E30.20)') P3 (1:10,1,1)
+    114 
+    115 END SUBROUTINE
+
+
+ENTRY POINTS
+
+  Name                        
+                              
+ yomdbg_mp_pval3_             
+
+Page 6           Source Listing                  PVAL3
+2024-09-10 10:13                                 yomdbg.F90
+
+    116 
+    117 SUBROUTINE DBG_INIT (KGPTOT, KGPBLKS)
+    118 
+    119 USE YOMMP0, ONLY : MYPROC, NPROC
+    120 USE OML_MOD
+    121 
+    122 INTEGER :: KGPTOT, KGPBLKS
+    123 
+    124 INTEGER :: IBL, ILUN
+    125 CHARACTER*64 :: CLFILE
+    126 
+    127 LOGICAL, SAVE :: LLDONE = .FALSE.
+    128 
+    129 IF (LLDONE) RETURN
+    130 
+    131 NGPTOT = KGPTOT
+    132 NGPBLKS = KGPBLKS
+    133 
+    134 WRITE (20, *) "yomdbg.F90", ':', 137 , " NGPTOT = ", NGPTOT, " NGPBLKS = ", NGPBLKS
+    135 
+    136 LLDONE = .TRUE.
+    137 
+    138 END SUBROUTINE
+
+
+ENTRY POINTS
+
+  Name                           
+                                 
+ yomdbg_mp_dbg_init_             
+
+Page 7           Source Listing                  DBG_INIT
+2024-09-10 10:13                                 yomdbg.F90
+
+    139 
+    140 SUBROUTINE PNAN (CDF, KL, P, CDMESS)
+    141 
+    142 CHARACTER (LEN=*) :: CDF
+    143 INTEGER :: KL
+    144 REAL (KIND=JPRB), INTENT (IN) :: P (:)
+    145 CHARACTER (LEN=*) :: CDMESS
+    146 
+    147 INTEGER :: ILUN
+    148 
+    149 IF (.NOT. LLDBG) RETURN
+    150 
+    151 ILUN = 0
+    152 
+    153 WRITE (ILUN, '(A,":",I6.6," ",A," ",I16)') CDF, KL, CDMESS, COUNT (ISNAN (P))
+    154 CALL FLUSH (ILUN)
+    155 
+    156 END SUBROUTINE
+
+
+ENTRY POINTS
+
+  Name                       
+                             
+ yomdbg_mp_pnan_             
+
+Page 8           Source Listing                  PNAN
+2024-09-10 10:13                                 yomdbg.F90
+
+    157 
+    158 SUBROUTINE PCRCPROM2 (CDF, KL, P, CDMESS)
+    159 
+    160 CHARACTER (LEN=*) :: CDF
+    161 INTEGER :: KL
+    162 REAL (KIND=JPRB), INTENT (IN) :: P (:,:)
+    163 CHARACTER (LEN=*) :: CDMESS
+    164 
+    165 INTEGER :: IBL, NPROMA, IE
+    166 
+    167 REAL (KIND=JPRB) :: Z (NGPTOT)
+    168 
+    169 Z = 0.
+    170 
+    171 NPROMA = SIZE (P, 1)
+    172 
+    173 DO IBL = 1, SIZE (P, 2)
+    174   IE = MIN (IBL*NPROMA, NGPTOT) - (IBL-1)*NPROMA
+    175   Z (1+(IBL-1)*NPROMA:MIN (IBL*NPROMA, NGPTOT)) = P (1:IE,IBL)
+    176 ENDDO
+    177 
+    178 CALL PCRC (CDF, KL, Z, CDMESS)
+    179 
+    180 
+    181 END SUBROUTINE
+
+
+ENTRY POINTS
+
+  Name                            
+                                  
+ yomdbg_mp_pcrcprom2_             
+
+Page 9           Source Listing                  PCRCPROM2
+2024-09-10 10:13                                 yomdbg.F90
+
+    182 
+    183 SUBROUTINE PCRCPROM3 (CDF, KL, P, CDMESS)
+    184 
+    185 CHARACTER (LEN=*) :: CDF
+    186 INTEGER :: KL
+    187 REAL (KIND=JPRB), INTENT (IN) :: P (:,:,:)
+    188 CHARACTER (LEN=*) :: CDMESS
+    189 
+    190 INTEGER :: IBL, NPROMA, IE
+    191 
+    192 REAL (KIND=JPRB) :: Z (NGPTOT, SIZE (P, 2))
+    193 
+    194 Z = 0.
+    195 
+    196 NPROMA = SIZE (P, 1)
+    197 
+    198 DO IBL = 1, SIZE (P, 3)
+    199   IE = MIN (IBL*NPROMA, NGPTOT) - (IBL-1)*NPROMA
+    200   Z (1+(IBL-1)*NPROMA:MIN (IBL*NPROMA, NGPTOT),:) = P (1:IE,:,IBL)
+    201 ENDDO
+    202 
+    203 CALL PCRC (CDF, KL, Z, CDMESS)
+    204 
+    205 END SUBROUTINE
+
+
+ENTRY POINTS
+
+  Name                            
+                                  
+ yomdbg_mp_pcrcprom3_             
+
+Page 10          Source Listing                  PCRCPROM3
+2024-09-10 10:13                                 yomdbg.F90
+
+    206 
+    207 SUBROUTINE PCRCPROMI4 (CDF, KL, P, CDMESS)
+    208 
+    209 CHARACTER (LEN=*) :: CDF
+    210 INTEGER :: KL
+    211 INTEGER (KIND=JPIM), INTENT (IN) :: P (:,:,:,:)
+    212 CHARACTER (LEN=*) :: CDMESS
+    213 
+    214 INTEGER :: IBL, NPROMA, IE
+    215 
+    216 INTEGER (KIND=JPIM) :: Z (NGPTOT, SIZE (P, 2), SIZE (P, 3))
+    217 
+    218 Z = 0.
+    219 
+    220 NPROMA = SIZE (P, 1)
+    221 
+    222 DO IBL = 1, SIZE (P, 4)
+    223   IE = MIN (IBL*NPROMA, NGPTOT) - (IBL-1)*NPROMA
+    224   Z (1+(IBL-1)*NPROMA:MIN (IBL*NPROMA, NGPTOT),:,:) = P (1:IE,:,:,IBL)
+    225 ENDDO
+    226 
+    227 CALL PCRC (CDF, KL, Z, CDMESS)
+    228 
+    229 END SUBROUTINE
+
+
+ENTRY POINTS
+
+  Name                             
+                                   
+ yomdbg_mp_pcrcpromi4_             
+
+Page 11          Source Listing                  PCRCPROMI4
+2024-09-10 10:13                                 yomdbg.F90
+
+    230 
+    231 SUBROUTINE PCRCPROM4 (CDF, KL, P, CDMESS)
+    232 
+    233 CHARACTER (LEN=*) :: CDF
+    234 INTEGER :: KL
+    235 REAL (KIND=JPRB), INTENT (IN) :: P (:,:,:,:)
+    236 CHARACTER (LEN=*) :: CDMESS
+    237 
+    238 INTEGER :: IBL, NPROMA, IE
+    239 
+    240 REAL (KIND=JPRB) :: Z (NGPTOT, SIZE (P, 2), SIZE (P, 3))
+    241 
+    242 Z = 0.
+    243 
+    244 NPROMA = SIZE (P, 1)
+    245 
+    246 DO IBL = 1, SIZE (P, 4)
+    247   IE = MIN (IBL*NPROMA, NGPTOT) - (IBL-1)*NPROMA
+    248   Z (1+(IBL-1)*NPROMA:MIN (IBL*NPROMA, NGPTOT),:,:) = P (1:IE,:,:,IBL)
+    249 ENDDO
+    250 
+    251 CALL PCRC (CDF, KL, Z, CDMESS)
+    252 
+    253 END SUBROUTINE
+
+
+ENTRY POINTS
+
+  Name                            
+                                  
+ yomdbg_mp_pcrcprom4_             
+
+Page 12          Source Listing                  PCRCPROM4
+2024-09-10 10:13                                 yomdbg.F90
+
+    254 
+    255 SUBROUTINE PCRCI1 (CDF, KL, K, CDMESS)
+    256 
+    257 CHARACTER (LEN=*) :: CDF
+    258 INTEGER :: KL
+    259 INTEGER (KIND=JPIM), INTENT (IN) :: K (:)
+    260 CHARACTER (LEN=*) :: CDMESS
+    261 
+    262 INTEGER :: ILUN
+    263 INTEGER*8 :: ICRC8, ILEN8
+    264 
+    265 ILUN = 20
+    266 
+    267 ICRC8 = 0
+    268 ILEN8 = SIZE (K) * KIND (K)
+    269 
+    270 CALL CRC64 (K, ILEN8, ICRC8)
+    271 
+    272 WRITE (ILUN, '(A,":",I6.6," ",A," ",Z16.16)') CDF, KL, CDMESS, ICRC8
+    273 CALL FLUSH (ILUN)
+    274 
+    275 WRITE (0, '(A,":",I6.6," ",A," ",Z16.16)') CDF, KL, CDMESS, ICRC8
+    276 CALL FLUSH (0)
+    277 
+    278 END SUBROUTINE
+
+
+ENTRY POINTS
+
+  Name                         
+                               
+ yomdbg_mp_pcrci1_             
+
+Page 13          Source Listing                  PCRCI1
+2024-09-10 10:13                                 yomdbg.F90
+
+    279 
+    280 SUBROUTINE PCRCI2 (CDF, KL, K, CDMESS)
+    281 
+    282 CHARACTER (LEN=*) :: CDF
+    283 INTEGER :: KL
+    284 INTEGER (KIND=JPIM), INTENT (IN) :: K (:,:)
+    285 CHARACTER (LEN=*) :: CDMESS
+    286 
+    287 INTEGER :: ILUN
+    288 INTEGER*8 :: ICRC8, ILEN8
+    289 
+    290 ILUN = 20
+    291 
+    292 ICRC8 = 0
+    293 ILEN8 = SIZE (K) * KIND (K)
+    294 
+    295 CALL CRC64 (K, ILEN8, ICRC8)
+    296 
+    297 WRITE (ILUN, '(A,":",I6.6," ",A," ",Z16.16)') CDF, KL, CDMESS, ICRC8
+    298 CALL FLUSH (ILUN)
+    299 
+    300 WRITE (0, '(A,":",I6.6," ",A," ",Z16.16)') CDF, KL, CDMESS, ICRC8
+    301 CALL FLUSH (0)
+    302 
+    303 END SUBROUTINE
+
+
+ENTRY POINTS
+
+  Name                         
+                               
+ yomdbg_mp_pcrci2_             
+
+Page 14          Source Listing                  PCRCI2
+2024-09-10 10:13                                 yomdbg.F90
+
+    304 
+    305 SUBROUTINE PCRCL1 (CDF, KL, L, CDMESS)
+    306 
+    307 CHARACTER (LEN=*) :: CDF
+    308 INTEGER :: KL
+    309 LOGICAL, INTENT (IN) :: L (:)
+    310 CHARACTER (LEN=*) :: CDMESS
+    311 
+    312 INTEGER :: ILUN
+    313 INTEGER*8 :: ICRC8, ILEN8
+    314 
+    315 ILUN = 20
+    316 
+    317 ICRC8 = 0
+    318 ILEN8 = SIZE (L) * KIND (L)
+    319 
+    320 CALL CRC64 (L, ILEN8, ICRC8)
+    321 
+    322 WRITE (ILUN, '(A,":",I6.6," ",A," ",Z16.16)') CDF, KL, CDMESS, ICRC8
+    323 CALL FLUSH (ILUN)
+    324 
+    325 WRITE (0, '(A,":",I6.6," ",A," ",Z16.16)') CDF, KL, CDMESS, ICRC8
+    326 CALL FLUSH (0)
+    327 
+    328 END SUBROUTINE
+
+
+ENTRY POINTS
+
+  Name                         
+                               
+ yomdbg_mp_pcrcl1_             
+
+Page 15          Source Listing                  PCRCL1
+2024-09-10 10:13                                 yomdbg.F90
+
+    329 
+    330 SUBROUTINE PCRCL2 (CDF, KL, L, CDMESS)
+    331 
+    332 CHARACTER (LEN=*) :: CDF
+    333 INTEGER :: KL
+    334 LOGICAL, INTENT (IN) :: L (:,:)
+    335 CHARACTER (LEN=*) :: CDMESS
+    336 
+    337 INTEGER :: ILUN
+    338 INTEGER*8 :: ICRC8, ILEN8
+    339 
+    340 ILUN = 20
+    341 
+    342 ICRC8 = 0
+    343 ILEN8 = SIZE (L) * KIND (L)
+    344 
+    345 CALL CRC64 (L, ILEN8, ICRC8)
+    346 
+    347 WRITE (ILUN, '(A,":",I6.6," ",A," ",Z16.16)') CDF, KL, CDMESS, ICRC8
+    348 CALL FLUSH (ILUN)
+    349 
+    350 WRITE (0, '(A,":",I6.6," ",A," ",Z16.16)') CDF, KL, CDMESS, ICRC8
+    351 CALL FLUSH (0)
+    352 
+    353 END SUBROUTINE
+
+
+ENTRY POINTS
+
+  Name                         
+                               
+ yomdbg_mp_pcrcl2_             
+
+Page 16          Source Listing                  PCRCL2
+2024-09-10 10:13                                 yomdbg.F90
+
+    354 
+    355 SUBROUTINE PCRC1 (CDF, KL, P, CDMESS)
+    356 
+    357 CHARACTER (LEN=*) :: CDF
+    358 INTEGER :: KL
+    359 REAL (KIND=JPRB), INTENT (IN) :: P (:)
+    360 CHARACTER (LEN=*) :: CDMESS
+    361 REAL (KIND=JPRB), ALLOCATABLE :: Z (:)
+    362 
+    363 INTEGER :: ILUN
+    364 INTEGER*8 :: ICRC8, ILEN8, ICRC8_DEV
+    365 LOGICAL :: LLPRESENT
+    366 
+    367 ILUN = 20
+    368 
+    369 ICRC8 = 0
+    370 ILEN8 = SIZE (P) * KIND (P)
+    371 
+    372 CALL CRC64 (P, ILEN8, ICRC8)
+    373 
+    374 LLPRESENT = .FALSE.
+    375 # 380
+    376 
+    377 
+    378 IF (LLPRESENT) THEN
+    379 
+    380   ALLOCATE (Z, MOLD=P)
+    381 
+    382 !$acc kernels copyout (Z)
+    383   Z = P
+    384 !$acc end kernels
+    385 
+    386   ICRC8_DEV = 0
+    387   CALL CRC64 (Z, ILEN8, ICRC8_DEV)
+    388 
+    389   WRITE (ILUN, '(A,":",I6.6," ",A," ",Z16.16," "Z16.16," ",L1)') CDF, KL, CDMESS, ICRC8, ICRC8_DEV, ICRC8 == ICRC8_DEV
+    390   WRITE (0,    '(A,":",I6.6," ",A," ",Z16.16," "Z16.16," ",L1)') CDF, KL, CDMESS, ICRC8, ICRC8_DEV, ICRC8 == ICRC8_DEV
+    391 ELSE
+    392   WRITE (ILUN, '(A,":",I6.6," ",A," ",Z16.16)') CDF, KL, CDMESS, ICRC8
+    393   WRITE (0,    '(A,":",I6.6," ",A," ",Z16.16)') CDF, KL, CDMESS, ICRC8
+    394 ENDIF
+    395 
+    396 CALL FLUSH (ILUN)
+    397 CALL FLUSH (0)
+    398 
+    399 END SUBROUTINE
+
+Page 17          Source Listing                  PCRC1
+2024-09-10 10:13 Entry Points                    yomdbg.F90
+
+
+
+ENTRY POINTS
+
+  Name                        
+                              
+ yomdbg_mp_pcrc1_             
+
+Page 18          Source Listing                  PCRC1
+2024-09-10 10:13                                 yomdbg.F90
+
+    400 
+    401 SUBROUTINE PCRC2DEV (CDF, KL, P, CDMESS)
+    402 
+    403 CHARACTER (LEN=*) :: CDF
+    404 INTEGER :: KL
+    405 REAL (KIND=JPRB), INTENT (IN) :: P (:,:)
+    406 CHARACTER (LEN=*) :: CDMESS
+    407 REAL (KIND=JPRB), ALLOCATABLE :: Z (:,:)
+    408 
+    409 INTEGER :: ILUN
+    410 INTEGER*8 :: ICRC8, ILEN8, ICRC8_DEV
+    411 
+    412 ILUN = 20
+    413 
+    414 ICRC8 = 0
+    415 ILEN8 = SIZE (P) * KIND (P)
+    416 
+    417 ALLOCATE (Z, MOLD=P)
+    418 
+    419 !$acc kernels copyout (Z) deviceptr (P)
+    420 Z = P
+    421 !$acc end kernels
+    422 
+    423 ICRC8_DEV = 0
+    424 
+    425 CALL CRC64 (Z, ILEN8, ICRC8_DEV)
+    426 
+    427 WRITE (ILUN, '(A,":",I6.6," ",A," ",Z16.16)') CDF, KL, CDMESS, ICRC8_DEV
+    428 WRITE (0,    '(A,":",I6.6," ",A," ",Z16.16)') CDF, KL, CDMESS, ICRC8_DEV
+    429 
+    430 
+    431 CALL FLUSH (ILUN)
+    432 CALL FLUSH (0)
+    433 
+    434 END SUBROUTINE
+
+Page 19          Source Listing                  PCRC2DEV
+2024-09-10 10:13 Entry Points                    yomdbg.F90
+
+
+
+ENTRY POINTS
+
+  Name                           
+                                 
+ yomdbg_mp_pcrc2dev_             
+
+Page 20          Source Listing                  PCRC2DEV
+2024-09-10 10:13                                 yomdbg.F90
+
+    435 
+    436 SUBROUTINE PCRC2 (CDF, KL, P, CDMESS)
+    437 
+    438 CHARACTER (LEN=*) :: CDF
+    439 INTEGER :: KL
+    440 REAL (KIND=JPRB), INTENT (IN) :: P (:,:)
+    441 CHARACTER (LEN=*) :: CDMESS
+    442 REAL (KIND=JPRB), ALLOCATABLE :: Z (:,:)
+    443 
+    444 INTEGER :: ILUN
+    445 INTEGER*8 :: ICRC8, ILEN8, ICRC8_DEV
+    446 LOGICAL :: LLPRESENT
+    447 
+    448 ILUN = 20
+    449 
+    450 ICRC8 = 0
+    451 ILEN8 = SIZE (P) * KIND (P)
+    452 
+    453 CALL CRC64 (P, ILEN8, ICRC8)
+    454 
+    455 LLPRESENT = .FALSE.
+    456 # 462
+    457 
+    458 
+    459 IF (LLPRESENT) THEN
+    460 
+    461   ALLOCATE (Z, MOLD=P)
+    462 
+    463 !$acc kernels copyout (Z)
+    464   Z = P
+    465 !$acc end kernels
+    466 
+    467   ICRC8_DEV = 0
+    468 
+    469   CALL CRC64 (Z, ILEN8, ICRC8_DEV)
+    470 
+    471   WRITE (ILUN, '(A,":",I6.6," ",A," ",Z16.16," "Z16.16," ",L1)') CDF, KL, CDMESS, ICRC8, ICRC8_DEV, ICRC8 == ICRC8_DEV
+    472   WRITE (0,    '(A,":",I6.6," ",A," ",Z16.16," "Z16.16," ",L1)') CDF, KL, CDMESS, ICRC8, ICRC8_DEV, ICRC8 == ICRC8_DEV
+    473 
+    474 ELSE
+    475   WRITE (ILUN, '(A,":",I6.6," ",A," ",Z16.16)') CDF, KL, CDMESS, ICRC8
+    476   WRITE (0,    '(A,":",I6.6," ",A," ",Z16.16)') CDF, KL, CDMESS, ICRC8
+    477 ENDIF
+    478 
+    479 CALL FLUSH (ILUN)
+    480 CALL FLUSH (0)
+    481 
+    482 END SUBROUTINE
+
+Page 21          Source Listing                  PCRC2
+2024-09-10 10:13 Entry Points                    yomdbg.F90
+
+
+
+ENTRY POINTS
+
+  Name                        
+                              
+ yomdbg_mp_pcrc2_             
+
+Page 22          Source Listing                  PCRC2
+2024-09-10 10:13                                 yomdbg.F90
+
+    483 
+    484 SUBROUTINE PCRC3 (CDF, KL, P, CDMESS)
+    485 
+    486 CHARACTER (LEN=*) :: CDF
+    487 INTEGER :: KL
+    488 REAL (KIND=JPRB), INTENT (IN) :: P (:,:,:)
+    489 CHARACTER (LEN=*) :: CDMESS
+    490 REAL (KIND=JPRB), ALLOCATABLE :: Z (:,:,:)
+    491 
+    492 INTEGER :: ILUN
+    493 INTEGER*8 :: ICRC8, ILEN8, ICRC8_DEV
+    494 LOGICAL :: LLPRESENT
+    495 
+    496 ILUN = 20
+    497 
+    498 ICRC8 = 0
+    499 ILEN8 = SIZE (P) * KIND (P)
+    500 
+    501 CALL CRC64 (P, ILEN8, ICRC8)
+    502 
+    503 LLPRESENT = .FALSE.
+    504 # 511
+    505 
+    506 
+    507 IF (LLPRESENT) THEN
+    508 
+    509   ALLOCATE (Z, MOLD=P)
+    510 
+    511 !$acc kernels copyout (Z)
+    512   Z = P
+    513 !$acc end kernels
+    514 
+    515   ICRC8_DEV = 0
+    516   CALL CRC64 (Z, ILEN8, ICRC8_DEV)
+    517 
+    518   WRITE (ILUN, '(A,":",I6.6," ",A," ",Z16.16," "Z16.16," ",L1)') CDF, KL, CDMESS, ICRC8, ICRC8_DEV, ICRC8 == ICRC8_DEV
+    519   WRITE (0,    '(A,":",I6.6," ",A," ",Z16.16," "Z16.16," ",L1)') CDF, KL, CDMESS, ICRC8, ICRC8_DEV, ICRC8 == ICRC8_DEV
+    520 
+    521 ELSE
+    522   WRITE (ILUN, '(A,":",I6.6," ",A," ",Z16.16)') CDF, KL, CDMESS, ICRC8
+    523   WRITE (0,    '(A,":",I6.6," ",A," ",Z16.16)') CDF, KL, CDMESS, ICRC8
+    524 ENDIF
+    525 
+    526 CALL FLUSH (ILUN)
+    527 CALL FLUSH (0)
+    528 
+    529 END SUBROUTINE
+
+Page 23          Source Listing                  PCRC3
+2024-09-10 10:13 Entry Points                    yomdbg.F90
+
+
+
+ENTRY POINTS
+
+  Name                        
+                              
+ yomdbg_mp_pcrc3_             
+
+Page 24          Source Listing                  PCRC3
+2024-09-10 10:13                                 yomdbg.F90
+
+    530 
+    531 SUBROUTINE PCRC4 (CDF, KL, P, CDMESS)
+    532 
+    533 CHARACTER (LEN=*) :: CDF
+    534 INTEGER :: KL
+    535 REAL (KIND=JPRB), INTENT (IN) :: P (:,:,:,:)
+    536 CHARACTER (LEN=*) :: CDMESS
+    537 REAL (KIND=JPRB), ALLOCATABLE :: Z (:,:,:,:)
+    538 
+    539 INTEGER :: ILUN
+    540 INTEGER*8 :: ICRC8, ILEN8, ICRC8_DEV
+    541 LOGICAL :: LLPRESENT
+    542 
+    543 ILUN = 20
+    544 
+    545 ICRC8 = 0
+    546 ILEN8 = SIZE (P) * KIND (P)
+    547 
+    548 CALL CRC64 (P, ILEN8, ICRC8)
+    549 
+    550 LLPRESENT = .FALSE.
+    551 # 559
+    552 
+    553 
+    554 IF (LLPRESENT) THEN
+    555 
+    556   ALLOCATE (Z, MOLD=P)
+    557 
+    558 !$acc kernels copyout (Z)
+    559   Z = P
+    560 !$acc end kernels
+    561 
+    562   ICRC8_DEV = 0
+    563   CALL CRC64 (Z, ILEN8, ICRC8_DEV)
+    564 
+    565   WRITE (ILUN, '(A,":",I6.6," ",A," ",Z16.16," "Z16.16," ",L1)') CDF, KL, CDMESS, ICRC8, ICRC8_DEV, ICRC8 == ICRC8_DEV
+    566   WRITE (0,    '(A,":",I6.6," ",A," ",Z16.16," "Z16.16," ",L1)') CDF, KL, CDMESS, ICRC8, ICRC8_DEV, ICRC8 == ICRC8_DEV
+    567 
+    568 ELSE
+    569   WRITE (ILUN, '(A,":",I6.6," ",A," ",Z16.16)') CDF, KL, CDMESS, ICRC8
+    570   WRITE (0,    '(A,":",I6.6," ",A," ",Z16.16)') CDF, KL, CDMESS, ICRC8
+    571 ENDIF
+    572 
+    573 CALL FLUSH (ILUN)
+    574 CALL FLUSH (0)
+    575 
+    576 END SUBROUTINE
+
+Page 25          Source Listing                  PCRC4
+2024-09-10 10:13 Entry Points                    yomdbg.F90
+
+
+
+ENTRY POINTS
+
+  Name                        
+                              
+ yomdbg_mp_pcrc4_             
+
+Page 26          Source Listing                  PCRC4
+2024-09-10 10:13                                 yomdbg.F90
+
+    577 
+    578 SUBROUTINE PCRCI3 (CDF, KL, P, CDMESS)
+    579 
+    580 CHARACTER (LEN=*) :: CDF
+    581 INTEGER :: KL
+    582 INTEGER (KIND=JPIM), INTENT (IN) :: P (:,:,:)
+    583 CHARACTER (LEN=*) :: CDMESS
+    584 
+    585 INTEGER :: ILUN
+    586 INTEGER*8 :: ICRC8, ILEN8
+    587 
+    588 ILUN = 20
+    589 
+    590 ICRC8 = 0
+    591 ILEN8 = SIZE (P) * KIND (P)
+    592 
+    593 CALL CRC64 (P, ILEN8, ICRC8)
+    594 
+    595 WRITE (ILUN, '(A,":",I6.6," ",A," ",Z16.16)') CDF, KL, CDMESS, ICRC8
+    596 WRITE (0,    '(A,":",I6.6," ",A," ",Z16.16)') CDF, KL, CDMESS, ICRC8
+    597 CALL FLUSH (ILUN)
+    598 CALL FLUSH (0)
+    599 
+    600 END SUBROUTINE
+
+
+ENTRY POINTS
+
+  Name                         
+                               
+ yomdbg_mp_pcrci3_             
+
+Page 27          Source Listing                  PCRCI3
+2024-09-10 10:13                                 yomdbg.F90
+
+    601 
+    602 # 692
+    603 
+    604 
+    605 END MODULE
+    606 
+
+Page 28          Source Listing                  PCRCI3
+2024-09-10 10:13                                 yomdbg.F90
+
+
+COMPILER OPTIONS BEING USED
+
+       -align all                            -align nonone
+       -align nocommons                      -align dcommons
+       -align noqcommons                     -align nozcommons
+       -align norecords                      -align nosequence
+       -align norec1byte                     -align norec2byte
+       -align norec4byte                     -align norec8byte
+       -align rec16byte                      -align norec32byte
+       -align norec64byte                    -align noarray8byte
+       -align array16byte                    -align noarray32byte
+       -align array64byte                    -align noarray128byte
+       -align noarray256byte                 -altparam
+       -assume accuracy_sensitive            -assume nobscc
+       -assume nobuffered_io                 -assume nobuffered_stdout
+       -assume byterecl                      -assume nocontiguous_assumed_shape
+       -assume nocontiguous_pointer          -assume cc_omp
+       -assume nocstring                     -assume nodummy_aliases
+       -assume nofailed_images               -assume nofpe_summary
+       -assume noieee_compares               -assume noieee_fpe_flags
+       -assume nominus0                      -assume noold_boz
+       -assume old_complex_align             -assume old_e0g0_format
+       -assume old_unit_star                 -assume old_inquire_recl
+       -assume old_ldout_format              -assume old_ldout_zero
+       -assume noold_logical_assign          -assume noold_logical_ldio
+       -assume old_maxminloc                 -assume old_xor
+       -assume noprotect_allocates           -assume protect_constants
+       -assume protect_parens                -assume realloc_lhs
+       -assume norecursion                   -assume split_common
+       -assume source_include                -assume nostd_fp_fmt
+       -assume nostd_intent_in               -assume std_minus0_rounding
+       -assume nostd_mod_proc_name           -assume std_value
+       -assume underscore                    -assume no2underscores
+       -auto                            no   -auto_scalar
+  no   -bintext                              -ccdefault default
+       -check noarg_temp_created             -check noassume
+       -check nobounds                       -check nocontiguous
+       -check noformat                       -check nooutput_conversion
+       -check nooverflow                     -check nopointers
+       -check noshape                        -check nostack
+       -check noteams                        -check nouninitialized
+       -check noudio_iostat                  -coarray-num-procs 0
+  no   -coarray-config-file                  -convert big_endian
+       -D __INTEL_COMPILER=2021              -D __INTEL_COMPILER_UPDATE=10
+       -D __unix__                           -D __unix
+       -D __linux__                          -D __linux
+       -D __gnu_linux__                      -D unix
+       -D linux                              -D __ELF__
+       -D __x86_64                           -D __x86_64__
+       -D __amd64                            -D __amd64__
+       -D __INTEL_COMPILER_BUILD_DATE=20230609       -D __PIC__
+       -D __pic__                            -D _OPENMP=201611
+       -D __INTEL_OFFLOAD                    -D __MMX__
+       -D __SSE__                            -D __SSE_MATH__
+       -D __SSE2__                           -D __SSE2_MATH__
+       -D __SSE3__                           -D __SSSE3__
+
+Page 29          Source Listing                  PCRCI3
+2024-09-10 10:13                                 yomdbg.F90
+
+       -D __SSE4_1__                         -D __SSE4_2__
+       -D __POPCNT__                         -D __PCLMUL__
+       -D __AES__                            -D __AVX__
+       -D __F16C__                           -D __AVX_I__
+       -D __RDRND__                          -D __FMA__
+       -D __FP_FAST_FMA                      -D __FP_FAST_FMAF
+       -D __BMI__                            -D __LZCNT__
+       -D __AVX2__                           -D __haswell
+       -D __haswell__                        -D __tune_haswell__
+       -D __core_avx2                        -D __core_avx2__
+       -D __tune_core_avx2__                 -D LINUX
+       -D LITTLE_ENDIAN                      -D LITTLE
+       -D ADDRESS64                          -D GRIB_API_1
+       -D HIGHRES                            -D BLAS
+       -double_size 64                  no   -d_lines
+  no   -Qdyncom                              -error_limit 30
+  no   -f66                             no   -f77rtl
+  no   -fast                                 -fpscomp nofilesfromcmd
+       -fpscomp nogeneral                    -fpscomp noioformat
+       -fpscomp noldio_spacing               -fpscomp nologicals
+  no   -fpconstant                           -fpe3
+       -fprm nearest                         -ftz
+       -fp_model noprecise                   -fp_model nofast
+       -fp_model nostrict                    -fp_model source
+       -fp_model nodouble                    -fp_model noextended
+       -fp_model novery_fast                 -fp_model noexcept
+       -fp_model nono_except                 -fp_modbits nofp_contract
+       -fp_modbits no_fp_contract            -fp_modbits nofenv_access
+       -fp_modbits nono_fenv_access          -fp_modbits nocx_limited_range
+       -fp_modbits nono_cx_limited_range       -fp_modbits noprec_div
+       -fp_modbits nono_prec_div             -fp_modbits noprec_sqrt
+       -fp_modbits nono_prec_sqrt            -fp_modbits ftz
+       -fp_modbits nono_ftz                  -fp_modbits nointrin_limited_range
+       -fp_modbits nono_intrin_limited_range       -fp_modbits notrunc_compares
+       -fp_modbits nono_trunc_compares       -fp_modbits noieee_nan_compares
+       -fp_modbits nono_ieee_nan_compares       -fp_modbits nohonor_f32_conversion
+       -fp_modbits nono_honor_f32_conversion       -fp_modbits nohonor_f64_conversion
+       -fp_modbits nono_honor_f64_conversion       -fp_modbits nono_x87_copy
+       -fp_modbits nono_no_x87_copy          -fp_modbits noexception_semantics
+       -fp_modbits nono_exception_semantics       -fp_modbits noprecise_libm_functions
+       -fp_modbits no_precise_libm_functions       -heap_arrays 0
+       -threadprivate_compat                 -free
+       -g2                                   -iface nomixed_str_len_arg
+       -iface nono_mixed_str_len_arg         -init noarrays
+       -init nohuge                          -init noinfinity
+       -init nominus_huge                    -init nominus_infinity
+       -init nominus_tiny                    -init nonan
+       -init nosnan                          -init notiny
+       -init nozero                     no   -intconstant
+       -integer_size 32                 no   -mixed_str_len_arg
+  no   -module                               -names lowercase
+  no   -noinclude                       no   -o
+       -offload-build=host                   -qopenmp
+       -openmp-simd                          -O2
+  no   -pad_source                           -real_size 32
+  no   -recursive                            -reentrancy threaded
+       -vec=simd                             -show nofullpath
+
+Page 30          Source Listing                  PCRCI3
+2024-09-10 10:13                                 yomdbg.F90
+
+       -show noinclude                       -show nomap
+       -show options                    no   -syntax_only
+  no   -threadcom                       no   -U
+  no   -vms                                  -w noall
+       -w nonone                             -w alignments
+       -w nodeclarations                     -w noexternals
+       -w general                            -w noignore_bounds
+       -w noignore_loc                       -w nointerfaces
+       -w noshape                            -w notruncated_source
+       -w uncalled                           -w uninitialized
+       -w nounused                           -w usage
+  no   -wrap-margins
+
+       -includepath : .D[2]/,.D[7]/,.D[12]/,.D[17]/,.D[22]/,.D[27]/,.D[32]/,.D[37]/,.D[42]/,.D[47]/,.D[52]/,.D[57]/,
+           .D[62]/,.D[67]/,.D[72]/,.D[77]/,.D[82]/,.D[87]/,.D[92]/,/opt/softs/intel/oneapi/2023.2/mkl/2023.2.0/include/,
+           /usr/local/include/,.f90,./.f90,/opt/softs/intel/oneapi/2023.2/mpi/2021.10.0//include/.f90,/opt/softs/intel/oneapi/2023.2/mpi/2021.10.0/include/.f90,
+           .D[1]/.f90,.D[2]/.f90,.D[3]/.f90,.D[4]/.f90,.D[5]/.f90,.D[6]/.f90,.D[7]/.f90,.D[8]/.f90,.D[9]/.f90,.D[10]/.f90,
+           .D[11]/.f90,.D[12]/.f90,.D[13]/.f90,.D[14]/.f90,.D[15]/.f90,.D[16]/.f90,.D[17]/.f90,.D[18]/.f90,.D[19]/.f90,
+           .D[20]/.f90,.D[21]/.f90,.D[22]/.f90,.D[23]/.f90,.D[24]/.f90,.D[25]/.f90,.D[26]/.f90,.D[27]/.f90,.D[28]/.f90,
+           .D[29]/.f90,.D[30]/.f90,.D[31]/.f90,.D[32]/.f90,.D[33]/.f90,.D[34]/.f90,.D[35]/.f90,.D[36]/.f90,.D[37]/.f90,
+           .D[38]/.f90,.D[39]/.f90,.D[40]/.f90,.D[41]/.f90,.D[42]/.f90,.D[43]/.f90,.D[44]/.f90,.D[45]/.f90,.D[46]/.f90,
+           .D[47]/.f90,.D[48]/.f90,.D[49]/.f90,.D[50]/.f90,.D[51]/.f90,.D[52]/.f90,.D[53]/.f90,.D[54]/.f90,.D[55]/.f90,
+           .D[56]/.f90,.D[57]/.f90,.D[58]/.f90,.D[59]/.f90,.D[60]/.f90,.D[61]/.f90,.D[62]/.f90,.D[63]/.f90,.D[64]/.f90,
+           .D[65]/.f90,.D[66]/.f90,.D[67]/.f90,.D[68]/.f90,.D[69]/.f90,.D[70]/.f90,.D[71]/.f90,.D[72]/.f90,.D[73]/.f90,
+           .D[74]/.f90,.D[75]/.f90,.D[76]/.f90,.D[77]/.f90,.D[78]/.f90,.D[79]/.f90,.D[80]/.f90,.D[81]/.f90,.D[82]/.f90,
+           .D[83]/.f90,.D[84]/.f90,.D[85]/.f90,.D[86]/.f90,.D[87]/.f90,.D[88]/.f90,.D[89]/.f90,.D[90]/.f90,.D[91]/.f90,
+           .D[92]/.f90,.D[93]/.f90,/opt/softs/intel/oneapi/2023.2/mkl/2023.2.0/include/intel64/lp64/.f90,/opt/softs/intel/oneapi/2023.2/mkl/2023.2.0/include/.f90,
+           /opt/softs/intel/oneapi/2023.2/mpi/2021.10.0/include/.f90,/opt/softs/intel/oneapi/2023.2/mkl/2023.2.0/include/.f90,
+           /opt/softs/intel/oneapi/2023.2/tbb/latest/include/.f90,/opt/softs/intel/oneapi/2023.2/compiler/2023.2.0/linux/bin/intel64/../../compiler/include/intel64/.f90,
+           /opt/softs/intel/oneapi/2023.2/compiler/2023.2.0/linux/bin/intel64/../../compiler/include/icc/.f90,/opt/softs/intel/oneapi/2023.2/compiler/2023.2.0/linux/bin/intel64/../../compiler/include/.f90,
+           /usr/local/include/.f90,/opt/softs/gcc/5.3.0/lib/gcc/x86_64-unknown-linux-gnu/5.3.0/include/.f90,/opt/softs/gcc/5.3.0/lib/gcc/x86_64-unknown-linux-gnu/5.3.0/include-fixed/.f90,
+           /opt/softs/gcc/5.3.0/include/.f90,/usr/include/.f90,/usr/include/.f90
+       -list filename : yomdbg.lst
+  no   -o
+
+COMPILER: Intel(R) Fortran 2021.10.0-1769
