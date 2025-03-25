@@ -1,0 +1,4 @@
+NPROMA =            32  NGPBLKS =          1120  KLEV =           105
+ISIZE4 =            10  ISIZE8 =            80  NTIME =            10
+        CLARCH;                        CLMETHOD;  NPROMA; NGPBLKS;   NTIME;              ZTCTOT;                 ZTC;              ZTDTOT;                 ZTD
+              ;             openaccsinglecolumn;      32;    1120;      10;    0.3210418224E+00;    0.8957640135E-06;    0.9202375412E+00;    0.2567627068E-05
