@@ -1,0 +1,251 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:02      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./cubidiag.F90
+
+(    1) SUBROUTINE CUBIDIAG &
+(    2)  & ( KIDIA, KFDIA, KLON, KLEV,&
+(    3)  & KCTOP, LD_LCUMASK,&
+(    4)  & PA,    PB,   PR,   PU )  
+(    5) 
+(    6) !          P. Bechtold         E.C.M.W.F.     07/03
+(    7) 
+(    8) !          PURPOSE.
+(    9) !          --------
+(   10) !          SOLVES BIDIAGONAL SYSTEM
+(   11) !          FOR IMPLICIT SOLUTION OF ADVECTION EQUATION
+(   12) 
+(   13) !          INTERFACE
+(   14) !          ---------
+(   15) 
+(   16) !          THIS ROUTINE IS CALLED FROM *CUDUDV* AND CUDTDQ.
+(   17) !          IT RETURNS UPDATED VALUE OF QUANTITY
+(   18) 
+(   19) !          METHOD.
+(   20) !          --------
+(   21) !          NUMERICAL RECIPES (Cambridge Press)
+(   22) !          DERIVED FROM TRIDIAGONAL ALGORIHM WITH C=0.
+(   23) !          (ONLY ONE FORWARD SUBSTITUTION NECESSARY)
+(   24) !          M  x  U  = R
+(   25) !          ELEMENTS OF MATRIX M ARE STORED IN VECTORS A, B, C
+(   26) 
+(   27) !          (  B(kctop-1)    C(kctop-1)    0          0        )
+(   28) !          (  A(kctop)      B(kctop)      C(kctop)   0        )
+(   29) !          (  0             A(jk)         B(jk)      C(jk)    )
+(   30) !          (  0             0             A(klev)    B(klev)  )
+(   31) 
+(   32) !     PARAMETER     DESCRIPTION                                   UNITS
+(   33) !     ---------     -----------                                   -----
+(   34) 
+(   35) !    INPUT PARAMETERS (INTEGER):
+(   36) 
+(   37) !    *KIDIA*        START POINT
+(   38) !    *KFDIA*        END POINT
+(   39) !    *KLON*         NUMBER OF GRID POINTS PER PACKET
+(   40) !    *KLEV*         NUMBER OF LEVELS
+(   41) !    *KCTOP*        CLOUD TOP LEVELS
+(   42) 
+(   43) !    INPUT PARAMETERS (REAL):
+(   44) 
+(   45) !    *PA, PB*       VECTORS CONTAINING DIAGONAL ELEMENTS 
+(   46) !    *PR*           RHS VECTOR CONTAINING "CONSTANTS"
+(   47) 
+(   48) !    OUTPUT PARAMETERS (REAL):
+(   49) 
+(   50) !    *PU*            SOLUTION VECTOR = UPDATED VALUE OF QUANTITY
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:02      page 2
+
+(   51) 
+(   52) !          EXTERNALS
+(   53) !          ---------
+(   54) !          NONE
+(   55) 
+(   56) !----------------------------------------------------------------------
+(   57) 
+(   58) USE PARKIND1  ,ONLY : JPIM     ,JPRB
+(   59) USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
+(   60) 
+(   61) IMPLICIT NONE
+(   62) 
+(   63) !     DUMMY INTEGER 
+(   64) INTEGER(KIND=JPIM),INTENT(IN)    :: KIDIA 
+(   65) INTEGER(KIND=JPIM),INTENT(IN)    :: KFDIA 
+(   66) INTEGER(KIND=JPIM),INTENT(IN)    :: KLON 
+(   67) INTEGER(KIND=JPIM),INTENT(IN)    :: KLEV 
+(   68) INTEGER(KIND=JPIM),INTENT(IN)    :: KCTOP(KLON) 
+(   69) LOGICAL           ,INTENT(IN)    :: LD_LCUMASK(KLON,KLEV) 
+(   70) REAL(KIND=JPRB)   ,INTENT(IN)    :: PA(KLON,KLEV) 
+(   71) REAL(KIND=JPRB)   ,INTENT(IN)    :: PB(KLON,KLEV) 
+(   72) REAL(KIND=JPRB)   ,INTENT(IN)    :: PR(KLON,KLEV) 
+(   73) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PU(KLON,KLEV) 
+(   74) !     DUMMY REALS
+(   75) !     DUMMY LOGICALS
+(   76) !     LOCALS
+(   77) INTEGER(KIND=JPIM) :: JK, JL
+(   78) REAL(KIND=JPRB) :: ZBET
+(   79) REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+(   80) 
+(   81) !----------------------------------------------------------------------
+(   82) 
+(   83) IF (LHOOK) CALL DR_HOOK('CUBIDIAG',0,ZHOOK_HANDLE)
+(   84) 
+(   85) PU(:,:)=0.0_JPRB
+(   86) 
+(   87) ! Forward Substitution
+(   88) 
+(   89) DO JK = 2, KLEV
+(   90)   DO JL = KIDIA,KFDIA
+(   91)     IF ( LD_LCUMASK(JL,JK) ) THEN
+(   92)       IF ( JK==KCTOP(JL)-1 ) THEN
+(   93)         ZBET      =1.0_JPRB/(PB(JL,JK)+1.E-35_JPRB)
+(   94)         PU(JL,JK) = PR(JL,JK) * ZBET
+(   95)       ELSEIF ( JK>KCTOP(JL)-1 ) THEN
+(   96)         ZBET      = 1.0_JPRB/(PB(JL,JK) + 1.E-35_JPRB)
+(   97)         PU(JL,JK) =(PR(JL,JK)-PA(JL,JK)*PU(JL,JK-1))*ZBET
+(   98)       ENDIF
+(   99)     ENDIF
+(  100)   ENDDO
+(  101) ENDDO
+(  102) 
+(  103) IF (LHOOK) CALL DR_HOOK('CUBIDIAG',1,ZHOOK_HANDLE)
+(  104) END SUBROUTINE CUBIDIAG
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:02      page 3
+
+(    1) # 1 "./cubidiag.F90"
+(    1) SUBROUTINE CUBIDIAG &
+(    2)  & ( KIDIA, KFDIA, KLON, KLEV,&
+(    3)  & KCTOP, LD_LCUMASK,&
+(    4)  & PA,    PB,   PR,   PU )  
+(    5) # 6 "./cubidiag.F90"
+(    6) !          P. Bechtold         E.C.M.W.F.     07/03
+(    7) # 8 "./cubidiag.F90"
+(    8) !          PURPOSE.
+(    9) !          --------
+(   10) !          SOLVES BIDIAGONAL SYSTEM
+(   11) !          FOR IMPLICIT SOLUTION OF ADVECTION EQUATION
+(   12) # 13 "./cubidiag.F90"
+(   13) !          INTERFACE
+(   14) !          ---------
+(   15) # 16 "./cubidiag.F90"
+(   16) !          THIS ROUTINE IS CALLED FROM *CUDUDV* AND CUDTDQ.
+(   17) !          IT RETURNS UPDATED VALUE OF QUANTITY
+(   18) # 19 "./cubidiag.F90"
+(   19) !          METHOD.
+(   20) !          --------
+(   21) !          NUMERICAL RECIPES (Cambridge Press)
+(   22) !          DERIVED FROM TRIDIAGONAL ALGORIHM WITH C=0.
+(   23) !          (ONLY ONE FORWARD SUBSTITUTION NECESSARY)
+(   24) !          M  x  U  = R
+(   25) !          ELEMENTS OF MATRIX M ARE STORED IN VECTORS A, B, C
+(   26) # 27 "./cubidiag.F90"
+(   27) !          (  B(kctop-1)    C(kctop-1)    0          0        )
+(   28) !          (  A(kctop)      B(kctop)      C(kctop)   0        )
+(   29) !          (  0             A(jk)         B(jk)      C(jk)    )
+(   30) !          (  0             0             A(klev)    B(klev)  )
+(   31) # 32 "./cubidiag.F90"
+(   32) !     PARAMETER     DESCRIPTION                                   UNITS
+(   33) !     ---------     -----------                                   -----
+(   34) # 35 "./cubidiag.F90"
+(   35) !    INPUT PARAMETERS (INTEGER):
+(   36) # 37 "./cubidiag.F90"
+(   37) !    *KIDIA*        START POINT
+(   38) !    *KFDIA*        END POINT
+(   39) !    *KLON*         NUMBER OF GRID POINTS PER PACKET
+(   40) !    *KLEV*         NUMBER OF LEVELS
+(   41) !    *KCTOP*        CLOUD TOP LEVELS
+(   42) # 43 "./cubidiag.F90"
+(   43) !    INPUT PARAMETERS (REAL):
+(   44) # 45 "./cubidiag.F90"
+(   45) !    *PA, PB*       VECTORS CONTAINING DIAGONAL ELEMENTS 
+(   46) !    *PR*           RHS VECTOR CONTAINING "CONSTANTS"
+(   47) # 48 "./cubidiag.F90"
+(   48) !    OUTPUT PARAMETERS (REAL):
+(   49) # 50 "./cubidiag.F90"
+(   50) !    *PU*            SOLUTION VECTOR = UPDATED VALUE OF QUANTITY
+(   51) # 52 "./cubidiag.F90"
+(   52) !          EXTERNALS
+(   53) !          ---------
+(   54) !          NONE
+(   55) # 56 "./cubidiag.F90"
+(   56) !----------------------------------------------------------------------
+(   57) # 58 "./cubidiag.F90"
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:02      page 4
+
+(   58) USE PARKIND1  ,ONLY : JPIM     ,JPRB
+(   59) USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
+(   60) # 61 "./cubidiag.F90"
+(   61) IMPLICIT NONE
+(   62) # 63 "./cubidiag.F90"
+(   63) !     DUMMY INTEGER 
+(   64) INTEGER(KIND=JPIM),INTENT(IN)    :: KIDIA 
+(   65) INTEGER(KIND=JPIM),INTENT(IN)    :: KFDIA 
+(   66) INTEGER(KIND=JPIM),INTENT(IN)    :: KLON 
+(   67) INTEGER(KIND=JPIM),INTENT(IN)    :: KLEV 
+(   68) INTEGER(KIND=JPIM),INTENT(IN)    :: KCTOP(KLON) 
+(   69) LOGICAL           ,INTENT(IN)    :: LD_LCUMASK(KLON,KLEV) 
+(   70) REAL(KIND=JPRB)   ,INTENT(IN)    :: PA(KLON,KLEV) 
+(   71) REAL(KIND=JPRB)   ,INTENT(IN)    :: PB(KLON,KLEV) 
+(   72) REAL(KIND=JPRB)   ,INTENT(IN)    :: PR(KLON,KLEV) 
+(   73) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PU(KLON,KLEV) 
+(   74) !     DUMMY REALS
+(   75) !     DUMMY LOGICALS
+(   76) !     LOCALS
+(   77) INTEGER(KIND=JPIM) :: JK, JL
+(   78) REAL(KIND=JPRB) :: ZBET
+(   79) REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+(   80) # 81 "./cubidiag.F90"
+(   81) !----------------------------------------------------------------------
+(   82) # 83 "./cubidiag.F90"
+(   83) IF (LHOOK) CALL DR_HOOK('CUBIDIAG',0,ZHOOK_HANDLE)
+(   84) # 85 "./cubidiag.F90"
+(   85) PU(:,:)=0.0_JPRB
+(   86) # 87 "./cubidiag.F90"
+(   87) ! Forward Substitution
+(   88) # 89 "./cubidiag.F90"
+(   89) DO JK = 2, KLEV
+(   90)   DO JL = KIDIA,KFDIA
+(   91)     IF ( LD_LCUMASK(JL,JK) ) THEN
+(   92)       IF ( JK==KCTOP(JL)-1 ) THEN
+(   93)         ZBET      =1.0_JPRB/(PB(JL,JK)+1.E-35_JPRB)
+(   94)         PU(JL,JK) = PR(JL,JK) * ZBET
+(   95)       ELSEIF ( JK>KCTOP(JL)-1 ) THEN
+(   96)         ZBET      = 1.0_JPRB/(PB(JL,JK) + 1.E-35_JPRB)
+(   97)         PU(JL,JK) =(PR(JL,JK)-PA(JL,JK)*PU(JL,JK-1))*ZBET
+(   98)       ENDIF
+(   99)     ENDIF
+(  100)   ENDDO
+(  101) ENDDO
+(  102) # 103 "./cubidiag.F90"
+(  103) IF (LHOOK) CALL DR_HOOK('CUBIDIAG',1,ZHOOK_HANDLE)
+(  104) END SUBROUTINE CUBIDIAG

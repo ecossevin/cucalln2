@@ -1,0 +1,576 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:04      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./cuinin.F90
+
+(    1) SUBROUTINE CUININ &
+(    2)  & (YDCST,   YDTHF,    YDEPHLI, YDECUMF,  KIDIA,    KFDIA,    KLON,    KLEV,&
+(    3)  & PTEN,     PQEN,     PQSEN,    PUEN,     PVEN,&
+(    4)  & PGEO,     PAPH,&
+(    5)  & KLAB,&
+(    6)  & PTENH,    PQENH,    PQSENH,   PGEOH,&
+(    7)  & PTU,      PQU,      PTD,      PQD,&
+(    8)  & PUU,      PVU,      PUD,      PVD,&
+(    9)  & PLU  )  
+(   10) 
+(   11) !          PURPOSE
+(   12) !          -------
+(   13) 
+(   14) !          THIS ROUTINE INTERPOLATES LARGE-SCALE FIELDS OF T,Q ETC.
+(   15) !          TO HALF LEVELS (I.E. GRID FOR MASSFLUX SCHEME),
+(   16) !          DETERMINES LEVEL OF MAXIMUM VERTICAL VELOCITY
+(   17) !          AND INITIALIZES VALUES FOR UPDRAFTS AND DOWNDRAFTS
+(   18) 
+(   19) !          INTERFACE
+(   20) !          ---------
+(   21) !          THIS ROUTINE IS CALLED FROM *CUMASTR*.
+(   22) 
+(   23) !          METHOD.
+(   24) !          --------
+(   25) !          FOR EXTRAPOLATION TO HALF LEVELS SEE TIEDTKE(1989)
+(   26) 
+(   27) !     PARAMETER     DESCRIPTION                                   UNITS 
+(   28) !     ---------     -----------                                   ----- 
+(   29) !     INPUT PARAMETERS (INTEGER): 
+(   30) 
+(   31) !    *KIDIA*        START POINT 
+(   32) !    *KFDIA*        END POINT 
+(   33) !    *KLON*         NUMBER OF GRID POINTS PER PACKET 
+(   34) !    *KLEV*         NUMBER OF LEVELS 
+(   35) 
+(   36) !    INPUT PARAMETERS (REAL): 
+(   37) 
+(   38) !    *PTEN*         PROVISIONAL ENVIRONMENT TEMPERATURE (T+1)       K 
+(   39) !    *PQEN*         PROVISIONAL ENVIRONMENT SPEC. HUMIDITY (T+1)  KG/KG 
+(   40) !    *PQSEN*        ENVIRONMENT SPEC. SATURATION HUMIDITY (T+1)   KG/KG 
+(   41) !    *PUEN*         PROVISIONAL ENVIRONMENT U-VELOCITY (T+1)       M/S
+(   42) !    *PVEN*         PROVISIONAL ENVIRONMENT V-VELOCITY (T+1)       M/S
+(   43) !    *PGEO*         GEOPOTENTIAL                                  M2/S2
+(   44) !    *PGEOH*        GEOPOTENTIAL ON HALF LEVELS                   M2/S2
+(   45) !    *PAPH*         PROVISIONAL PRESSURE ON HALF LEVELS             PA
+(   46) 
+(   47) !    OUTPUT PARAMETERS (INTEGER):
+(   48) 
+(   49) !    *KLAB*         FLAG KLAB=1 FOR SUBCLOUD LEVELS
+(   50) !                        KLAB=2 FOR CONDENSATION LEVEL
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:04      page 2
+
+(   51) 
+(   52) !    OUTPUT PARAMETERS (REAL):
+(   53) 
+(   54) !    *PTENH*        ENV. TEMPERATURE (T+1) ON HALF LEVELS         K
+(   55) !    *PQENH*        ENV. SPEC. HUMIDITY (T+1) ON HALF LEVELS    KG/KG
+(   56) !    *PQSENH*       ENV. SPEC. SATURATION HUMIDITY (T+1)
+(   57) !                   ON HALF LEVELS                              KG/KG
+(   58) !    *PTU*          TEMPERATURE IN UPDRAFTS                       K
+(   59) !    *PQU*          SPEC. HUMIDITY IN UPDRAFTS                  KG/KG
+(   60) !    *PTD*          TEMPERATURE IN DOWNDRAFTS                     K
+(   61) !    *PQU*          SPEC. HUMIDITY IN DOWNDRAFTS                KG/KG
+(   62) !    *PUU*          U-VELOCITY IN UPDRAFTS                       M/S
+(   63) !    *PVU*          V-VELOCITY IN UPDRAFTS                       M/S
+(   64) !    *PUD*          U-VELOCITY IN DOWNDRAFTS                     M/S
+(   65) !    *PVD*          V-VELOCITY IN DOWNDRAFTS                     M/S
+(   66) !    *PLU*          LIQUID WATER CONTENT IN UPDRAFTS            KG/KG
+(   67) 
+(   68) !          EXTERNALS
+(   69) !          ---------
+(   70) !          *CUADJTQ* TO SPECIFY QS AT HALF LEVELS
+(   71) 
+(   72) !     AUTHOR.
+(   73) !     -------
+(   74) !      M.TIEDTKE         E.C.M.W.F.     12/89
+(   75) 
+(   76) !     MODIFICATIONS.
+(   77) !     --------------
+(   78) !      M.Hamrud      01-Oct-2003 CY28 Cleaning
+(   79) !      05-02-11 : Optimisation (NJKT2) P. BECHTOLD
+(   80) !     R. El Khatib 22-Jun-2022 A contribution to simplify phasing after the refactoring of YOMCLI/YOMCST/YOETHF.
+(   81) !----------------------------------------------------------------------
+(   82) 
+(   83) USE PARKIND1 , ONLY : JPIM     ,JPRB
+(   84) USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+(   85) 
+(   86) USE YOMCST   , ONLY : TCST
+(   87) USE YOETHF   , ONLY : TTHF
+(   88) USE YOECUMF  , ONLY : TECUMF
+(   89) USE YOEPHLI  , ONLY : TEPHLI
+(   90) 
+(   91) IMPLICIT NONE
+(   92) 
+(   93) TYPE(TCST)        ,INTENT(IN)    :: YDCST
+(   94) TYPE(TTHF)        ,INTENT(IN)    :: YDTHF
+(   95) TYPE(TECUMF)      ,INTENT(IN)    :: YDECUMF
+(   96) TYPE(TEPHLI)      ,INTENT(IN)    :: YDEPHLI
+(   97) INTEGER(KIND=JPIM),INTENT(IN)    :: KLON 
+(   98) INTEGER(KIND=JPIM),INTENT(IN)    :: KLEV 
+(   99) INTEGER(KIND=JPIM),INTENT(IN)    :: KIDIA 
+(  100) INTEGER(KIND=JPIM),INTENT(IN)    :: KFDIA 
+(  101) REAL(KIND=JPRB)   ,INTENT(IN)    :: PTEN(KLON,KLEV) 
+(  102) REAL(KIND=JPRB)   ,INTENT(IN)    :: PQEN(KLON,KLEV) 
+(  103) REAL(KIND=JPRB)   ,INTENT(IN)    :: PQSEN(KLON,KLEV) 
+(  104) REAL(KIND=JPRB)   ,INTENT(IN)    :: PUEN(KLON,KLEV) 
+(  105) REAL(KIND=JPRB)   ,INTENT(IN)    :: PVEN(KLON,KLEV) 
+(  106) REAL(KIND=JPRB)   ,INTENT(IN)    :: PGEO(KLON,KLEV) 
+(  107) REAL(KIND=JPRB)   ,INTENT(IN)    :: PAPH(KLON,KLEV+1) 
+(  108) INTEGER(KIND=JPIM),INTENT(OUT)   :: KLAB(KLON,KLEV) 
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:04      page 3
+
+(  109) REAL(KIND=JPRB)   ,INTENT(INOUT) :: PTENH(KLON,KLEV) 
+(  110) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PQENH(KLON,KLEV) 
+(  111) REAL(KIND=JPRB)   ,INTENT(INOUT) :: PQSENH(KLON,KLEV) 
+(  112) REAL(KIND=JPRB)   ,INTENT(IN)    :: PGEOH(KLON,KLEV+1) 
+(  113) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PTU(KLON,KLEV) 
+(  114) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PQU(KLON,KLEV) 
+(  115) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PTD(KLON,KLEV) 
+(  116) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PQD(KLON,KLEV) 
+(  117) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PUU(KLON,KLEV) 
+(  118) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PVU(KLON,KLEV) 
+(  119) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PUD(KLON,KLEV) 
+(  120) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PVD(KLON,KLEV) 
+(  121) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PLU(KLON,KLEV) 
+(  122) REAL(KIND=JPRB) ::     ZPH(KLON)
+(  123) LOGICAL ::  LLFLAG(KLON)
+(  124) 
+(  125) INTEGER(KIND=JPIM) :: IK, JK, JL
+(  126) 
+(  127) REAL(KIND=JPRB) :: ZORCPD !, ZZS
+(  128) REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+(  129) 
+(  130) #include "cuadjtq.intfb.h"
+(  131) #include "cuadjtqs.intfb.h"
+(  132) 
+(  133) !----------------------------------------------------------------------
+(  134) 
+(  135) !*    1.           SPECIFY LARGE SCALE PARAMETERS AT HALF LEVELS
+(  136) !*                 ADJUST TEMPERATURE FIELDS IF STATICLY UNSTABLE
+(  137) !*                 FIND LEVEL OF MAXIMUM VERTICAL VELOCITY
+(  138) !                  ----------------------------------------------
+(  139) 
+(  140) IF (LHOOK) CALL DR_HOOK('CUININ',0,ZHOOK_HANDLE)
+(  141) ASSOCIATE(NJKT2=>YDECUMF%NJKT2, &
+(  142)  & RCPD=>YDCST%RCPD, &
+(  143)  & LPHYLIN=>YDEPHLI%LPHYLIN)
+(  144) ZORCPD=1._JPRB/RCPD
+(  145) DO JK=2,KLEV
+(  146)   DO JL=KIDIA,KFDIA
+(  147)     PTENH(JL,JK)=(MAX(RCPD*PTEN(JL,JK-1)+PGEO(JL,JK-1),&
+(  148)      & RCPD*PTEN(JL,JK)+PGEO(JL,JK))-PGEOH(JL,JK))*ZORCPD  
+(  149)     PQENH(JL,JK)=PQEN(JL,JK-1)
+(  150)     PQSENH(JL,JK)=PQSEN(JL,JK-1)
+(  151)     ZPH(JL)=PAPH(JL,JK)
+(  152)     LLFLAG(JL)=.TRUE.
+(  153)   ENDDO
+(  154) 
+(  155) !orig   IF(JK.GE.KLEV-1) GO TO 130
+(  156)   IF(JK >= KLEV-1 .OR. JK<NJKT2) CYCLE
+(  157)   IK=JK
+(  158)   IF(LPHYLIN)THEN
+(  159)     !$loki inline
+(  160)     CALL CUADJTQS &
+(  161)      & ( YDTHF, YDCST, KIDIA,    KFDIA,    KLON,    KLEV,     IK,&
+(  162)      &   ZPH,      PTENH,    PQSENH,  LLFLAG,   0)  
+(  163)   ELSE
+(  164)     !$loki inline
+(  165)     CALL CUADJTQ &
+(  166)      & ( YDTHF, YDCST, YDEPHLI,  KIDIA,    KFDIA,    KLON,    KLEV,     IK,&
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:04      page 4
+
+(  167)      &   ZPH,      PTENH,    PQSENH,  LLFLAG,   3)  
+(  168)   ENDIF
+(  169) 
+(  170)   DO JL=KIDIA,KFDIA
+(  171)     PQENH(JL,JK)=MIN(PQEN(JL,JK-1),PQSEN(JL,JK-1))&
+(  172)      & +(PQSENH(JL,JK)-PQSEN(JL,JK-1))  
+(  173)     PQENH(JL,JK)=MAX(PQENH(JL,JK),0.0_JPRB)
+(  174)   ENDDO
+(  175) !orig  130   continue
+(  176) ENDDO
+(  177) 
+(  178) DO JL=KIDIA,KFDIA
+(  179)   PTENH(JL,KLEV)=(RCPD*PTEN(JL,KLEV)+PGEO(JL,KLEV)-PGEOH(JL,KLEV))*ZORCPD
+(  180)   PQENH(JL,KLEV)=PQEN(JL,KLEV)
+(  181)   PTENH(JL,1)=PTEN(JL,1)
+(  182)   PQENH(JL,1)=PQEN(JL,1)
+(  183) ENDDO
+(  184) 
+(  185) !DO JK=KLEV-1,2,-1
+(  186) !  DO JL=KIDIA,KFDIA
+(  187) !    ZZS=MAX(RCPD*PTENH(JL,JK)+PGEOH(JL,JK),&
+(  188) !     & RCPD*PTENH(JL,JK+1)+PGEOH(JL,JK+1))  
+(  189) !   PTENH(JL,JK)=(ZZS-PGEOH(JL,JK))*ZORCPD
+(  190) !  ENDDO
+(  191) !ENDDO
+(  192) 
+(  193) !-----------------------------------------------------------------------
+(  194) 
+(  195) !*    2.0          INITIALIZE VALUES FOR UPDRAFTS AND DOWNDRAFTS
+(  196) !*                 ---------------------------------------------
+(  197) 
+(  198) DO JK=1,KLEV
+(  199)   IK=JK-1
+(  200)   IF(JK == 1) IK=1
+(  201)   DO JL=KIDIA,KFDIA
+(  202)     PTU(JL,JK)=PTENH(JL,JK)
+(  203)     PTD(JL,JK)=PTENH(JL,JK)
+(  204)     PQU(JL,JK)=PQENH(JL,JK)
+(  205)     PQD(JL,JK)=PQENH(JL,JK)
+(  206)     PLU(JL,JK)=0.0_JPRB
+(  207)     PUU(JL,JK)=PUEN(JL,IK)
+(  208)     PUD(JL,JK)=PUEN(JL,IK)
+(  209)     PVU(JL,JK)=PVEN(JL,IK)
+(  210)     PVD(JL,JK)=PVEN(JL,IK)
+(  211)     KLAB(JL,JK)=0
+(  212)   ENDDO
+(  213) ENDDO
+(  214) 
+(  215) END ASSOCIATE
+(  216) IF (LHOOK) CALL DR_HOOK('CUININ',1,ZHOOK_HANDLE)
+(  217) END SUBROUTINE CUININ
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:04      page 5
+
+(    1) # 1 "./cuinin.F90"
+(    1) SUBROUTINE CUININ &
+(    2)  & (YDCST,   YDTHF,    YDEPHLI, YDECUMF,  KIDIA,    KFDIA,    KLON,    KLEV,&
+(    3)  & PTEN,     PQEN,     PQSEN,    PUEN,     PVEN,&
+(    4)  & PGEO,     PAPH,&
+(    5)  & KLAB,&
+(    6)  & PTENH,    PQENH,    PQSENH,   PGEOH,&
+(    7)  & PTU,      PQU,      PTD,      PQD,&
+(    8)  & PUU,      PVU,      PUD,      PVD,&
+(    9)  & PLU  )  
+(   10) # 11 "./cuinin.F90"
+(   11) !          PURPOSE
+(   12) !          -------
+(   13) # 14 "./cuinin.F90"
+(   14) !          THIS ROUTINE INTERPOLATES LARGE-SCALE FIELDS OF T,Q ETC.
+(   15) !          TO HALF LEVELS (I.E. GRID FOR MASSFLUX SCHEME),
+(   16) !          DETERMINES LEVEL OF MAXIMUM VERTICAL VELOCITY
+(   17) !          AND INITIALIZES VALUES FOR UPDRAFTS AND DOWNDRAFTS
+(   18) # 19 "./cuinin.F90"
+(   19) !          INTERFACE
+(   20) !          ---------
+(   21) !          THIS ROUTINE IS CALLED FROM *CUMASTR*.
+(   22) # 23 "./cuinin.F90"
+(   23) !          METHOD.
+(   24) !          --------
+(   25) !          FOR EXTRAPOLATION TO HALF LEVELS SEE TIEDTKE(1989)
+(   26) # 27 "./cuinin.F90"
+(   27) !     PARAMETER     DESCRIPTION                                   UNITS 
+(   28) !     ---------     -----------                                   ----- 
+(   29) !     INPUT PARAMETERS (INTEGER): 
+(   30) # 31 "./cuinin.F90"
+(   31) !    *KIDIA*        START POINT 
+(   32) !    *KFDIA*        END POINT 
+(   33) !    *KLON*         NUMBER OF GRID POINTS PER PACKET 
+(   34) !    *KLEV*         NUMBER OF LEVELS 
+(   35) # 36 "./cuinin.F90"
+(   36) !    INPUT PARAMETERS (REAL): 
+(   37) # 38 "./cuinin.F90"
+(   38) !    *PTEN*         PROVISIONAL ENVIRONMENT TEMPERATURE (T+1)       K 
+(   39) !    *PQEN*         PROVISIONAL ENVIRONMENT SPEC. HUMIDITY (T+1)  KG/KG 
+(   40) !    *PQSEN*        ENVIRONMENT SPEC. SATURATION HUMIDITY (T+1)   KG/KG 
+(   41) !    *PUEN*         PROVISIONAL ENVIRONMENT U-VELOCITY (T+1)       M/S
+(   42) !    *PVEN*         PROVISIONAL ENVIRONMENT V-VELOCITY (T+1)       M/S
+(   43) !    *PGEO*         GEOPOTENTIAL                                  M2/S2
+(   44) !    *PGEOH*        GEOPOTENTIAL ON HALF LEVELS                   M2/S2
+(   45) !    *PAPH*         PROVISIONAL PRESSURE ON HALF LEVELS             PA
+(   46) # 47 "./cuinin.F90"
+(   47) !    OUTPUT PARAMETERS (INTEGER):
+(   48) # 49 "./cuinin.F90"
+(   49) !    *KLAB*         FLAG KLAB=1 FOR SUBCLOUD LEVELS
+(   50) !                        KLAB=2 FOR CONDENSATION LEVEL
+(   51) # 52 "./cuinin.F90"
+(   52) !    OUTPUT PARAMETERS (REAL):
+(   53) # 54 "./cuinin.F90"
+(   54) !    *PTENH*        ENV. TEMPERATURE (T+1) ON HALF LEVELS         K
+(   55) !    *PQENH*        ENV. SPEC. HUMIDITY (T+1) ON HALF LEVELS    KG/KG
+(   56) !    *PQSENH*       ENV. SPEC. SATURATION HUMIDITY (T+1)
+(   57) !                   ON HALF LEVELS                              KG/KG
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:04      page 6
+
+(   58) !    *PTU*          TEMPERATURE IN UPDRAFTS                       K
+(   59) !    *PQU*          SPEC. HUMIDITY IN UPDRAFTS                  KG/KG
+(   60) !    *PTD*          TEMPERATURE IN DOWNDRAFTS                     K
+(   61) !    *PQU*          SPEC. HUMIDITY IN DOWNDRAFTS                KG/KG
+(   62) !    *PUU*          U-VELOCITY IN UPDRAFTS                       M/S
+(   63) !    *PVU*          V-VELOCITY IN UPDRAFTS                       M/S
+(   64) !    *PUD*          U-VELOCITY IN DOWNDRAFTS                     M/S
+(   65) !    *PVD*          V-VELOCITY IN DOWNDRAFTS                     M/S
+(   66) !    *PLU*          LIQUID WATER CONTENT IN UPDRAFTS            KG/KG
+(   67) # 68 "./cuinin.F90"
+(   68) !          EXTERNALS
+(   69) !          ---------
+(   70) !          *CUADJTQ* TO SPECIFY QS AT HALF LEVELS
+(   71) # 72 "./cuinin.F90"
+(   72) !     AUTHOR.
+(   73) !     -------
+(   74) !      M.TIEDTKE         E.C.M.W.F.     12/89
+(   75) # 76 "./cuinin.F90"
+(   76) !     MODIFICATIONS.
+(   77) !     --------------
+(   78) !      M.Hamrud      01-Oct-2003 CY28 Cleaning
+(   79) !      05-02-11 : Optimisation (NJKT2) P. BECHTOLD
+(   80) !     R. El Khatib 22-Jun-2022 A contribution to simplify phasing after the refactoring of YOMCLI/YOMCST/YOETHF.
+(   81) !----------------------------------------------------------------------
+(   82) # 83 "./cuinin.F90"
+(   83) USE PARKIND1 , ONLY : JPIM     ,JPRB
+(   84) USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+(   85) # 86 "./cuinin.F90"
+(   86) USE YOMCST   , ONLY : TCST
+(   87) USE YOETHF   , ONLY : TTHF
+(   88) USE YOECUMF  , ONLY : TECUMF
+(   89) USE YOEPHLI  , ONLY : TEPHLI
+(   90) # 91 "./cuinin.F90"
+(   91) IMPLICIT NONE
+(   92) # 93 "./cuinin.F90"
+(   93) TYPE(TCST)        ,INTENT(IN)    :: YDCST
+(   94) TYPE(TTHF)        ,INTENT(IN)    :: YDTHF
+(   95) TYPE(TECUMF)      ,INTENT(IN)    :: YDECUMF
+(   96) TYPE(TEPHLI)      ,INTENT(IN)    :: YDEPHLI
+(   97) INTEGER(KIND=JPIM),INTENT(IN)    :: KLON 
+(   98) INTEGER(KIND=JPIM),INTENT(IN)    :: KLEV 
+(   99) INTEGER(KIND=JPIM),INTENT(IN)    :: KIDIA 
+(  100) INTEGER(KIND=JPIM),INTENT(IN)    :: KFDIA 
+(  101) REAL(KIND=JPRB)   ,INTENT(IN)    :: PTEN(KLON,KLEV) 
+(  102) REAL(KIND=JPRB)   ,INTENT(IN)    :: PQEN(KLON,KLEV) 
+(  103) REAL(KIND=JPRB)   ,INTENT(IN)    :: PQSEN(KLON,KLEV) 
+(  104) REAL(KIND=JPRB)   ,INTENT(IN)    :: PUEN(KLON,KLEV) 
+(  105) REAL(KIND=JPRB)   ,INTENT(IN)    :: PVEN(KLON,KLEV) 
+(  106) REAL(KIND=JPRB)   ,INTENT(IN)    :: PGEO(KLON,KLEV) 
+(  107) REAL(KIND=JPRB)   ,INTENT(IN)    :: PAPH(KLON,KLEV+1) 
+(  108) INTEGER(KIND=JPIM),INTENT(OUT)   :: KLAB(KLON,KLEV) 
+(  109) REAL(KIND=JPRB)   ,INTENT(INOUT) :: PTENH(KLON,KLEV) 
+(  110) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PQENH(KLON,KLEV) 
+(  111) REAL(KIND=JPRB)   ,INTENT(INOUT) :: PQSENH(KLON,KLEV) 
+(  112) REAL(KIND=JPRB)   ,INTENT(IN)    :: PGEOH(KLON,KLEV+1) 
+(  113) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PTU(KLON,KLEV) 
+(  114) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PQU(KLON,KLEV) 
+(  115) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PTD(KLON,KLEV) 
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:04      page 7
+
+(  116) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PQD(KLON,KLEV) 
+(  117) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PUU(KLON,KLEV) 
+(  118) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PVU(KLON,KLEV) 
+(  119) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PUD(KLON,KLEV) 
+(  120) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PVD(KLON,KLEV) 
+(  121) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PLU(KLON,KLEV) 
+(  122) REAL(KIND=JPRB) ::     ZPH(KLON)
+(  123) LOGICAL ::  LLFLAG(KLON)
+(  124) # 125 "./cuinin.F90"
+(  125) INTEGER(KIND=JPIM) :: IK, JK, JL
+(  126) # 127 "./cuinin.F90"
+(  127) REAL(KIND=JPRB) :: ZORCPD !, ZZS
+(  128) REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+(  129) # 130 "./cuinin.F90"
+(  130) # 1 "./cuadjtq.intfb.h"
+(    1) INTERFACE
+(    2) # 3 "./cuadjtq.intfb.h"
+(    3) SUBROUTINE CUADJTQ &
+(    4) & (YDTHF, YDCST, YDEPHLI,KIDIA,    KFDIA,    KLON,    KLEV,     KK,&
+(    5) &  PSP,      PT,       PQ,      LDFLAG,   KCALL,   LDOFLAG)
+(    6) USE PARKIND1 , ONLY : JPIM     ,JPRB
+(    7) USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+(    8) USE YOMCST   , ONLY : TCST
+(    9) USE YOETHF   , ONLY : TTHF
+(   10) USE YOEPHLI  , ONLY : TEPHLI
+(   11) IMPLICIT NONE
+(   12) TYPE(TTHF)         ,INTENT(IN)               :: YDTHF
+(   13) TYPE(TCST)         ,INTENT(IN)               :: YDCST
+(   14) TYPE(TEPHLI)       ,INTENT(IN)               :: YDEPHLI
+(   15) INTEGER(KIND=JPIM) ,INTENT(IN)               :: KIDIA
+(   16) INTEGER(KIND=JPIM) ,INTENT(IN)               :: KFDIA
+(   17) INTEGER(KIND=JPIM) ,INTENT(IN)               :: KLON
+(   18) INTEGER(KIND=JPIM) ,INTENT(IN)               :: KLEV
+(   19) INTEGER(KIND=JPIM) ,INTENT(IN)               :: KK
+(   20) REAL(KIND=JPRB)    ,INTENT(IN)               :: PSP(KLON)
+(   21) REAL(KIND=JPRB)    ,INTENT(INOUT)            :: PT(KLON,KLEV)
+(   22) REAL(KIND=JPRB)    ,INTENT(INOUT)            :: PQ(KLON,KLEV)
+(   23) LOGICAL            ,INTENT(IN)               :: LDFLAG(KLON)
+(   24) INTEGER(KIND=JPIM) ,INTENT(IN)               :: KCALL
+(   25) LOGICAL            ,INTENT(IN)    ,OPTIONAL  :: LDOFLAG(KLON)
+(   26) END SUBROUTINE CUADJTQ
+(   27) # 28 "./cuadjtq.intfb.h"
+(   28) END INTERFACE
+(   29) # 131 "./cuinin.F90"
+(  131) # 131 "./cuinin.F90"
+(  131) # 1 "./cuadjtqs.intfb.h"
+(    1) INTERFACE
+(    2) SUBROUTINE CUADJTQS &
+(    3) &(YDTHF, YDCST, KIDIA,    KFDIA,    KLON,    KLEV,&
+(    4) & KK,&
+(    5) & PSP,      PT,       PQ,       LDFLAG,   KCALL)
+(    6) USE PARKIND1  ,ONLY : JPIM     ,JPRB
+(    7) USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
+(    8) USE YOMCST   , ONLY : TCST
+(    9) USE YOETHF   , ONLY : TTHF
+(   10) IMPLICIT NONE
+(   11) INTEGER(KIND=JPIM),INTENT(IN)    :: KLON
+(   12) INTEGER(KIND=JPIM),INTENT(IN)    :: KLEV
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:04      page 8
+
+(   13) TYPE(TTHF)        ,INTENT(IN)    :: YDTHF
+(   14) TYPE(TCST)        ,INTENT(IN)    :: YDCST
+(   15) INTEGER(KIND=JPIM),INTENT(IN)    :: KIDIA
+(   16) INTEGER(KIND=JPIM),INTENT(IN)    :: KFDIA
+(   17) INTEGER(KIND=JPIM),INTENT(IN)    :: KK
+(   18) REAL(KIND=JPRB)   ,INTENT(IN)    :: PSP(KLON)
+(   19) REAL(KIND=JPRB)   ,INTENT(INOUT) :: PT(KLON,KLEV)
+(   20) REAL(KIND=JPRB)   ,INTENT(INOUT) :: PQ(KLON,KLEV)
+(   21) LOGICAL           ,INTENT(IN)    :: LDFLAG(KLON)
+(   22) INTEGER(KIND=JPIM),INTENT(IN)    :: KCALL
+(   23) END SUBROUTINE CUADJTQS
+(   24) # 25 "./cuadjtqs.intfb.h"
+(   25) END INTERFACE
+(   26) # 132 "./cuinin.F90"
+(  132) # 133 "./cuinin.F90"
+(  133) !----------------------------------------------------------------------
+(  134) # 135 "./cuinin.F90"
+(  135) !*    1.           SPECIFY LARGE SCALE PARAMETERS AT HALF LEVELS
+(  136) !*                 ADJUST TEMPERATURE FIELDS IF STATICLY UNSTABLE
+(  137) !*                 FIND LEVEL OF MAXIMUM VERTICAL VELOCITY
+(  138) !                  ----------------------------------------------
+(  139) # 140 "./cuinin.F90"
+(  140) IF (LHOOK) CALL DR_HOOK('CUININ',0,ZHOOK_HANDLE)
+(  141) ASSOCIATE(NJKT2=>YDECUMF%NJKT2, &
+(  142)  & RCPD=>YDCST%RCPD, &
+(  143)  & LPHYLIN=>YDEPHLI%LPHYLIN)
+(  144) ZORCPD=1._JPRB/RCPD
+(  145) DO JK=2,KLEV
+(  146)   DO JL=KIDIA,KFDIA
+(  147)     PTENH(JL,JK)=(MAX(RCPD*PTEN(JL,JK-1)+PGEO(JL,JK-1),&
+(  148)      & RCPD*PTEN(JL,JK)+PGEO(JL,JK))-PGEOH(JL,JK))*ZORCPD  
+(  149)     PQENH(JL,JK)=PQEN(JL,JK-1)
+(  150)     PQSENH(JL,JK)=PQSEN(JL,JK-1)
+(  151)     ZPH(JL)=PAPH(JL,JK)
+(  152)     LLFLAG(JL)=.TRUE.
+(  153)   ENDDO
+(  154) # 155 "./cuinin.F90"
+(  155) !orig   IF(JK.GE.KLEV-1) GO TO 130
+(  156)   IF(JK >= KLEV-1 .OR. JK<NJKT2) CYCLE
+(  157)   IK=JK
+(  158)   IF(LPHYLIN)THEN
+(  159)     !$loki inline
+(  160)     CALL CUADJTQS &
+(  161)      & ( YDTHF, YDCST, KIDIA,    KFDIA,    KLON,    KLEV,     IK,&
+(  162)      &   ZPH,      PTENH,    PQSENH,  LLFLAG,   0)  
+(  163)   ELSE
+(  164)     !$loki inline
+(  165)     CALL CUADJTQ &
+(  166)      & ( YDTHF, YDCST, YDEPHLI,  KIDIA,    KFDIA,    KLON,    KLEV,     IK,&
+(  167)      &   ZPH,      PTENH,    PQSENH,  LLFLAG,   3)  
+(  168)   ENDIF
+(  169) # 170 "./cuinin.F90"
+(  170)   DO JL=KIDIA,KFDIA
+(  171)     PQENH(JL,JK)=MIN(PQEN(JL,JK-1),PQSEN(JL,JK-1))&
+(  172)      & +(PQSENH(JL,JK)-PQSEN(JL,JK-1))  
+(  173)     PQENH(JL,JK)=MAX(PQENH(JL,JK),0.0_JPRB)
+(  174)   ENDDO
+(  175) !orig  130   continue
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:04      page 9
+
+(  176) ENDDO
+(  177) # 178 "./cuinin.F90"
+(  178) DO JL=KIDIA,KFDIA
+(  179)   PTENH(JL,KLEV)=(RCPD*PTEN(JL,KLEV)+PGEO(JL,KLEV)-PGEOH(JL,KLEV))*ZORCPD
+(  180)   PQENH(JL,KLEV)=PQEN(JL,KLEV)
+(  181)   PTENH(JL,1)=PTEN(JL,1)
+(  182)   PQENH(JL,1)=PQEN(JL,1)
+(  183) ENDDO
+(  184) # 185 "./cuinin.F90"
+(  185) !DO JK=KLEV-1,2,-1
+(  186) !  DO JL=KIDIA,KFDIA
+(  187) !    ZZS=MAX(RCPD*PTENH(JL,JK)+PGEOH(JL,JK),&
+(  188) !     & RCPD*PTENH(JL,JK+1)+PGEOH(JL,JK+1))  
+(  189) !   PTENH(JL,JK)=(ZZS-PGEOH(JL,JK))*ZORCPD
+(  190) !  ENDDO
+(  191) !ENDDO
+(  192) # 193 "./cuinin.F90"
+(  193) !-----------------------------------------------------------------------
+(  194) # 195 "./cuinin.F90"
+(  195) !*    2.0          INITIALIZE VALUES FOR UPDRAFTS AND DOWNDRAFTS
+(  196) !*                 ---------------------------------------------
+(  197) # 198 "./cuinin.F90"
+(  198) DO JK=1,KLEV
+(  199)   IK=JK-1
+(  200)   IF(JK == 1) IK=1
+(  201)   DO JL=KIDIA,KFDIA
+(  202)     PTU(JL,JK)=PTENH(JL,JK)
+(  203)     PTD(JL,JK)=PTENH(JL,JK)
+(  204)     PQU(JL,JK)=PQENH(JL,JK)
+(  205)     PQD(JL,JK)=PQENH(JL,JK)
+(  206)     PLU(JL,JK)=0.0_JPRB
+(  207)     PUU(JL,JK)=PUEN(JL,IK)
+(  208)     PUD(JL,JK)=PUEN(JL,IK)
+(  209)     PVU(JL,JK)=PVEN(JL,IK)
+(  210)     PVD(JL,JK)=PVEN(JL,IK)
+(  211)     KLAB(JL,JK)=0
+(  212)   ENDDO
+(  213) ENDDO
+(  214) # 215 "./cuinin.F90"
+(  215) END ASSOCIATE
+(  216) IF (LHOOK) CALL DR_HOOK('CUININ',1,ZHOOK_HANDLE)
+(  217) END SUBROUTINE CUININ

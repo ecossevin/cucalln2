@@ -1,0 +1,99 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:16      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./stack_mod.F90
+
+(    1) MODULE STACK_MOD
+(    2) 
+(    3) USE PARKIND1, ONLY : JPRB, JPIM, JPIA
+(    4) 
+(    5) IMPLICIT NONE
+(    6) 
+(    7) TYPE STACK_DATA
+(    8)   REAL (KIND=4), POINTER :: ZDATA4 (:,:,:,:)
+(    9)   REAL (KIND=8), POINTER :: ZDATA8 (:,:,:,:)
+(   10)   INTEGER*8 :: IALIGN
+(   11) CONTAINS
+(   12) END TYPE
+(   13) 
+(   14) TYPE STACK
+(   15)   INTEGER*8 :: L4
+(   16)   INTEGER*8 :: U4
+(   17)   INTEGER*8 :: L8
+(   18)   INTEGER*8 :: U8
+(   19) END TYPE
+(   20) 
+(   21) TYPE (STACK_DATA) :: YSTACK
+(   22) PUBLIC :: STACK, YSTACK
+(   23) 
+(   24) CONTAINS
+(   25) 
+(   26) END MODULE
+(   27) 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:16      page 2
+
+(    1) # 1 "./stack_mod.F90"
+(    1) MODULE STACK_MOD
+(    2) # 3 "./stack_mod.F90"
+(    3) USE PARKIND1, ONLY : JPRB, JPIM, JPIA
+(    4) # 5 "./stack_mod.F90"
+(    5) IMPLICIT NONE
+(    6) # 7 "./stack_mod.F90"
+(    7) TYPE STACK_DATA
+(    8)   REAL (KIND=4), POINTER :: ZDATA4 (:,:,:,:)
+(    9)   REAL (KIND=8), POINTER :: ZDATA8 (:,:,:,:)
+(   10)   INTEGER*8 :: IALIGN
+(   11) CONTAINS
+(   12) END TYPE
+(   13) # 14 "./stack_mod.F90"
+(   14) TYPE STACK
+(   15)   INTEGER*8 :: L4
+(   16)   INTEGER*8 :: U4
+(   17)   INTEGER*8 :: L8
+(   18)   INTEGER*8 :: U8
+(   19) END TYPE
+(   20) # 21 "./stack_mod.F90"
+(   21) TYPE (STACK_DATA) :: YSTACK
+(   22) PUBLIC :: STACK, YSTACK
+(   23) # 24 "./stack_mod.F90"
+(   24) CONTAINS
+(   25) # 26 "./stack_mod.F90"
+(   26) END MODULE

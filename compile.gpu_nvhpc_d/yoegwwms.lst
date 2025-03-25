@@ -1,0 +1,114 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:22      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./yoegwwms.F90
+
+(    1) MODULE YOEGWWMS
+(    2) 
+(    3) USE PARKIND1  ,ONLY : JPIM     ,JPRB
+(    4) 
+(    5) IMPLICIT NONE
+(    6) 
+(    7) SAVE  
+(    8) 
+(    9) ! YOEGWWMS --  parameters/switches for the Warner McIntyre GW parameterization
+(   10) 
+(   11) !-----------------------------------------------------------------
+(   12) 
+(   13) TYPE :: TEGWWMS
+(   14) LOGICAL            :: LOZPR     !If .TRUE. then enhancement of mom. flux over tropics
+(   15) LOGICAL            :: LGACALC   !If .TRUE. recalculate vertical coordinate stretch for equal ratio
+(   16) LOGICAL            :: LGSATL    !If .TRUE. then spectrum is saturated up to m* at launch
+(   17) LOGICAL            :: LGINDL    !If .TRUE. then saturation and launch spectrum is independent of launch location
+(   18) INTEGER(KIND=JPIM) :: NLAUNCHL(3)!launch levels of gravity wave spectrum (Pa)
+(   19) INTEGER(KIND=JPIM) :: NLAUNCHLEV!Number of independent launch heights to be treated
+(   20) INTEGER(KIND=JPIM) :: NLAUNCH   !single launch level as used for simplified
+(   21) INTEGER(KIND=JPIM) :: NSLOPE    !slope at small-m end of spectrum
+(   22) INTEGER(KIND=JPIM) :: NGAUSS    !if LOZPR=TRUE and GGAUSS=2 then gaussian distribution of GFLUXLAUN based on GGAUSSA and GGA
+(   23)                                 !if LOZPR=TRUE and GGAUSS=1 then FLUXLAUN=GCOEFF*PPRECIP
+(   24) REAL(KIND=JPRB)    :: GFLUXLAUNL(3)!total launch momentum flux (Pa) in each azimuth for all launch evels
+(   25) REAL(KIND=JPRB)    :: GFLUXLAUN !total launch momentum flux (Pa) in each azimuth at NLAUNCH
+(   26) REAL(KIND=JPRB)    :: GMSTAR_L(3)!m* (expressed as length, see Scinocca 2003)
+(   27) REAL(KIND=JPRB)    :: GCSTAR    !C* (see McLandress and Scinocca 2005)
+(   28) REAL (KIND=JPRB)   :: GPTWO     !2*p where p is the exponent of omega for the expression of the launch energy density
+(   29) REAL(KIND=JPRB)    :: GTPHYGWWMS!Time frequency (s) of call of scheme
+(   30) 
+(   31) REAL(KIND=JPRB)    :: GGAUSSA   !gaussian distribution half-width (used if GGAUSS=1)
+(   32) REAL(KIND=JPRB)    :: GGAUSSB(3)!height of gaussian distribution (ie amplification factor)
+(   33) REAL(KIND=JPRB)    :: GCOEFF    !if GGAUSS=1 then FLUXLAUN=GCOEFF*PPRECIP
+(   34) !---------------------------------------------------------------------
+(   35) CONTAINS
+(   36) END TYPE TEGWWMS
+(   37) 
+(   38) !!TYPE(TEGWWMS), POINTER :: YREGWWMS => NULL()
+(   39) !---------------------------------------------------------------------
+(   40) 
+(   41) END MODULE YOEGWWMS
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:22      page 2
+
+(    1) # 1 "./yoegwwms.F90"
+(    1) MODULE YOEGWWMS
+(    2) # 3 "./yoegwwms.F90"
+(    3) USE PARKIND1  ,ONLY : JPIM     ,JPRB
+(    4) # 5 "./yoegwwms.F90"
+(    5) IMPLICIT NONE
+(    6) # 7 "./yoegwwms.F90"
+(    7) SAVE  
+(    8) # 9 "./yoegwwms.F90"
+(    9) ! YOEGWWMS --  parameters/switches for the Warner McIntyre GW parameterization
+(   10) # 11 "./yoegwwms.F90"
+(   11) !-----------------------------------------------------------------
+(   12) # 13 "./yoegwwms.F90"
+(   13) TYPE :: TEGWWMS
+(   14) LOGICAL            :: LOZPR     !If .TRUE. then enhancement of mom. flux over tropics
+(   15) LOGICAL            :: LGACALC   !If .TRUE. recalculate vertical coordinate stretch for equal ratio
+(   16) LOGICAL            :: LGSATL    !If .TRUE. then spectrum is saturated up to m* at launch
+(   17) LOGICAL            :: LGINDL    !If .TRUE. then saturation and launch spectrum is independent of launch location
+(   18) INTEGER(KIND=JPIM) :: NLAUNCHL(3)!launch levels of gravity wave spectrum (Pa)
+(   19) INTEGER(KIND=JPIM) :: NLAUNCHLEV!Number of independent launch heights to be treated
+(   20) INTEGER(KIND=JPIM) :: NLAUNCH   !single launch level as used for simplified
+(   21) INTEGER(KIND=JPIM) :: NSLOPE    !slope at small-m end of spectrum
+(   22) INTEGER(KIND=JPIM) :: NGAUSS    !if LOZPR=TRUE and GGAUSS=2 then gaussian distribution of GFLUXLAUN based on GGAUSSA and GGAUSSB
+(   23)                                 !if LOZPR=TRUE and GGAUSS=1 then FLUXLAUN=GCOEFF*PPRECIP
+(   24) REAL(KIND=JPRB)    :: GFLUXLAUNL(3)!total launch momentum flux (Pa) in each azimuth for all launch evels
+(   25) REAL(KIND=JPRB)    :: GFLUXLAUN !total launch momentum flux (Pa) in each azimuth at NLAUNCH
+(   26) REAL(KIND=JPRB)    :: GMSTAR_L(3)!m* (expressed as length, see Scinocca 2003)
+(   27) REAL(KIND=JPRB)    :: GCSTAR    !C* (see McLandress and Scinocca 2005)
+(   28) REAL (KIND=JPRB)   :: GPTWO     !2*p where p is the exponent of omega for the expression of the launch energy density
+(   29) REAL(KIND=JPRB)    :: GTPHYGWWMS!Time frequency (s) of call of scheme
+(   30) # 31 "./yoegwwms.F90"
+(   31) REAL(KIND=JPRB)    :: GGAUSSA   !gaussian distribution half-width (used if GGAUSS=1)
+(   32) REAL(KIND=JPRB)    :: GGAUSSB(3)!height of gaussian distribution (ie amplification factor)
+(   33) REAL(KIND=JPRB)    :: GCOEFF    !if GGAUSS=1 then FLUXLAUN=GCOEFF*PPRECIP
+(   34) !---------------------------------------------------------------------
+(   35) CONTAINS
+(   36) END TYPE TEGWWMS
+(   37) # 38 "./yoegwwms.F90"
+(   38) !!TYPE(TEGWWMS), POINTER :: YREGWWMS => NULL()
+(   39) !---------------------------------------------------------------------
+(   40) # 41 "./yoegwwms.F90"
+(   41) END MODULE YOEGWWMS

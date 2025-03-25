@@ -1,0 +1,456 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:42      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./util_type_aero_wvl_diag_mod.F90
+
+(    1) MODULE UTIL_TYPE_AERO_WVL_DIAG_MOD
+(    2) 
+(    3) USE YOE_AERODIAG, ONLY : TYPE_AERO_WVL_DIAG
+(    4) 
+(    5) INTERFACE SAVE
+(    6) MODULE PROCEDURE SAVE_TYPE_AERO_WVL_DIAG
+(    7) END INTERFACE
+(    8) 
+(    9) INTERFACE LOAD
+(   10) MODULE PROCEDURE LOAD_TYPE_AERO_WVL_DIAG
+(   11) END INTERFACE
+(   12) 
+(   13) INTERFACE COPY
+(   14) MODULE PROCEDURE COPY_TYPE_AERO_WVL_DIAG
+(   15) END INTERFACE
+(   16) 
+(   17) INTERFACE HOST
+(   18) MODULE PROCEDURE HOST_TYPE_AERO_WVL_DIAG
+(   19) END INTERFACE
+(   20) 
+(   21) INTERFACE LEGACY
+(   22) MODULE PROCEDURE LEGACY_TYPE_AERO_WVL_DIAG
+(   23) END INTERFACE
+(   24)      
+(   25) INTERFACE CRC64
+(   26) MODULE PROCEDURE CRC64_TYPE_AERO_WVL_DIAG
+(   27) END INTERFACE
+(   28) 
+(   29) INTERFACE WIPE
+(   30) MODULE PROCEDURE WIPE_TYPE_AERO_WVL_DIAG
+(   31) END INTERFACE
+(   32) 
+(   33) INTERFACE SIZE
+(   34) MODULE PROCEDURE SIZE_TYPE_AERO_WVL_DIAG
+(   35) END INTERFACE
+(   36) 
+(   37) 
+(   38) CONTAINS
+(   39) 
+(   40) SUBROUTINE SAVE_TYPE_AERO_WVL_DIAG (KLUN, YD)
+(   41) 
+(   42) IMPLICIT NONE
+(   43) INTEGER, INTENT (IN) :: KLUN
+(   44) TYPE (TYPE_AERO_WVL_DIAG), INTENT (IN), TARGET :: YD
+(   45) 
+(   46) WRITE (KLUN) YD%IWVL
+(   47) WRITE (KLUN) YD%IGRIBDIAG
+(   48) END SUBROUTINE
+(   49) 
+(   50) SUBROUTINE LOAD_TYPE_AERO_WVL_DIAG (KLUN, YD)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:42      page 2
+
+(   51) 
+(   52) IMPLICIT NONE
+(   53) INTEGER, INTENT (IN) :: KLUN
+(   54) TYPE (TYPE_AERO_WVL_DIAG), INTENT (OUT), TARGET :: YD
+(   55) 
+(   56) READ (KLUN) YD%IWVL
+(   57) READ (KLUN) YD%IGRIBDIAG
+(   58) END SUBROUTINE
+(   59) 
+(   60) 
+(   61) SUBROUTINE COPY_TYPE_AERO_WVL_DIAG (YD, LDCREATED, LDFIELDAPI)
+(   62) 
+(   63) IMPLICIT NONE
+(   64) TYPE (TYPE_AERO_WVL_DIAG), INTENT (IN), TARGET :: YD
+(   65) LOGICAL, OPTIONAL, INTENT (IN) :: LDCREATED, LDFIELDAPI
+(   66) LOGICAL :: LLCREATED
+(   67) LOGICAL :: LLFIELDAPI
+(   68) 
+(   69) LLFIELDAPI = .FALSE.
+(   70) IF (PRESENT (LDFIELDAPI)) THEN
+(   71)   LLFIELDAPI = LDFIELDAPI
+(   72) ENDIF
+(   73) LLCREATED = .FALSE.
+(   74) IF (PRESENT (LDCREATED)) THEN
+(   75)   LLCREATED = LDCREATED
+(   76) ENDIF
+(   77) IF (.NOT. LLCREATED) THEN
+(   78)   !$acc enter data create (YD)
+(   79)   !$acc update device (YD)
+(   80) ENDIF
+(   81) 
+(   82) 
+(   83) END SUBROUTINE
+(   84) 
+(   85) SUBROUTINE HOST_TYPE_AERO_WVL_DIAG (YD)
+(   86) 
+(   87) IMPLICIT NONE
+(   88) TYPE (TYPE_AERO_WVL_DIAG), TARGET :: YD
+(   89) 
+(   90) 
+(   91) 
+(   92) END SUBROUTINE
+(   93) 
+(   94) SUBROUTINE LEGACY_TYPE_AERO_WVL_DIAG (YD, KADDRL, KADDRU, KDIR)
+(   95) 
+(   96) IMPLICIT NONE
+(   97) TYPE (TYPE_AERO_WVL_DIAG), TARGET :: YD
+(   98) INTEGER*8, INTENT (IN) :: KADDRL
+(   99) INTEGER*8, INTENT (IN) :: KADDRU
+(  100) INTEGER, INTENT (IN) :: KDIR
+(  101) 
+(  102) 
+(  103) 
+(  104) END SUBROUTINE     
+(  105) 
+(  106) SUBROUTINE CRC64_TYPE_AERO_WVL_DIAG (YD, KLUN, CDPATH)
+(  107) USE CRC64_INTRINSIC
+(  108) 
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:42      page 3
+
+(  109) IMPLICIT NONE
+(  110) TYPE (TYPE_AERO_WVL_DIAG), TARGET :: YD
+(  111) INTEGER, INTENT (IN) :: KLUN
+(  112) CHARACTER(LEN=*), INTENT (IN) :: CDPATH
+(  113) CHARACTER(LEN=128) :: CLIND
+(  114) 
+(  115) WRITE (KLUN, '(Z16.16," ",A)') CRC64 (YD%IWVL), CDPATH//'%IWVL'
+(  116) 
+(  117) WRITE (KLUN, '(Z16.16," ",A)') CRC64 (YD%IGRIBDIAG), CDPATH//'%IGRIBDIAG'
+(  118) 
+(  119) END SUBROUTINE
+(  120) 
+(  121) SUBROUTINE WIPE_TYPE_AERO_WVL_DIAG (YD, LDDELETED, LDFIELDAPI)
+(  122) 
+(  123) IMPLICIT NONE
+(  124) TYPE (TYPE_AERO_WVL_DIAG), INTENT (IN), TARGET :: YD
+(  125) LOGICAL, OPTIONAL, INTENT (IN) :: LDDELETED, LDFIELDAPI
+(  126) LOGICAL :: LLDELETED
+(  127) LOGICAL :: LLFIELDAPI
+(  128) 
+(  129) LLFIELDAPI = .FALSE.
+(  130) IF (PRESENT (LDFIELDAPI)) THEN
+(  131)   LLFIELDAPI = LDFIELDAPI
+(  132) ENDIF
+(  133) 
+(  134) 
+(  135) LLDELETED = .FALSE.
+(  136) IF (PRESENT (LDDELETED)) THEN
+(  137)   LLDELETED = LDDELETED
+(  138) ENDIF
+(  139) IF (.NOT. LLDELETED) THEN
+(  140)   !$acc exit data delete (YD)
+(  141) ENDIF
+(  142) END SUBROUTINE
+(  143) 
+(  144) INTEGER*8 FUNCTION SIZE_TYPE_AERO_WVL_DIAG (YD, CDPATH, LDPRINT) RESULT (KSIZE)
+(  145) 
+(  146) IMPLICIT NONE
+(  147) TYPE (TYPE_AERO_WVL_DIAG),     INTENT (IN), TARGET :: YD
+(  148) CHARACTER(LEN=*), INTENT (IN), OPTIONAL :: CDPATH
+(  149) LOGICAL,          INTENT (IN), OPTIONAL :: LDPRINT
+(  150) INTEGER*8 :: ISIZE, JSIZE
+(  151) LOGICAL :: LLPRINT
+(  152) CHARACTER(LEN=128) :: CLPATH
+(  153) 
+(  154) LLPRINT = .FALSE.
+(  155) IF (PRESENT (LDPRINT)) THEN
+(  156)   LLPRINT = LDPRINT
+(  157) ENDIF
+(  158) CLPATH=''
+(  159) IF (PRESENT (CDPATH)) THEN
+(  160)   CLPATH = CDPATH
+(  161) ENDIF
+(  162) KSIZE = 0
+(  163) ISIZE = KIND (YD%IWVL)
+(  164) IF (LLPRINT) THEN
+(  165)   WRITE (*, '(I10," ")', ADVANCE='NO') ISIZE
+(  166)   WRITE (*, *) TRIM (CLPATH)//'%IWVL'
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:42      page 4
+
+(  167) ENDIF
+(  168) KSIZE = KSIZE + ISIZE
+(  169) ISIZE = KIND (YD%IGRIBDIAG) * SIZE (YD%IGRIBDIAG)
+(  170) IF (LLPRINT) THEN
+(  171)   WRITE (*, '(I10," ")', ADVANCE='NO') ISIZE
+(  172)   WRITE (*, *) TRIM (CLPATH)//'%IGRIBDIAG'
+(  173) ENDIF
+(  174) KSIZE = KSIZE + ISIZE
+(  175) END FUNCTION
+(  176) 
+(  177) END MODULE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:42      page 5
+
+(    1) # 1 "./util_type_aero_wvl_diag_mod.F90"
+(    1) MODULE UTIL_TYPE_AERO_WVL_DIAG_MOD
+(    2) # 3 "./util_type_aero_wvl_diag_mod.F90"
+(    3) USE YOE_AERODIAG, ONLY : TYPE_AERO_WVL_DIAG
+(    4) # 5 "./util_type_aero_wvl_diag_mod.F90"
+(    5) INTERFACE SAVE
+(    6) MODULE PROCEDURE SAVE_TYPE_AERO_WVL_DIAG
+(    7) END INTERFACE
+(    8) # 9 "./util_type_aero_wvl_diag_mod.F90"
+(    9) INTERFACE LOAD
+(   10) MODULE PROCEDURE LOAD_TYPE_AERO_WVL_DIAG
+(   11) END INTERFACE
+(   12) # 13 "./util_type_aero_wvl_diag_mod.F90"
+(   13) INTERFACE COPY
+(   14) MODULE PROCEDURE COPY_TYPE_AERO_WVL_DIAG
+(   15) END INTERFACE
+(   16) # 17 "./util_type_aero_wvl_diag_mod.F90"
+(   17) INTERFACE HOST
+(   18) MODULE PROCEDURE HOST_TYPE_AERO_WVL_DIAG
+(   19) END INTERFACE
+(   20) # 21 "./util_type_aero_wvl_diag_mod.F90"
+(   21) INTERFACE LEGACY
+(   22) MODULE PROCEDURE LEGACY_TYPE_AERO_WVL_DIAG
+(   23) END INTERFACE
+(   24)      
+(   25) INTERFACE CRC64
+(   26) MODULE PROCEDURE CRC64_TYPE_AERO_WVL_DIAG
+(   27) END INTERFACE
+(   28) # 29 "./util_type_aero_wvl_diag_mod.F90"
+(   29) INTERFACE WIPE
+(   30) MODULE PROCEDURE WIPE_TYPE_AERO_WVL_DIAG
+(   31) END INTERFACE
+(   32) # 33 "./util_type_aero_wvl_diag_mod.F90"
+(   33) INTERFACE SIZE
+(   34) MODULE PROCEDURE SIZE_TYPE_AERO_WVL_DIAG
+(   35) END INTERFACE
+(   36) # 38 "./util_type_aero_wvl_diag_mod.F90"
+(   38) CONTAINS
+(   39) # 40 "./util_type_aero_wvl_diag_mod.F90"
+(   40) SUBROUTINE SAVE_TYPE_AERO_WVL_DIAG (KLUN, YD)
+(   41) # 42 "./util_type_aero_wvl_diag_mod.F90"
+(   42) IMPLICIT NONE
+(   43) INTEGER, INTENT (IN) :: KLUN
+(   44) TYPE (TYPE_AERO_WVL_DIAG), INTENT (IN), TARGET :: YD
+(   45) # 46 "./util_type_aero_wvl_diag_mod.F90"
+(   46) WRITE (KLUN) YD%IWVL
+(   47) WRITE (KLUN) YD%IGRIBDIAG
+(   48) END SUBROUTINE
+(   49) # 50 "./util_type_aero_wvl_diag_mod.F90"
+(   50) SUBROUTINE LOAD_TYPE_AERO_WVL_DIAG (KLUN, YD)
+(   51) # 52 "./util_type_aero_wvl_diag_mod.F90"
+(   52) IMPLICIT NONE
+(   53) INTEGER, INTENT (IN) :: KLUN
+(   54) TYPE (TYPE_AERO_WVL_DIAG), INTENT (OUT), TARGET :: YD
+(   55) # 56 "./util_type_aero_wvl_diag_mod.F90"
+(   56) READ (KLUN) YD%IWVL
+(   57) READ (KLUN) YD%IGRIBDIAG
+(   58) END SUBROUTINE
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:42      page 6
+
+(   59) # 61 "./util_type_aero_wvl_diag_mod.F90"
+(   61) SUBROUTINE COPY_TYPE_AERO_WVL_DIAG (YD, LDCREATED, LDFIELDAPI)
+(   62) # 63 "./util_type_aero_wvl_diag_mod.F90"
+(   63) IMPLICIT NONE
+(   64) TYPE (TYPE_AERO_WVL_DIAG), INTENT (IN), TARGET :: YD
+(   65) LOGICAL, OPTIONAL, INTENT (IN) :: LDCREATED, LDFIELDAPI
+(   66) LOGICAL :: LLCREATED
+(   67) LOGICAL :: LLFIELDAPI
+(   68) # 69 "./util_type_aero_wvl_diag_mod.F90"
+(   69) LLFIELDAPI = .FALSE.
+(   70) IF (PRESENT (LDFIELDAPI)) THEN
+(   71)   LLFIELDAPI = LDFIELDAPI
+(   72) ENDIF
+(   73) LLCREATED = .FALSE.
+(   74) IF (PRESENT (LDCREATED)) THEN
+(   75)   LLCREATED = LDCREATED
+(   76) ENDIF
+(   77) IF (.NOT. LLCREATED) THEN
+(   78)   !$acc enter data create (YD)
+(   79)   !$acc update device (YD)
+(   80) ENDIF
+(   81) # 83 "./util_type_aero_wvl_diag_mod.F90"
+(   83) END SUBROUTINE
+(   84) # 85 "./util_type_aero_wvl_diag_mod.F90"
+(   85) SUBROUTINE HOST_TYPE_AERO_WVL_DIAG (YD)
+(   86) # 87 "./util_type_aero_wvl_diag_mod.F90"
+(   87) IMPLICIT NONE
+(   88) TYPE (TYPE_AERO_WVL_DIAG), TARGET :: YD
+(   89) # 92 "./util_type_aero_wvl_diag_mod.F90"
+(   92) END SUBROUTINE
+(   93) # 94 "./util_type_aero_wvl_diag_mod.F90"
+(   94) SUBROUTINE LEGACY_TYPE_AERO_WVL_DIAG (YD, KADDRL, KADDRU, KDIR)
+(   95) # 96 "./util_type_aero_wvl_diag_mod.F90"
+(   96) IMPLICIT NONE
+(   97) TYPE (TYPE_AERO_WVL_DIAG), TARGET :: YD
+(   98) INTEGER*8, INTENT (IN) :: KADDRL
+(   99) INTEGER*8, INTENT (IN) :: KADDRU
+(  100) INTEGER, INTENT (IN) :: KDIR
+(  101) # 104 "./util_type_aero_wvl_diag_mod.F90"
+(  104) END SUBROUTINE     
+(  105) # 106 "./util_type_aero_wvl_diag_mod.F90"
+(  106) SUBROUTINE CRC64_TYPE_AERO_WVL_DIAG (YD, KLUN, CDPATH)
+(  107) USE CRC64_INTRINSIC
+(  108) # 109 "./util_type_aero_wvl_diag_mod.F90"
+(  109) IMPLICIT NONE
+(  110) TYPE (TYPE_AERO_WVL_DIAG), TARGET :: YD
+(  111) INTEGER, INTENT (IN) :: KLUN
+(  112) CHARACTER(LEN=*), INTENT (IN) :: CDPATH
+(  113) CHARACTER(LEN=128) :: CLIND
+(  114) # 115 "./util_type_aero_wvl_diag_mod.F90"
+(  115) WRITE (KLUN, '(Z16.16," ",A)') CRC64 (YD%IWVL), CDPATH//'%IWVL'
+(  116) # 117 "./util_type_aero_wvl_diag_mod.F90"
+(  117) WRITE (KLUN, '(Z16.16," ",A)') CRC64 (YD%IGRIBDIAG), CDPATH//'%IGRIBDIAG'
+(  118) # 119 "./util_type_aero_wvl_diag_mod.F90"
+(  119) END SUBROUTINE
+(  120) # 121 "./util_type_aero_wvl_diag_mod.F90"
+(  121) SUBROUTINE WIPE_TYPE_AERO_WVL_DIAG (YD, LDDELETED, LDFIELDAPI)
+(  122) # 123 "./util_type_aero_wvl_diag_mod.F90"
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:42      page 7
+
+(  123) IMPLICIT NONE
+(  124) TYPE (TYPE_AERO_WVL_DIAG), INTENT (IN), TARGET :: YD
+(  125) LOGICAL, OPTIONAL, INTENT (IN) :: LDDELETED, LDFIELDAPI
+(  126) LOGICAL :: LLDELETED
+(  127) LOGICAL :: LLFIELDAPI
+(  128) # 129 "./util_type_aero_wvl_diag_mod.F90"
+(  129) LLFIELDAPI = .FALSE.
+(  130) IF (PRESENT (LDFIELDAPI)) THEN
+(  131)   LLFIELDAPI = LDFIELDAPI
+(  132) ENDIF
+(  133) # 135 "./util_type_aero_wvl_diag_mod.F90"
+(  135) LLDELETED = .FALSE.
+(  136) IF (PRESENT (LDDELETED)) THEN
+(  137)   LLDELETED = LDDELETED
+(  138) ENDIF
+(  139) IF (.NOT. LLDELETED) THEN
+(  140)   !$acc exit data delete (YD)
+(  141) ENDIF
+(  142) END SUBROUTINE
+(  143) # 144 "./util_type_aero_wvl_diag_mod.F90"
+(  144) INTEGER*8 FUNCTION SIZE_TYPE_AERO_WVL_DIAG (YD, CDPATH, LDPRINT) RESULT (KSIZE)
+(  145) # 146 "./util_type_aero_wvl_diag_mod.F90"
+(  146) IMPLICIT NONE
+(  147) TYPE (TYPE_AERO_WVL_DIAG),     INTENT (IN), TARGET :: YD
+(  148) CHARACTER(LEN=*), INTENT (IN), OPTIONAL :: CDPATH
+(  149) LOGICAL,          INTENT (IN), OPTIONAL :: LDPRINT
+(  150) INTEGER*8 :: ISIZE, JSIZE
+(  151) LOGICAL :: LLPRINT
+(  152) CHARACTER(LEN=128) :: CLPATH
+(  153) # 154 "./util_type_aero_wvl_diag_mod.F90"
+(  154) LLPRINT = .FALSE.
+(  155) IF (PRESENT (LDPRINT)) THEN
+(  156)   LLPRINT = LDPRINT
+(  157) ENDIF
+(  158) CLPATH=''
+(  159) IF (PRESENT (CDPATH)) THEN
+(  160)   CLPATH = CDPATH
+(  161) ENDIF
+(  162) KSIZE = 0
+(  163) ISIZE = KIND (YD%IWVL)
+(  164) IF (LLPRINT) THEN
+(  165)   WRITE (*, '(I10," ")', ADVANCE='NO') ISIZE
+(  166)   WRITE (*, *) TRIM (CLPATH)//'%IWVL'
+(  167) ENDIF
+(  168) KSIZE = KSIZE + ISIZE
+(  169) ISIZE = KIND (YD%IGRIBDIAG) * SIZE (YD%IGRIBDIAG)
+(  170) IF (LLPRINT) THEN
+(  171)   WRITE (*, '(I10," ")', ADVANCE='NO') ISIZE
+(  172)   WRITE (*, *) TRIM (CLPATH)//'%IGRIBDIAG'
+(  173) ENDIF
+(  174) KSIZE = KSIZE + ISIZE
+(  175) END FUNCTION
+(  176) # 177 "./util_type_aero_wvl_diag_mod.F90"
+(  177) END MODULE

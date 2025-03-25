@@ -1,0 +1,1019 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:18      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./cuctracer.scc_stack.F90
+
+(    1) MODULE CUCTRACER_LOKI_MOD
+(    2)   CONTAINS
+(    3)   SUBROUTINE CUCTRACER_LOKI (YDCST, YDCUMFS, YDECUMF2, YDECUMF, KIDIA, KFDIA, KLON, KLEV, KTRAC, KCTOP, KDTOP, KTYPE, LDCUM,
+(    4)   & LDDRAF, PTSPHY, PAPH, PAP, PMFU, PMFD, PMFUO, PMFDO, PUDRATE, PDDRATE, PDMFUP, PDMFDP, PCEN, PTENC, PSCAV, YDSTACK_L)
+(    5)     
+(    6)     !**** *CUCTRACER* - COMPUTE CONVECTIVE TRANSPORT OF CHEM. TRACERS
+(    7)     !                   IMPORTANT: ROUTINE IS FOR POSITIVE DEFINIT QUANTITIES
+(    8)     !                              SCAVENGING IS DONE IF SCAVENGING COEFFICIENT>0
+(    9)     
+(   10)     !          P.BECHTOLD        E.C.M.W.F.              11/02/2004
+(   11)     
+(   12)     !**   INTERFACE.
+(   13)     !     ----------
+(   14)     
+(   15)     !          *CUTRACER* IS CALLED FROM *CUMASTR*
+(   16)     
+(   17)     !     PARAMETER     DESCRIPTION                                   UNITS
+(   18)     !     ---------     -----------                                   -----
+(   19)     !     INPUT PARAMETERS (INTEGER):
+(   20)     
+(   21)     !    *KIDIA*        START POINT
+(   22)     !    *KFDIA*        END POINT
+(   23)     !    *KLON*         NUMBER OF GRID POINTS PER PACKET
+(   24)     !    *KLEV*         NUMBER OF LEVELS
+(   25)     !    *KTRAC*        NUMBER OF CHEMICAL TRACERS
+(   26)     
+(   27)     !    *KCTOP*        CLOUD TOP  LEVEL
+(   28)     !    *KDTOP*        DOWNDRAFT TOP LEVEL
+(   29)     !    *KTYPE*        TYPE OF CONVECTION
+(   30)     !                       1 = PENETRATIVE CONVECTION
+(   31)     !                       2 = SHALLOW CONVECTION
+(   32)     !                       3 = MIDLEVEL CONVECTION
+(   33)     
+(   34)     
+(   35)     !    INPUT PARAMETERS (LOGICAL):
+(   36)     
+(   37)     !    *LDCUM*        FLAG: .TRUE. FOR CONVECTIVE POINTS
+(   38)     !    *LDDRAF*       FLAG: .TRUE. IF DOWNDRAFTS EXIST
+(   39)     
+(   40)     !    INPUT PARAMETERS (REAL):
+(   41)     
+(   42)     !    *PTSPHY*       PHYSICS TIME-STEP                              S
+(   43)     !    *PAPH*         PROVISIONAL PRESSURE ON HALF LEVELS            PA
+(   44)     !    *PAPH          PROVISIONAL PRESSURE ON FULL LEVELS            PA
+(   45)     !    *PCEN*         PROVISIONAL ENVIRONMENT TRACER CONCENTRATION
+(   46)     !    *PMFU*         MASSFLUX UPDRAFTS                             KG/(M2*S)
+(   47)     !    *PMFD*         MASSFLUX DOWNDRAFTS                           KG/(M2*S)
+(   48)     !    *PUDRATE*      UPDRAFT DETRAINMENT                           KG/(M2*S)
+(   49)     !    *PDDRATE*      DOWNDRAFT DETRAINMENT                         KG/(M2*S)
+(   50)     !    *PDMFUP*       UPDRAUGT PRECIP (PRODUCTION) IN LAYER         KG/(M2*S)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:18      page 2
+
+(   51)     !    *PDMFDP*       DDRAUGHT PRECIP (PRODUCTION) IN LAYER         KG/(M2*S)
+(   52)     !    *PSCAV*        WET SCAVENGING COEFFICIENTS                   UNITLESS
+(   53)     
+(   54)     !    UPDATED PARAMETERS (REAL):
+(   55)     
+(   56)     !    *PTENC*        UPDATED TENDENCY OF CHEM. TRACERS              1/S
+(   57)     
+(   58)     !          METHOD
+(   59)     !          -------
+(   60)     !     EXPLICIT UPSTREAM AND IMPLICIT SOLUTION OF VERTICAL ADVECTION
+(   61)     !     DEPENDING ON VALUE OF RMFSOLCT: 0=EXPLICIT 0-1 SEMI-IMPLICIT >=1 IMPLICIT
+(   62)     
+(   63)     !     FOR EXPLICIT SOLUTION: ONLY ONE SINGLE ITERATION
+(   64)     !     FOR IMPLICIT SOLUTION: FIRST IMPLICIT SOLVER, THEN EXPLICIT SOLVER
+(   65)     !                            TO CORRECT TENDENCIES BELOW CLOUD BASE
+(   66)     
+(   67)     
+(   68)     !------------------------------------------------------------------------------------
+(   69)     !     COMMENTS FOR OFFLINE USERS IN CHEMICAL TRANSPORT MODELS
+(   70)     !     (i.e. reading mass fluxes and detrainment rates from ECMWF archive:
+(   71)     !      ------------------------------------------------------------------
+(   72)     !     KCTOP IS FIRST LEVEL FROM TOP WHERE PMFU>0
+(   73)     !     KDTOP IS FIRST LEVEL FROM TOP WHERE PMFD<0
+(   74)     !     ATTENTION: ON ARCHIVE DETRAINMENT RATES HAVE UNITS KG/(M3*S), SO FOR USE
+(   75)     !                IN CURRENT ROUTINE YOU HAVE TO MULTIPLY ARCHIVED VALUES BY DZ
+(   76)     !     LDCUM  IS TRUE IF CONVECTION EXISTS, i.e. IF PMFU>0 IN COLUMN OR IF
+(   77)     !                       KCTOP>0 AND KCTOP<KLEV
+(   78)     !     LDDRAF IS TRUE IF DOWNDRAUGHTS EXIST IF PMFD<0 IN COLUMN OR IF
+(   79)     !                       KDTOP>0 AND KDTOP<KLEV
+(   80)     !     IF MASSFLUX SATISFIES CFL CRITERIUM M<=DP/Dt IT IS SUFFICIENT TO
+(   81)     !     ONLY CONSIDER EXPLICIT SOLUTION (RMFSOLCT=0), IN THIS CASE
+(   82)     !     YOU CAN IGNORE IMPLICIT PART 7.0 OF CURRENT ROUTINE
+(   83)     !------------------------------------------------------------------------------------
+(   84)     
+(   85)     !          EXTERNALS
+(   86)     !          ---------
+(   87)     !          CUBIDIAG
+(   88)     
+(   89)     !          MODIFICATIONS
+(   90)     !          -------------
+(   91)     !        M.Hamrud      01-Oct-2003 CY28 Cleaning
+(   92)     !        P.Bechtold    07-Oct-2009 add scavenging
+(   93)     !     R. El Khatib 22-Jun-2022 A contribution to simplify phasing after the refactoring of YOMCLI/YOMCST/YOETHF.
+(   94)     
+(   95)     !----------------------------------------------------------------------
+(   96)     
+(   97)     USE cubidiag_LOKI_MOD, ONLY: cubidiag_LOKI
+(   98)     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY: REAL64
+(   99)     USE, intrinsic :: ISO_C_BINDING, ONLY: C_SIZEOF
+(  100)     USE PARKIND1, ONLY: JPIM, JPRB
+(  101)     USE YOMHOOK, ONLY: LHOOK, JPHOOK
+(  102)     
+(  103)     USE YOMCST, ONLY: TCST
+(  104)     USE YOECUMF, ONLY: TECUMF
+(  105)     USE YOECUMF2, ONLY: TECUMF2
+(  106)     USE YOMCUMFS, ONLY: TCUMFS
+(  107)     
+(  108)     IMPLICIT NONE
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:18      page 3
+
+(  109)     
+(  110)     TYPE(TCST), INTENT(IN) :: YDCST
+(  111)     TYPE(TCUMFS), INTENT(IN) :: YDCUMFS
+(  112)     TYPE(TECUMF), INTENT(IN) :: YDECUMF
+(  113)     TYPE(TECUMF2), INTENT(IN) :: YDECUMF2
+(  114)     INTEGER(KIND=JPIM), INTENT(IN) :: KLON
+(  115)     INTEGER(KIND=JPIM), INTENT(IN) :: KLEV
+(  116)     INTEGER(KIND=JPIM), INTENT(IN) :: KTRAC
+(  117)     INTEGER(KIND=JPIM), INTENT(IN) :: KIDIA
+(  118)     INTEGER(KIND=JPIM), INTENT(IN) :: KFDIA
+(  119)     INTEGER(KIND=JPIM), INTENT(IN) :: KCTOP(KLON)
+(  120)     INTEGER(KIND=JPIM), INTENT(IN) :: KDTOP(KLON)
+(  121)     INTEGER(KIND=JPIM), INTENT(IN) :: KTYPE(KLON)
+(  122)     LOGICAL, INTENT(IN) :: LDCUM(KLON)
+(  123)     LOGICAL, INTENT(IN) :: LDDRAF(KLON)
+(  124)     REAL(KIND=JPRB), INTENT(IN) :: PTSPHY
+(  125)     REAL(KIND=JPRB), INTENT(IN) :: PAPH(KLON, KLEV + 1)
+(  126)     REAL(KIND=JPRB), INTENT(IN) :: PAP(KLON, KLEV)
+(  127)     REAL(KIND=JPRB), INTENT(IN) :: PMFU(KLON, KLEV)
+(  128)     REAL(KIND=JPRB), INTENT(IN) :: PMFD(KLON, KLEV)
+(  129)     REAL(KIND=JPRB), INTENT(IN) :: PMFUO(KLON, KLEV)
+(  130)     REAL(KIND=JPRB), INTENT(IN) :: PMFDO(KLON, KLEV)
+(  131)     REAL(KIND=JPRB), INTENT(IN) :: PUDRATE(KLON, KLEV)
+(  132)     REAL(KIND=JPRB), INTENT(IN) :: PDDRATE(KLON, KLEV)
+(  133)     REAL(KIND=JPRB), INTENT(IN) :: PDMFUP(KLON, KLEV)
+(  134)     REAL(KIND=JPRB), INTENT(IN) :: PDMFDP(KLON, KLEV)
+(  135)     REAL(KIND=JPRB), INTENT(IN) :: PCEN(KLON, KLEV, KTRAC)
+(  136)     REAL(KIND=JPRB), INTENT(IN) :: PSCAV(KTRAC)
+(  137)     REAL(KIND=JPRB), INTENT(INOUT) :: PTENC(KLON, KLEV, KTRAC)
+(  138)     INTEGER(KIND=JPIM) :: IK, IM, JK, JL, JN
+(  139)     
+(  140)     REAL(KIND=JPRB) :: ZZP, ZMFA, ZIMP, ZERATE, ZPOSI, ZTSPHY, ZC, ZADVW(KLON)
+(  141)     REAL(KIND=JPRB) :: ZRMFCMIN, ZRMFSOLCT
+(  142)     
+(  143)     !     ALLOCATABLE ARAYS
+(  144)     REAL(KIND=JPRB), DIMENSION(KLON, KLEV, KTRAC) :: ZCEN, ZCU, ZCD, ZTENC, ZMFC
+(  145)     REAL(KIND=JPRB), DIMENSION(KLON, KLEV) :: ZDP, ZB, ZR1
+(  146)     LOGICAL, DIMENSION(KLON, KLEV) :: LLCUMASK, LLCUMBAS
+(  147)     REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+(  148)     
+(  149) !$acc routine vector
+(  150)     INTEGER(KIND=8) :: YLSTACK_L
+(  151)     INTEGER(KIND=8), INTENT(INOUT) :: YDSTACK_L
+(  152)     POINTER(IP_ZADVW, ZADVW)
+(  153)     POINTER(IP_ZCEN, ZCEN)
+(  154)     POINTER(IP_ZCU, ZCU)
+(  155)     POINTER(IP_ZCD, ZCD)
+(  156)     POINTER(IP_ZTENC, ZTENC)
+(  157)     POINTER(IP_ZMFC, ZMFC)
+(  158)     POINTER(IP_ZDP, ZDP)
+(  159)     POINTER(IP_ZB, ZB)
+(  160)     POINTER(IP_ZR1, ZR1)
+(  161)     POINTER(IP_LLCUMASK, LLCUMASK)
+(  162)     POINTER(IP_LLCUMBAS, LLCUMBAS)
+(  163)     YLSTACK_L = YDSTACK_L
+(  164)     IP_ZADVW = YLSTACK_L
+(  165)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  166)     IP_ZCEN = YLSTACK_L
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:18      page 4
+
+(  167)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*KTRAC*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  168)     IP_ZCU = YLSTACK_L
+(  169)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*KTRAC*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  170)     IP_ZCD = YLSTACK_L
+(  171)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*KTRAC*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  172)     IP_ZTENC = YLSTACK_L
+(  173)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*KTRAC*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  174)     IP_ZMFC = YLSTACK_L
+(  175)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*KTRAC*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  176)     IP_ZDP = YLSTACK_L
+(  177)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  178)     IP_ZB = YLSTACK_L
+(  179)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  180)     IP_ZR1 = YLSTACK_L
+(  181)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  182)     IP_LLCUMASK = YLSTACK_L
+(  183)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*C_SIZEOF(LOGICAL(.true.)) + 7, -3), 3)
+(  184)     IP_LLCUMBAS = YLSTACK_L
+(  185)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*C_SIZEOF(LOGICAL(.true.)) + 7, -3), 3)
+(  186) !$acc data present( KCTOP, KDTOP, KTYPE, LDCUM, LDDRAF, PAPH, PAP, PMFU, PMFD, PMFUO, PMFDO, PUDRATE, PDDRATE, PDMFUP, PDMFD
+(  187) !$acc & PCEN, PTENC, PSCAV, YDCST, YDCUMFS, YDECUMF2, YDECUMF )
+(  188)     !----------------------------------------------------------------------
+(  189)     
+(  190)     IF (YDCUMFS%LECUMFS) THEN
+(  191)       ZRMFSOLCT = YDECUMF2%RMFSOLCT2
+(  192)       ZRMFCMIN = YDECUMF2%RMFCMIN2
+(  193)     ELSE
+(  194)       ZRMFSOLCT = YDECUMF%RMFSOLCT
+(  195)       ZRMFCMIN = YDECUMF%RMFCMIN
+(  196)     END IF
+(  197)     
+(  198)     ZIMP = 1.0_JPRB - ZRMFSOLCT
+(  199)     ZTSPHY = 1.0_JPRB / PTSPHY
+(  200)     
+(  201)     
+(  202) !$acc loop vector
+(  203)     DO JL=KIDIA,KFDIA
+(  204)       ZADVW(JL) = 0.0_JPRB
+(  205)       IF (KTYPE(JL) == 1) ZADVW(JL) = YDECUMF%RMFADVW
+(  206)       
+(  207)       ! Initialize Cumulus mask + some setups
+(  208)       
+(  209) !$acc loop seq
+(  210)       DO JK=2,KLEV
+(  211)         LLCUMASK(JL, JK) = .false.
+(  212)         IF (LDCUM(JL)) THEN
+(  213)           ZDP(JL, JK) = YDCST%RG / (PAPH(JL, JK + 1) - PAPH(JL, JK))
+(  214)           IF (JK >= -1 + KCTOP(JL)) THEN
+(  215)             LLCUMASK(JL, JK) = .true.
+(  216)           END IF
+(  217)         END IF
+(  218)       END DO
+(  219)       !----------------------------------------------------------------------
+(  220)       
+(  221) !$acc loop seq
+(  222)       DO JN=1,KTRAC
+(  223)         
+(  224)         !*    1.0          DEFINE TRACERS AT HALF LEVELS
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:18      page 5
+
+(  225)         !                  -----------------------------
+(  226)         
+(  227) !$acc loop seq
+(  228)         DO JK=2,KLEV
+(  229)           IK = JK - 1
+(  230)           ZCEN(JL, JK, JN) = PCEN(JL, JK, JN)
+(  231)           ZCD(JL, JK, JN) = PCEN(JL, IK, JN)
+(  232)           ZCU(JL, JK, JN) = PCEN(JL, IK, JN)
+(  233)           ZMFC(JL, JK, JN) = 0.0_JPRB
+(  234)           ZTENC(JL, JK, JN) = 0.0_JPRB
+(  235)         END DO
+(  236)         ZCU(JL, KLEV, JN) = PCEN(JL, KLEV, JN)
+(  237)         
+(  238)         !*    2.0          COMPUTE UPDRAFT VALUES
+(  239)         !                  ----------------------
+(  240)         
+(  241) !$acc loop seq
+(  242)         DO JK=KLEV - 1,3,-1
+(  243)           IK = JK + 1
+(  244)           IF (LLCUMASK(JL, JK)) THEN
+(  245)             ZERATE = PMFU(JL, JK) - PMFU(JL, IK) + PUDRATE(JL, JK)
+(  246)             ZMFA = 1.0_JPRB / MAX(ZRMFCMIN, PMFU(JL, JK))
+(  247)             IF (JK >= KCTOP(JL)) THEN
+(  248)               ZCU(JL, JK, JN) = (PMFU(JL, IK)*ZCU(JL, IK, JN) + ZERATE*PCEN(JL, JK, JN) - (PUDRATE(JL, JK) + PDMFUP(JL, JK) 
+(  249)               & *PSCAV(JN))*ZCU(JL, IK, JN))*ZMFA
+(  250)               ! if you have a source term dc/dt=dcdt write
+(  251)               !             ZCU(JL,JK,JN)=( PMFU(JL,IK)*ZCU(JL,IK,JN)+ZERATE*PCEN(JL,JK,JN) &
+(  252)               !                           -PUDRATE(JL,JK)*ZCU(JL,IK,JN) )*ZMFA
+(  253)               !                           +dcdt(jl,ik,jn)*ptsphy
+(  254)             END IF
+(  255)           END IF
+(  256)         END DO
+(  257)         
+(  258)         
+(  259)         !*    3.0          COMPUTE DOWNDRAFT VALUES
+(  260)         !                  ------------------------
+(  261)         
+(  262) !$acc loop seq
+(  263)         DO JK=3,KLEV
+(  264)           IK = JK - 1
+(  265)           IF (LDDRAF(JL) .and. JK == KDTOP(JL)) THEN
+(  266)             !Nota: in order to avoid final negative Tracer values at LFS the allowed value of ZCD
+(  267)             !      depends on the jump in mass flux at the LFS
+(  268)             !ZCD(JL,JK,JN)=0.5_JPRB*ZCU(JL,JK,JN)+0.5_JPRB*PCEN(JL,IK,JN)
+(  269)             ZCD(JL, JK, JN) = 0.1_JPRB*ZCU(JL, JK, JN) + 0.9_JPRB*PCEN(JL, IK, JN)
+(  270)           ELSE IF (LDDRAF(JL) .and. JK > KDTOP(JL)) THEN
+(  271)             ZERATE = -PMFD(JL, JK) + PMFD(JL, IK) + PDDRATE(JL, JK)
+(  272)             ZMFA = 1._JPRB / MIN(-ZRMFCMIN, PMFD(JL, JK))
+(  273)             ZCD(JL, JK, JN) = (PMFD(JL, IK)*ZCD(JL, IK, JN) - ZERATE*PCEN(JL, IK, JN) + (PDDRATE(JL, JK) + PDMFDP(JL, JK) &
+(  274)             & *PSCAV(JN))*ZCD(JL, IK, JN))*ZMFA
+(  275)             ! if you have a source term dc/dt=dcdt write
+(  276)             !             ZCD(JL,JK,JN)=( PMFD(JL,IK)*ZCD(JL,IK,JN)-ZERATE*PCEN(JL,IK,JN) &
+(  277)             !                           &+PDDRATE(JL,JK)*ZCD(JL,IK,JN) &
+(  278)             !                           &+dcdt(jl,ik,jn)*ptsphy
+(  279)           END IF
+(  280)         END DO
+(  281)         
+(  282)         ! In order to avoid negative Tracer at KLEV adjust ZCD
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:18      page 6
+
+(  283)         JK = KLEV
+(  284)         IK = JK - 1
+(  285)         IF (LDDRAF(JL)) THEN
+(  286)           ZPOSI = -ZDP(JL, JK)*(PMFU(JL, JK)*ZCU(JL, JK, JN) + PMFD(JL, JK)*ZCD(JL, JK, JN) - (PMFU(JL, JK) + PMFD(JL, JK)) 
+(  287)           & *PCEN(JL, IK, JN))
+(  288)           IF (PCEN(JL, JK, JN) + PTSPHY*ZPOSI < 0.0_JPRB) THEN
+(  289)             ZMFA = 1._JPRB / MIN(-ZRMFCMIN, PMFD(JL, JK))
+(  290)             ZCD(JL, JK, JN) = ((PMFU(JL, JK) + PMFD(JL, JK))*PCEN(JL, IK, JN) - PMFU(JL, JK)*ZCU(JL, JK, JN) + PCEN(JL, JK, 
+(  291)             &  (PTSPHY*ZDP(JL, JK)))*ZMFA
+(  292)           END IF
+(  293)         END IF
+(  294)         
+(  295)       END DO
+(  296)       
+(  297)       !----------------------------------------------------------------------
+(  298)       
+(  299) !$acc loop seq
+(  300)       DO JN=1,KTRAC
+(  301)         
+(  302)         !*    4.0          COMPUTE FLUXES
+(  303)         !                  --------------
+(  304)         
+(  305) !$acc loop seq
+(  306)         DO JK=2,KLEV
+(  307)           IK = JK - 1
+(  308)           IF (LLCUMASK(JL, JK)) THEN
+(  309)             ZMFA = PMFU(JL, JK) + PMFD(JL, JK)
+(  310)             ZMFC(JL, JK, JN) = PMFU(JL, JK)*ZCU(JL, JK, JN) + PMFD(JL, JK)*ZCD(JL, JK, JN) - ZIMP*ZMFA*ZCEN(JL, IK, JN)
+(  311)           END IF
+(  312)         END DO
+(  313)         
+(  314)         !*    5.0          COMPUTE TENDENCIES = RHS
+(  315)         !                  ------------------------
+(  316)         
+(  317) !$acc loop seq
+(  318)         DO JK=2,KLEV - 1
+(  319)           IK = JK + 1
+(  320)           IF (LLCUMASK(JL, JK)) THEN
+(  321)             ZTENC(JL, JK, JN) = ZDP(JL, JK)*(ZMFC(JL, IK, JN) - ZMFC(JL, JK, JN))
+(  322)             !ZTENC(JL,JK,JN)=ZTENC(JL,JK,JN)-ZDP(JL,JK)*PDMFUP(JL,JK)*PSCAV(JN)*ZCU(JL,JK,JN)
+(  323)           END IF
+(  324)         END DO
+(  325)         
+(  326)         JK = KLEV
+(  327)         IF (LDCUM(JL)) THEN
+(  328)           ZTENC(JL, JK, JN) = -ZDP(JL, JK)*ZMFC(JL, JK, JN)
+(  329)           !ZTENC(JL,JK,JN)=ZTENC(JL,JK,JN)-ZDP(JL,JK)*PDMFUP(JL,JK)*PSCAV(JN)*ZCU(JL,JK,JN)
+(  330)         END IF
+(  331)         
+(  332)       END DO
+(  333)     END DO
+(  334)     
+(  335)     
+(  336)     IF (ZRMFSOLCT == 0.0_JPRB) THEN
+(  337)       
+(  338)       
+(  339)       !*    6.0          UPDATE TENDENCIES
+(  340)       !                  -----------------
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:18      page 7
+
+(  341)       
+(  342)       
+(  343) !$acc loop vector
+(  344)       DO JL=KIDIA,KFDIA
+(  345) !$acc loop seq
+(  346)         DO JN=1,KTRAC
+(  347) !$acc loop seq
+(  348)           DO JK=2,KLEV
+(  349)             IF (LLCUMASK(JL, JK)) THEN
+(  350)               PTENC(JL, JK, JN) = PTENC(JL, JK, JN) + ZTENC(JL, JK, JN)
+(  351)             END IF
+(  352)           END DO
+(  353)         END DO
+(  354)       END DO
+(  355)       
+(  356)       
+(  357)     ELSE
+(  358)       
+(  359)       !---------------------------------------------------------------------------
+(  360)       
+(  361)       !*    7.0          IMPLICIT SOLUTION
+(  362)       !                  -----------------
+(  363)       
+(  364)       ! Fill bi-diagonal Matrix vectors A=k-1, B=k;
+(  365)       ! reuse ZMFC=A and ZB=B;
+(  366)       ! ZTENC corresponds to the RHS ("constants") of the equation
+(  367)       ! The solution is in ZR1
+(  368)       
+(  369)       LLCUMBAS(:, :) = .false.
+(  370)       ZB(:, :) = 1._JPRB
+(  371)       
+(  372) !$acc loop seq
+(  373)       DO JN=1,KTRAC
+(  374)         
+(  375)         ! Fill vectors A, B and RHS
+(  376)         
+(  377)         
+(  378) !$acc loop vector
+(  379)         DO JL=KIDIA,KFDIA
+(  380) !$acc loop seq
+(  381)           DO JK=2,KLEV
+(  382)             IK = JK + 1
+(  383)             IM = JK - 1
+(  384)             ! LLCUMBAS(JL,JK)=LLCUMASK(JL,JK).AND.JK<=KCBOT(JL)
+(  385)             LLCUMBAS(JL, JK) = LLCUMASK(JL, JK)
+(  386)             IF (LLCUMBAS(JL, JK)) THEN
+(  387)               ZZP = ZRMFSOLCT*ZDP(JL, JK)*PTSPHY
+(  388)               ZMFC(JL, JK, JN) = -ZZP*(PMFU(JL, JK) + PMFD(JL, JK))
+(  389)               IF (JK < KLEV) THEN
+(  390)                 ZB(JL, JK) = 1.0_JPRB + ZZP*(PMFU(JL, IK) + PMFD(JL, IK))
+(  391)               ELSE
+(  392)                 ZB(JL, JK) = 1.0_JPRB
+(  393)               END IF
+(  394)               ZZP = YDCST%RG*(PMFUO(JL, JK) + YDECUMF%RMFADVWDD*PMFDO(JL, JK)) / (PAP(JL, JK) - PAP(JL, IM))*PTSPHY*ZADVW(JL
+(  395)               ZC = ZZP*(PCEN(JL, IM, JN) - PCEN(JL, JK, JN))
+(  396)               ZTENC(JL, JK, JN) = ZTENC(JL, JK, JN)*PTSPHY + PCEN(JL, JK, JN) - ZC
+(  397)             END IF
+(  398)           END DO
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:18      page 8
+
+(  399)         END DO
+(  400)         
+(  401)         
+(  402)         CALL CUBIDIAG_LOKI(KIDIA, KFDIA, KLON, KLEV, KCTOP, LLCUMBAS, ZMFC(:, :, JN), ZB, ZTENC(:, :, JN), ZR1,  &
+(  403)         & YDSTACK_L=YLSTACK_L)
+(  404)         
+(  405)         ! Compute tendencies
+(  406)         
+(  407)         
+(  408) !$acc loop vector
+(  409)         DO JL=KIDIA,KFDIA
+(  410) !$acc loop seq
+(  411)           DO JK=2,KLEV
+(  412)             IF (LLCUMBAS(JL, JK)) THEN
+(  413)               PTENC(JL, JK, JN) = PTENC(JL, JK, JN) + (ZR1(JL, JK) - PCEN(JL, JK, JN))*ZTSPHY
+(  414)               !  for implicit solution including tendency source term
+(  415)               !  PTENC(JL,JK,JN)=(ZR1(JL,JK)-PCEN(JL,JK,JN))*ZTSPHY
+(  416)             END IF
+(  417)           END DO
+(  418)         END DO
+(  419)         
+(  420)         
+(  421)       END DO
+(  422)       
+(  423)     END IF
+(  424)     !---------------------------------------------------------------------------
+(  425)     
+(  426)     
+(  427) !$acc end data
+(  428)   END SUBROUTINE CUCTRACER_LOKI
+(  429) END MODULE CUCTRACER_LOKI_MOD
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:18      page 9
+
+(    1) # 1 "./cuctracer.scc_stack.F90"
+(    1) MODULE CUCTRACER_LOKI_MOD
+(    2)   CONTAINS
+(    3)   SUBROUTINE CUCTRACER_LOKI (YDCST, YDCUMFS, YDECUMF2, YDECUMF, KIDIA, KFDIA, KLON, KLEV, KTRAC, KCTOP, KDTOP, KTYPE, LDCUM,  &
+(    4)   & LDDRAF, PTSPHY, PAPH, PAP, PMFU, PMFD, PMFUO, PMFDO, PUDRATE, PDDRATE, PDMFUP, PDMFDP, PCEN, PTENC, PSCAV, YDSTACK_L)
+(    5)     
+(    6)     !**** *CUCTRACER* - COMPUTE CONVECTIVE TRANSPORT OF CHEM. TRACERS
+(    7)     !                   IMPORTANT: ROUTINE IS FOR POSITIVE DEFINIT QUANTITIES
+(    8)     !                              SCAVENGING IS DONE IF SCAVENGING COEFFICIENT>0
+(    9)     
+(   10)     !          P.BECHTOLD        E.C.M.W.F.              11/02/2004
+(   11)     
+(   12)     !**   INTERFACE.
+(   13)     !     ----------
+(   14)     
+(   15)     !          *CUTRACER* IS CALLED FROM *CUMASTR*
+(   16)     
+(   17)     !     PARAMETER     DESCRIPTION                                   UNITS
+(   18)     !     ---------     -----------                                   -----
+(   19)     !     INPUT PARAMETERS (INTEGER):
+(   20)     
+(   21)     !    *KIDIA*        START POINT
+(   22)     !    *KFDIA*        END POINT
+(   23)     !    *KLON*         NUMBER OF GRID POINTS PER PACKET
+(   24)     !    *KLEV*         NUMBER OF LEVELS
+(   25)     !    *KTRAC*        NUMBER OF CHEMICAL TRACERS
+(   26)     
+(   27)     !    *KCTOP*        CLOUD TOP  LEVEL
+(   28)     !    *KDTOP*        DOWNDRAFT TOP LEVEL
+(   29)     !    *KTYPE*        TYPE OF CONVECTION
+(   30)     !                       1 = PENETRATIVE CONVECTION
+(   31)     !                       2 = SHALLOW CONVECTION
+(   32)     !                       3 = MIDLEVEL CONVECTION
+(   33)     
+(   34)     
+(   35)     !    INPUT PARAMETERS (LOGICAL):
+(   36)     
+(   37)     !    *LDCUM*        FLAG: .TRUE. FOR CONVECTIVE POINTS
+(   38)     !    *LDDRAF*       FLAG: .TRUE. IF DOWNDRAFTS EXIST
+(   39)     
+(   40)     !    INPUT PARAMETERS (REAL):
+(   41)     
+(   42)     !    *PTSPHY*       PHYSICS TIME-STEP                              S
+(   43)     !    *PAPH*         PROVISIONAL PRESSURE ON HALF LEVELS            PA
+(   44)     !    *PAPH          PROVISIONAL PRESSURE ON FULL LEVELS            PA
+(   45)     !    *PCEN*         PROVISIONAL ENVIRONMENT TRACER CONCENTRATION
+(   46)     !    *PMFU*         MASSFLUX UPDRAFTS                             KG/(M2*S)
+(   47)     !    *PMFD*         MASSFLUX DOWNDRAFTS                           KG/(M2*S)
+(   48)     !    *PUDRATE*      UPDRAFT DETRAINMENT                           KG/(M2*S)
+(   49)     !    *PDDRATE*      DOWNDRAFT DETRAINMENT                         KG/(M2*S)
+(   50)     !    *PDMFUP*       UPDRAUGT PRECIP (PRODUCTION) IN LAYER         KG/(M2*S)
+(   51)     !    *PDMFDP*       DDRAUGHT PRECIP (PRODUCTION) IN LAYER         KG/(M2*S)
+(   52)     !    *PSCAV*        WET SCAVENGING COEFFICIENTS                   UNITLESS
+(   53)     
+(   54)     !    UPDATED PARAMETERS (REAL):
+(   55)     
+(   56)     !    *PTENC*        UPDATED TENDENCY OF CHEM. TRACERS              1/S
+(   57)     
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:18      page 10
+
+(   58)     !          METHOD
+(   59)     !          -------
+(   60)     !     EXPLICIT UPSTREAM AND IMPLICIT SOLUTION OF VERTICAL ADVECTION
+(   61)     !     DEPENDING ON VALUE OF RMFSOLCT: 0=EXPLICIT 0-1 SEMI-IMPLICIT >=1 IMPLICIT
+(   62)     
+(   63)     !     FOR EXPLICIT SOLUTION: ONLY ONE SINGLE ITERATION
+(   64)     !     FOR IMPLICIT SOLUTION: FIRST IMPLICIT SOLVER, THEN EXPLICIT SOLVER
+(   65)     !                            TO CORRECT TENDENCIES BELOW CLOUD BASE
+(   66)     
+(   67)     
+(   68)     !------------------------------------------------------------------------------------
+(   69)     !     COMMENTS FOR OFFLINE USERS IN CHEMICAL TRANSPORT MODELS
+(   70)     !     (i.e. reading mass fluxes and detrainment rates from ECMWF archive:
+(   71)     !      ------------------------------------------------------------------
+(   72)     !     KCTOP IS FIRST LEVEL FROM TOP WHERE PMFU>0
+(   73)     !     KDTOP IS FIRST LEVEL FROM TOP WHERE PMFD<0
+(   74)     !     ATTENTION: ON ARCHIVE DETRAINMENT RATES HAVE UNITS KG/(M3*S), SO FOR USE
+(   75)     !                IN CURRENT ROUTINE YOU HAVE TO MULTIPLY ARCHIVED VALUES BY DZ
+(   76)     !     LDCUM  IS TRUE IF CONVECTION EXISTS, i.e. IF PMFU>0 IN COLUMN OR IF
+(   77)     !                       KCTOP>0 AND KCTOP<KLEV
+(   78)     !     LDDRAF IS TRUE IF DOWNDRAUGHTS EXIST IF PMFD<0 IN COLUMN OR IF
+(   79)     !                       KDTOP>0 AND KDTOP<KLEV
+(   80)     !     IF MASSFLUX SATISFIES CFL CRITERIUM M<=DP/Dt IT IS SUFFICIENT TO
+(   81)     !     ONLY CONSIDER EXPLICIT SOLUTION (RMFSOLCT=0), IN THIS CASE
+(   82)     !     YOU CAN IGNORE IMPLICIT PART 7.0 OF CURRENT ROUTINE
+(   83)     !------------------------------------------------------------------------------------
+(   84)     
+(   85)     !          EXTERNALS
+(   86)     !          ---------
+(   87)     !          CUBIDIAG
+(   88)     
+(   89)     !          MODIFICATIONS
+(   90)     !          -------------
+(   91)     !        M.Hamrud      01-Oct-2003 CY28 Cleaning
+(   92)     !        P.Bechtold    07-Oct-2009 add scavenging
+(   93)     !     R. El Khatib 22-Jun-2022 A contribution to simplify phasing after the refactoring of YOMCLI/YOMCST/YOETHF.
+(   94)     
+(   95)     !----------------------------------------------------------------------
+(   96)     
+(   97)     USE cubidiag_LOKI_MOD, ONLY: cubidiag_LOKI
+(   98)     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY: REAL64
+(   99)     USE, intrinsic :: ISO_C_BINDING, ONLY: C_SIZEOF
+(  100)     USE PARKIND1, ONLY: JPIM, JPRB
+(  101)     USE YOMHOOK, ONLY: LHOOK, JPHOOK
+(  102)     
+(  103)     USE YOMCST, ONLY: TCST
+(  104)     USE YOECUMF, ONLY: TECUMF
+(  105)     USE YOECUMF2, ONLY: TECUMF2
+(  106)     USE YOMCUMFS, ONLY: TCUMFS
+(  107)     
+(  108)     IMPLICIT NONE
+(  109)     
+(  110)     TYPE(TCST), INTENT(IN) :: YDCST
+(  111)     TYPE(TCUMFS), INTENT(IN) :: YDCUMFS
+(  112)     TYPE(TECUMF), INTENT(IN) :: YDECUMF
+(  113)     TYPE(TECUMF2), INTENT(IN) :: YDECUMF2
+(  114)     INTEGER(KIND=JPIM), INTENT(IN) :: KLON
+(  115)     INTEGER(KIND=JPIM), INTENT(IN) :: KLEV
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:18      page 11
+
+(  116)     INTEGER(KIND=JPIM), INTENT(IN) :: KTRAC
+(  117)     INTEGER(KIND=JPIM), INTENT(IN) :: KIDIA
+(  118)     INTEGER(KIND=JPIM), INTENT(IN) :: KFDIA
+(  119)     INTEGER(KIND=JPIM), INTENT(IN) :: KCTOP(KLON)
+(  120)     INTEGER(KIND=JPIM), INTENT(IN) :: KDTOP(KLON)
+(  121)     INTEGER(KIND=JPIM), INTENT(IN) :: KTYPE(KLON)
+(  122)     LOGICAL, INTENT(IN) :: LDCUM(KLON)
+(  123)     LOGICAL, INTENT(IN) :: LDDRAF(KLON)
+(  124)     REAL(KIND=JPRB), INTENT(IN) :: PTSPHY
+(  125)     REAL(KIND=JPRB), INTENT(IN) :: PAPH(KLON, KLEV + 1)
+(  126)     REAL(KIND=JPRB), INTENT(IN) :: PAP(KLON, KLEV)
+(  127)     REAL(KIND=JPRB), INTENT(IN) :: PMFU(KLON, KLEV)
+(  128)     REAL(KIND=JPRB), INTENT(IN) :: PMFD(KLON, KLEV)
+(  129)     REAL(KIND=JPRB), INTENT(IN) :: PMFUO(KLON, KLEV)
+(  130)     REAL(KIND=JPRB), INTENT(IN) :: PMFDO(KLON, KLEV)
+(  131)     REAL(KIND=JPRB), INTENT(IN) :: PUDRATE(KLON, KLEV)
+(  132)     REAL(KIND=JPRB), INTENT(IN) :: PDDRATE(KLON, KLEV)
+(  133)     REAL(KIND=JPRB), INTENT(IN) :: PDMFUP(KLON, KLEV)
+(  134)     REAL(KIND=JPRB), INTENT(IN) :: PDMFDP(KLON, KLEV)
+(  135)     REAL(KIND=JPRB), INTENT(IN) :: PCEN(KLON, KLEV, KTRAC)
+(  136)     REAL(KIND=JPRB), INTENT(IN) :: PSCAV(KTRAC)
+(  137)     REAL(KIND=JPRB), INTENT(INOUT) :: PTENC(KLON, KLEV, KTRAC)
+(  138)     INTEGER(KIND=JPIM) :: IK, IM, JK, JL, JN
+(  139)     
+(  140)     REAL(KIND=JPRB) :: ZZP, ZMFA, ZIMP, ZERATE, ZPOSI, ZTSPHY, ZC, ZADVW(KLON)
+(  141)     REAL(KIND=JPRB) :: ZRMFCMIN, ZRMFSOLCT
+(  142)     
+(  143)     !     ALLOCATABLE ARAYS
+(  144)     REAL(KIND=JPRB), DIMENSION(KLON, KLEV, KTRAC) :: ZCEN, ZCU, ZCD, ZTENC, ZMFC
+(  145)     REAL(KIND=JPRB), DIMENSION(KLON, KLEV) :: ZDP, ZB, ZR1
+(  146)     LOGICAL, DIMENSION(KLON, KLEV) :: LLCUMASK, LLCUMBAS
+(  147)     REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+(  148)     
+(  149) !$acc routine vector
+(  150)     INTEGER(KIND=8) :: YLSTACK_L
+(  151)     INTEGER(KIND=8), INTENT(INOUT) :: YDSTACK_L
+(  152)     POINTER(IP_ZADVW, ZADVW)
+(  153)     POINTER(IP_ZCEN, ZCEN)
+(  154)     POINTER(IP_ZCU, ZCU)
+(  155)     POINTER(IP_ZCD, ZCD)
+(  156)     POINTER(IP_ZTENC, ZTENC)
+(  157)     POINTER(IP_ZMFC, ZMFC)
+(  158)     POINTER(IP_ZDP, ZDP)
+(  159)     POINTER(IP_ZB, ZB)
+(  160)     POINTER(IP_ZR1, ZR1)
+(  161)     POINTER(IP_LLCUMASK, LLCUMASK)
+(  162)     POINTER(IP_LLCUMBAS, LLCUMBAS)
+(  163)     YLSTACK_L = YDSTACK_L
+(  164)     IP_ZADVW = YLSTACK_L
+(  165)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  166)     IP_ZCEN = YLSTACK_L
+(  167)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*KTRAC*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  168)     IP_ZCU = YLSTACK_L
+(  169)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*KTRAC*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  170)     IP_ZCD = YLSTACK_L
+(  171)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*KTRAC*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  172)     IP_ZTENC = YLSTACK_L
+(  173)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*KTRAC*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:18      page 12
+
+(  174)     IP_ZMFC = YLSTACK_L
+(  175)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*KTRAC*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  176)     IP_ZDP = YLSTACK_L
+(  177)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  178)     IP_ZB = YLSTACK_L
+(  179)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  180)     IP_ZR1 = YLSTACK_L
+(  181)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  182)     IP_LLCUMASK = YLSTACK_L
+(  183)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*C_SIZEOF(LOGICAL(.true.)) + 7, -3), 3)
+(  184)     IP_LLCUMBAS = YLSTACK_L
+(  185)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*C_SIZEOF(LOGICAL(.true.)) + 7, -3), 3)
+(  187) !$acc & PCEN, PTENC, PSCAV, YDCST, YDCUMFS, YDECUMF2, YDECUMF )
+(  188)     !----------------------------------------------------------------------
+(  189)     
+(  190)     IF (YDCUMFS%LECUMFS) THEN
+(  191)       ZRMFSOLCT = YDECUMF2%RMFSOLCT2
+(  192)       ZRMFCMIN = YDECUMF2%RMFCMIN2
+(  193)     ELSE
+(  194)       ZRMFSOLCT = YDECUMF%RMFSOLCT
+(  195)       ZRMFCMIN = YDECUMF%RMFCMIN
+(  196)     END IF
+(  197)     
+(  198)     ZIMP = 1.0_JPRB - ZRMFSOLCT
+(  199)     ZTSPHY = 1.0_JPRB / PTSPHY
+(  200)     
+(  201)     
+(  202) !$acc loop vector
+(  203)     DO JL=KIDIA,KFDIA
+(  204)       ZADVW(JL) = 0.0_JPRB
+(  205)       IF (KTYPE(JL) == 1) ZADVW(JL) = YDECUMF%RMFADVW
+(  206)       
+(  207)       ! Initialize Cumulus mask + some setups
+(  208)       
+(  209) !$acc loop seq
+(  210)       DO JK=2,KLEV
+(  211)         LLCUMASK(JL, JK) = .false.
+(  212)         IF (LDCUM(JL)) THEN
+(  213)           ZDP(JL, JK) = YDCST%RG / (PAPH(JL, JK + 1) - PAPH(JL, JK))
+(  214)           IF (JK >= -1 + KCTOP(JL)) THEN
+(  215)             LLCUMASK(JL, JK) = .true.
+(  216)           END IF
+(  217)         END IF
+(  218)       END DO
+(  219)       !----------------------------------------------------------------------
+(  220)       
+(  221) !$acc loop seq
+(  222)       DO JN=1,KTRAC
+(  223)         
+(  224)         !*    1.0          DEFINE TRACERS AT HALF LEVELS
+(  225)         !                  -----------------------------
+(  226)         
+(  227) !$acc loop seq
+(  228)         DO JK=2,KLEV
+(  229)           IK = JK - 1
+(  230)           ZCEN(JL, JK, JN) = PCEN(JL, JK, JN)
+(  231)           ZCD(JL, JK, JN) = PCEN(JL, IK, JN)
+(  232)           ZCU(JL, JK, JN) = PCEN(JL, IK, JN)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:18      page 13
+
+(  233)           ZMFC(JL, JK, JN) = 0.0_JPRB
+(  234)           ZTENC(JL, JK, JN) = 0.0_JPRB
+(  235)         END DO
+(  236)         ZCU(JL, KLEV, JN) = PCEN(JL, KLEV, JN)
+(  237)         
+(  238)         !*    2.0          COMPUTE UPDRAFT VALUES
+(  239)         !                  ----------------------
+(  240)         
+(  241) !$acc loop seq
+(  242)         DO JK=KLEV - 1,3,-1
+(  243)           IK = JK + 1
+(  244)           IF (LLCUMASK(JL, JK)) THEN
+(  245)             ZERATE = PMFU(JL, JK) - PMFU(JL, IK) + PUDRATE(JL, JK)
+(  246)             ZMFA = 1.0_JPRB / MAX(ZRMFCMIN, PMFU(JL, JK))
+(  247)             IF (JK >= KCTOP(JL)) THEN
+(  248)               ZCU(JL, JK, JN) = (PMFU(JL, IK)*ZCU(JL, IK, JN) + ZERATE*PCEN(JL, JK, JN) - (PUDRATE(JL, JK) + PDMFUP(JL, JK) &
+(  249)               & *PSCAV(JN))*ZCU(JL, IK, JN))*ZMFA
+(  250)               ! if you have a source term dc/dt=dcdt write
+(  251)               !             ZCU(JL,JK,JN)=( PMFU(JL,IK)*ZCU(JL,IK,JN)+ZERATE*PCEN(JL,JK,JN) &
+(  252)               !                           -PUDRATE(JL,JK)*ZCU(JL,IK,JN) )*ZMFA
+(  253)               !                           +dcdt(jl,ik,jn)*ptsphy
+(  254)             END IF
+(  255)           END IF
+(  256)         END DO
+(  257)         
+(  258)         
+(  259)         !*    3.0          COMPUTE DOWNDRAFT VALUES
+(  260)         !                  ------------------------
+(  261)         
+(  262) !$acc loop seq
+(  263)         DO JK=3,KLEV
+(  264)           IK = JK - 1
+(  265)           IF (LDDRAF(JL) .and. JK == KDTOP(JL)) THEN
+(  266)             !Nota: in order to avoid final negative Tracer values at LFS the allowed value of ZCD
+(  267)             !      depends on the jump in mass flux at the LFS
+(  268)             !ZCD(JL,JK,JN)=0.5_JPRB*ZCU(JL,JK,JN)+0.5_JPRB*PCEN(JL,IK,JN)
+(  269)             ZCD(JL, JK, JN) = 0.1_JPRB*ZCU(JL, JK, JN) + 0.9_JPRB*PCEN(JL, IK, JN)
+(  270)           ELSE IF (LDDRAF(JL) .and. JK > KDTOP(JL)) THEN
+(  271)             ZERATE = -PMFD(JL, JK) + PMFD(JL, IK) + PDDRATE(JL, JK)
+(  272)             ZMFA = 1._JPRB / MIN(-ZRMFCMIN, PMFD(JL, JK))
+(  273)             ZCD(JL, JK, JN) = (PMFD(JL, IK)*ZCD(JL, IK, JN) - ZERATE*PCEN(JL, IK, JN) + (PDDRATE(JL, JK) + PDMFDP(JL, JK) &
+(  274)             & *PSCAV(JN))*ZCD(JL, IK, JN))*ZMFA
+(  275)             ! if you have a source term dc/dt=dcdt write
+(  276)             !             ZCD(JL,JK,JN)=( PMFD(JL,IK)*ZCD(JL,IK,JN)-ZERATE*PCEN(JL,IK,JN) &
+(  277)             !                           &+PDDRATE(JL,JK)*ZCD(JL,IK,JN) &
+(  278)             !                           &+dcdt(jl,ik,jn)*ptsphy
+(  279)           END IF
+(  280)         END DO
+(  281)         
+(  282)         ! In order to avoid negative Tracer at KLEV adjust ZCD
+(  283)         JK = KLEV
+(  284)         IK = JK - 1
+(  285)         IF (LDDRAF(JL)) THEN
+(  286)           ZPOSI = -ZDP(JL, JK)*(PMFU(JL, JK)*ZCU(JL, JK, JN) + PMFD(JL, JK)*ZCD(JL, JK, JN) - (PMFU(JL, JK) + PMFD(JL, JK)) &
+(  287)           & *PCEN(JL, IK, JN))
+(  288)           IF (PCEN(JL, JK, JN) + PTSPHY*ZPOSI < 0.0_JPRB) THEN
+(  289)             ZMFA = 1._JPRB / MIN(-ZRMFCMIN, PMFD(JL, JK))
+(  290)             ZCD(JL, JK, JN) = ((PMFU(JL, JK) + PMFD(JL, JK))*PCEN(JL, IK, JN) - PMFU(JL, JK)*ZCU(JL, JK, JN) + PCEN(JL, JK, JN) / &
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:18      page 14
+
+(  291)             &  (PTSPHY*ZDP(JL, JK)))*ZMFA
+(  292)           END IF
+(  293)         END IF
+(  294)         
+(  295)       END DO
+(  296)       
+(  297)       !----------------------------------------------------------------------
+(  298)       
+(  299) !$acc loop seq
+(  300)       DO JN=1,KTRAC
+(  301)         
+(  302)         !*    4.0          COMPUTE FLUXES
+(  303)         !                  --------------
+(  304)         
+(  305) !$acc loop seq
+(  306)         DO JK=2,KLEV
+(  307)           IK = JK - 1
+(  308)           IF (LLCUMASK(JL, JK)) THEN
+(  309)             ZMFA = PMFU(JL, JK) + PMFD(JL, JK)
+(  310)             ZMFC(JL, JK, JN) = PMFU(JL, JK)*ZCU(JL, JK, JN) + PMFD(JL, JK)*ZCD(JL, JK, JN) - ZIMP*ZMFA*ZCEN(JL, IK, JN)
+(  311)           END IF
+(  312)         END DO
+(  313)         
+(  314)         !*    5.0          COMPUTE TENDENCIES = RHS
+(  315)         !                  ------------------------
+(  316)         
+(  317) !$acc loop seq
+(  318)         DO JK=2,KLEV - 1
+(  319)           IK = JK + 1
+(  320)           IF (LLCUMASK(JL, JK)) THEN
+(  321)             ZTENC(JL, JK, JN) = ZDP(JL, JK)*(ZMFC(JL, IK, JN) - ZMFC(JL, JK, JN))
+(  322)             !ZTENC(JL,JK,JN)=ZTENC(JL,JK,JN)-ZDP(JL,JK)*PDMFUP(JL,JK)*PSCAV(JN)*ZCU(JL,JK,JN)
+(  323)           END IF
+(  324)         END DO
+(  325)         
+(  326)         JK = KLEV
+(  327)         IF (LDCUM(JL)) THEN
+(  328)           ZTENC(JL, JK, JN) = -ZDP(JL, JK)*ZMFC(JL, JK, JN)
+(  329)           !ZTENC(JL,JK,JN)=ZTENC(JL,JK,JN)-ZDP(JL,JK)*PDMFUP(JL,JK)*PSCAV(JN)*ZCU(JL,JK,JN)
+(  330)         END IF
+(  331)         
+(  332)       END DO
+(  333)     END DO
+(  334)     
+(  335)     
+(  336)     IF (ZRMFSOLCT == 0.0_JPRB) THEN
+(  337)       
+(  338)       
+(  339)       !*    6.0          UPDATE TENDENCIES
+(  340)       !                  -----------------
+(  341)       
+(  342)       
+(  343) !$acc loop vector
+(  344)       DO JL=KIDIA,KFDIA
+(  345) !$acc loop seq
+(  346)         DO JN=1,KTRAC
+(  347) !$acc loop seq
+(  348)           DO JK=2,KLEV
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:18      page 15
+
+(  349)             IF (LLCUMASK(JL, JK)) THEN
+(  350)               PTENC(JL, JK, JN) = PTENC(JL, JK, JN) + ZTENC(JL, JK, JN)
+(  351)             END IF
+(  352)           END DO
+(  353)         END DO
+(  354)       END DO
+(  355)       
+(  356)       
+(  357)     ELSE
+(  358)       
+(  359)       !---------------------------------------------------------------------------
+(  360)       
+(  361)       !*    7.0          IMPLICIT SOLUTION
+(  362)       !                  -----------------
+(  363)       
+(  364)       ! Fill bi-diagonal Matrix vectors A=k-1, B=k;
+(  365)       ! reuse ZMFC=A and ZB=B;
+(  366)       ! ZTENC corresponds to the RHS ("constants") of the equation
+(  367)       ! The solution is in ZR1
+(  368)       
+(  369)       LLCUMBAS(:, :) = .false.
+(  370)       ZB(:, :) = 1._JPRB
+(  371)       
+(  372) !$acc loop seq
+(  373)       DO JN=1,KTRAC
+(  374)         
+(  375)         ! Fill vectors A, B and RHS
+(  376)         
+(  377)         
+(  378) !$acc loop vector
+(  379)         DO JL=KIDIA,KFDIA
+(  380) !$acc loop seq
+(  381)           DO JK=2,KLEV
+(  382)             IK = JK + 1
+(  383)             IM = JK - 1
+(  384)             ! LLCUMBAS(JL,JK)=LLCUMASK(JL,JK).AND.JK<=KCBOT(JL)
+(  385)             LLCUMBAS(JL, JK) = LLCUMASK(JL, JK)
+(  386)             IF (LLCUMBAS(JL, JK)) THEN
+(  387)               ZZP = ZRMFSOLCT*ZDP(JL, JK)*PTSPHY
+(  388)               ZMFC(JL, JK, JN) = -ZZP*(PMFU(JL, JK) + PMFD(JL, JK))
+(  389)               IF (JK < KLEV) THEN
+(  390)                 ZB(JL, JK) = 1.0_JPRB + ZZP*(PMFU(JL, IK) + PMFD(JL, IK))
+(  391)               ELSE
+(  392)                 ZB(JL, JK) = 1.0_JPRB
+(  393)               END IF
+(  394)               ZZP = YDCST%RG*(PMFUO(JL, JK) + YDECUMF%RMFADVWDD*PMFDO(JL, JK)) / (PAP(JL, JK) - PAP(JL, IM))*PTSPHY*ZADVW(JL)
+(  395)               ZC = ZZP*(PCEN(JL, IM, JN) - PCEN(JL, JK, JN))
+(  396)               ZTENC(JL, JK, JN) = ZTENC(JL, JK, JN)*PTSPHY + PCEN(JL, JK, JN) - ZC
+(  397)             END IF
+(  398)           END DO
+(  399)         END DO
+(  400)         
+(  401)         
+(  402)         CALL CUBIDIAG_LOKI(KIDIA, KFDIA, KLON, KLEV, KCTOP, LLCUMBAS, ZMFC(:, :, JN), ZB, ZTENC(:, :, JN), ZR1,  &
+(  403)         & YDSTACK_L=YLSTACK_L)
+(  404)         
+(  405)         ! Compute tendencies
+(  406)         
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:18      page 16
+
+(  407)         
+(  408) !$acc loop vector
+(  409)         DO JL=KIDIA,KFDIA
+(  410) !$acc loop seq
+(  411)           DO JK=2,KLEV
+(  412)             IF (LLCUMBAS(JL, JK)) THEN
+(  413)               PTENC(JL, JK, JN) = PTENC(JL, JK, JN) + (ZR1(JL, JK) - PCEN(JL, JK, JN))*ZTSPHY
+(  414)               !  for implicit solution including tendency source term
+(  415)               !  PTENC(JL,JK,JN)=(ZR1(JL,JK)-PCEN(JL,JK,JN))*ZTSPHY
+(  416)             END IF
+(  417)           END DO
+(  418)         END DO
+(  419)         
+(  420)         
+(  421)       END DO
+(  422)       
+(  423)     END IF
+(  424)     !---------------------------------------------------------------------------
+(  425)     
+(  426)     
+(  427) !$acc end data
+(  428)   END SUBROUTINE CUCTRACER_LOKI
+(  429) END MODULE CUCTRACER_LOKI_MOD

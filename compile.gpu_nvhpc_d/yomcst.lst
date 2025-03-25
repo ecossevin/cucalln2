@@ -1,0 +1,891 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:28      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./yomcst.F90
+
+(    1) ! (C) Copyright 1988- ECMWF.
+(    2) !
+(    3) ! This software is licensed under the terms of the Apache Licence Version 2.0
+(    4) ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+(    5) !
+(    6) ! In applying this licence, ECMWF does not waive the privileges and immunities
+(    7) ! granted to it by virtue of its status as an intergovernmental organisation
+(    8) ! nor does it submit to any jurisdiction.
+(    9) 
+(   10) MODULE YOMCST
+(   11) 
+(   12) USE PARKIND1  ,ONLY : JPRB
+(   13) 
+(   14) IMPLICIT NONE
+(   15) 
+(   16) SAVE
+(   17) 
+(   18) !     ------------------------------------------------------------------
+(   19) 
+(   20) TYPE TCST
+(   21) !*    Common of physical constants
+(   22) !     You will find the meanings in the annex 1 of the documentation
+(   23)   
+(   24) ! A1.0 Fundamental constants
+(   25) ! * RPI          : number Pi
+(   26) ! * RCLUM        : light velocity
+(   27) ! * RHPLA        : Planck constant
+(   28) ! * RKBOL        : Bolzmann constant
+(   29) ! * RNAVO        : Avogadro number
+(   30)   REAL(KIND=JPRB) :: RPI
+(   31)   REAL(KIND=JPRB) :: RCLUM
+(   32)   REAL(KIND=JPRB) :: RHPLA
+(   33)   REAL(KIND=JPRB) :: RKBOL
+(   34)   REAL(KIND=JPRB) :: RNAVO
+(   35)   
+(   36) ! A1.1 Astronomical constants
+(   37) ! * RDAY         : duration of the solar day
+(   38) ! * RDAYI        : invariant time unit of 86400s
+(   39) ! * RHOUR        : duration of the solar hour 
+(   40) ! * REA          : astronomical unit (mean distance Earth-sun)
+(   41) ! * REPSM        : polar axis tilting angle
+(   42) ! * RSIYEA       : duration of the sideral year
+(   43) ! * RSIDAY       : duration of the sideral day
+(   44) ! * ROMEGA       : angular velocity of the Earth rotation
+(   45)   REAL(KIND=JPRB) :: RDAY
+(   46)   REAL(KIND=JPRB) :: RDAYI
+(   47)   REAL(KIND=JPRB) :: RHOUR
+(   48)   REAL(KIND=JPRB) :: REA
+(   49)   REAL(KIND=JPRB) :: REPSM
+(   50)   REAL(KIND=JPRB) :: RSIYEA
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:28      page 2
+
+(   51)   REAL(KIND=JPRB) :: RSIDAY
+(   52)   REAL(KIND=JPRB) :: ROMEGA
+(   53)   
+(   54) ! A1.2 Geoide
+(   55) ! * RA           : Earth radius
+(   56) ! * RG           : gravity constant
+(   57) ! * R1SA         : 1/RA
+(   58) ! * DEG2RAD      : 180./RPI
+(   59)   REAL(KIND=JPRB) :: RA
+(   60)   REAL(KIND=JPRB) :: RG
+(   61)   REAL(KIND=JPRB) :: R1SA
+(   62)   REAL(KIND=JPRB) :: DEG2RAD
+(   63)   
+(   64) ! A1.3 Radiation
+(   65) ! * RSIGMA       : Stefan-Bolzman constant
+(   66) ! * RI0          : solar constant
+(   67)   REAL(KIND=JPRB) :: RSIGMA
+(   68)   REAL(KIND=JPRB) :: RI0
+(   69)   
+(   70) ! A1.4 Thermodynamic gas phase
+(   71) ! * R            : perfect gas constant
+(   72) ! * RMD          : dry air molar mass
+(   73) ! * RMV          : vapour water molar mass
+(   74) ! * RMO3         : ozone molar mass
+(   75) ! * RD           : R_dry (dry air constant)
+(   76) ! * RV           : R_vap (vapour water constant)
+(   77) ! * RCPD         : Cp_dry (dry air calorific capacity at constant pressure)
+(   78) ! * RCPV         : Cp_vap (vapour calorific capacity at constant pressure)
+(   79) ! * RCVD         : Cv_dry (dry air calorific capacity at constant volume)
+(   80) ! * RCVV         : Cv_vap (vapour calorific capacity at constant volume)
+(   81) ! * RKAPPA       : Kappa = R_dry/Cp_dry
+(   82) ! * RETV         : R_vap/R_dry - 1
+(   83) ! * RMCO2        : CO2 (carbon dioxide) molar mass
+(   84) ! * RMCH4        : CH4 (methane) molar mass
+(   85) ! * RMN2O        : N2O molar mass
+(   86) ! * RMCO         : CO (carbon monoxide) molar mass
+(   87) ! * RMHCHO       : HCHO molar mass
+(   88) ! * RMNO2        : NO2 (nitrogen dioxide) molar mass
+(   89) ! * RMSO2        : SO2 (sulfur dioxide) molar mass
+(   90) ! * RMSO4        : SO4 (sulphate) molar mass
+(   91) ! * RMCFC11      : CFC11 molar mass
+(   92) ! * RMCFC12      : CFC12 molar mass
+(   93) ! * RMHCFC12     : HCFC22 molar mass
+(   94) ! * RMCCL4       : CCl4 molar mass
+(   95)   REAL(KIND=JPRB) :: R
+(   96)   REAL(KIND=JPRB) :: RMD
+(   97)   REAL(KIND=JPRB) :: RMV
+(   98)   REAL(KIND=JPRB) :: RMO3
+(   99)   REAL(KIND=JPRB) :: RD
+(  100)   REAL(KIND=JPRB) :: RV
+(  101)   REAL(KIND=JPRB) :: RCPD
+(  102)   REAL(KIND=JPRB) :: RCPV
+(  103)   REAL(KIND=JPRB) :: RCVD
+(  104)   REAL(KIND=JPRB) :: RCVV
+(  105)   REAL(KIND=JPRB) :: RKAPPA
+(  106)   REAL(KIND=JPRB) :: RETV
+(  107)   REAL(KIND=JPRB) :: RMCO2
+(  108)   REAL(KIND=JPRB) :: RMCH4
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:28      page 3
+
+(  109)   REAL(KIND=JPRB) :: RMN2O
+(  110)   REAL(KIND=JPRB) :: RMCO
+(  111)   REAL(KIND=JPRB) :: RMHCHO
+(  112)   REAL(KIND=JPRB) :: RMNO2
+(  113)   REAL(KIND=JPRB) :: RMSO2
+(  114)   REAL(KIND=JPRB) :: RMSO4
+(  115)   REAL(KIND=JPRB) :: RMCFC11
+(  116)   REAL(KIND=JPRB) :: RMCFC12
+(  117)   REAL(KIND=JPRB) :: RMHCFC22
+(  118)   REAL(KIND=JPRB) :: RMCCL4
+(  119)   
+(  120) ! A1.5,6 Thermodynamic liquid,solid phases
+(  121) ! * RCW          : Cw (calorific capacity of liquid water)
+(  122) ! * RCS          : Cs (calorific capacity of solid water)
+(  123)   REAL(KIND=JPRB) :: RCW
+(  124)   REAL(KIND=JPRB) :: RCS
+(  125)   
+(  126) ! A1.7 Thermodynamic transition of phase
+(  127) ! * RATM         : pre_n = "normal" pressure
+(  128) ! * RTT          : Tt = temperature of water fusion at "pre_n"
+(  129) ! * RLVTT        : RLvTt = vaporisation latent heat at T=Tt
+(  130) ! * RLSTT        : RLsTt = sublimation latent heat at T=Tt
+(  131) ! * RLVZER       : RLv0 = vaporisation latent heat at T=0K
+(  132) ! * RLSZER       : RLs0 = sublimation latent heat at T=0K
+(  133) ! * RLMLT        : RLMlt = melting latent heat at T=Tt
+(  134) ! * RDT          : Tt - Tx(ew-ei)
+(  135)   REAL(KIND=JPRB) :: RATM
+(  136)   REAL(KIND=JPRB) :: RTT
+(  137)   REAL(KIND=JPRB) :: RLVTT
+(  138)   REAL(KIND=JPRB) :: RLSTT
+(  139)   REAL(KIND=JPRB) :: RLVZER
+(  140)   REAL(KIND=JPRB) :: RLSZER
+(  141)   REAL(KIND=JPRB) :: RLMLT
+(  142)   REAL(KIND=JPRB) :: RDT
+(  143)   
+(  144) ! A1.8 Curve of saturation
+(  145) ! * RESTT        : es(Tt) = saturation vapour tension at T=Tt
+(  146) ! * RGAMW        : Rgamw = (Cw-Cp_vap)/R_vap
+(  147) ! * RBETW        : Rbetw = RLvTt/R_vap + Rgamw*Tt
+(  148) ! * RALPW        : Ralpw = log(es(Tt)) + Rbetw/Tt + Rgamw*log(Tt)
+(  149) ! * RGAMS        : Rgams = (Cs-Cp_vap)/R_vap
+(  150) ! * RBETS        : Rbets = RLsTt/R_vap + Rgams*Tt
+(  151) ! * RALPS        : Ralps = log(es(Tt)) + Rbets/Tt + Rgams*log(Tt)
+(  152) ! * RALPD        : Ralpd = Ralps - Ralpw
+(  153) ! * RBETD        : Rbetd = Rbets - Rbetw
+(  154) ! * RGAMD        : Rgamd = Rgams - Rgamw
+(  155)   REAL(KIND=JPRB) :: RESTT
+(  156)   REAL(KIND=JPRB) :: RGAMW
+(  157)   REAL(KIND=JPRB) :: RBETW
+(  158)   REAL(KIND=JPRB) :: RALPW
+(  159)   REAL(KIND=JPRB) :: RGAMS
+(  160)   REAL(KIND=JPRB) :: RBETS
+(  161)   REAL(KIND=JPRB) :: RALPS
+(  162)   REAL(KIND=JPRB) :: RALPD
+(  163)   REAL(KIND=JPRB) :: RBETD
+(  164)   REAL(KIND=JPRB) :: RGAMD
+(  165) 
+(  166) ! A1.9 Slant total delay constats
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:28      page 4
+
+(  167) ! * RK1 Atmospheric refractivity constant Thayer (1974)
+(  168) ! * RK2 Atmospheric refractivity constant Bevis (1994)
+(  169) ! * RK3 Atmospheric refractivity constant Bevis (1994)
+(  170) ! * RGNSSSAT Distance from geocentre to GNSS satellite
+(  171) ! * RGNSSEAR Earth radius
+(  172) ! * RAWGS WGS 84 equatorial radius
+(  173) ! * REWGS WGS 84 first eccentricity
+(  174) ! * RFWGS WGS 84 flattening
+(  175) ! * RGEQU gravity at equator
+(  176) ! * RGRAT gravity ratio???
+(  177) ! * RKSSOM ???
+(  178) 
+(  179)   REAL(KIND=JPRB) :: RK1
+(  180)   REAL(KIND=JPRB) :: RK2
+(  181)   REAL(KIND=JPRB) :: RK3
+(  182)   REAL(KIND=JPRB) :: RGNSSSAT
+(  183)   REAL(KIND=JPRB) :: RGNSSEAR
+(  184)   REAL(KIND=JPRB) :: RAWGS
+(  185)   REAL(KIND=JPRB) :: REWGS
+(  186)   REAL(KIND=JPRB) :: RFWGS
+(  187)   REAL(KIND=JPRB) :: RGEQU
+(  188)   REAL(KIND=JPRB) :: RGRAT
+(  189)   REAL(KIND=JPRB) :: RKSSOM
+(  190) END TYPE TCST
+(  191) 
+(  192) !*    Common of physical constants
+(  193) !     You will find the meanings in the annex 1 of the documentation
+(  194) 
+(  195) ! A1.0 Fundamental constants
+(  196) ! * RPI          : number Pi
+(  197) ! * RCLUM        : light velocity
+(  198) ! * RHPLA        : Planck constant
+(  199) ! * RKBOL        : Bolzmann constant
+(  200) ! * RNAVO        : Avogadro number
+(  201) REAL(KIND=JPRB),PROTECTED :: RPI
+(  202) REAL(KIND=JPRB),PROTECTED :: RCLUM
+(  203) REAL(KIND=JPRB),PROTECTED :: RHPLA
+(  204) REAL(KIND=JPRB),PROTECTED :: RKBOL
+(  205) REAL(KIND=JPRB),PROTECTED :: RNAVO
+(  206) 
+(  207) ! A1.1 Astronomical constants
+(  208) ! * RDAY         : duration of the solar day
+(  209) ! * RDAYI        : invariant time unit of 86400s
+(  210) ! * RHOUR        : duration of the solar hour 
+(  211) ! * REA          : astronomical unit (mean distance Earth-sun)
+(  212) ! * REPSM        : polar axis tilting angle
+(  213) ! * RSIYEA       : duration of the sideral year
+(  214) ! * RSIDAY       : duration of the sideral day
+(  215) ! * ROMEGA       : angular velocity of the Earth rotation
+(  216) REAL(KIND=JPRB),PROTECTED :: RDAY
+(  217) REAL(KIND=JPRB),PROTECTED :: RDAYI
+(  218) REAL(KIND=JPRB),PROTECTED :: RHOUR
+(  219) REAL(KIND=JPRB),PROTECTED :: REA
+(  220) REAL(KIND=JPRB),PROTECTED :: REPSM
+(  221) REAL(KIND=JPRB),PROTECTED :: RSIYEA
+(  222) REAL(KIND=JPRB),PROTECTED :: RSIDAY
+(  223) REAL(KIND=JPRB),PROTECTED :: ROMEGA
+(  224) 
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:28      page 5
+
+(  225) ! A1.2 Geoide
+(  226) ! * RA           : Earth radius
+(  227) ! * RG           : gravity constant
+(  228) ! * R1SA         : 1/RA
+(  229) ! * DEG2RAD      : 180./RPI
+(  230) REAL(KIND=JPRB),PROTECTED :: RA
+(  231) REAL(KIND=JPRB),PROTECTED :: RG
+(  232) REAL(KIND=JPRB),PROTECTED :: R1SA
+(  233) REAL(KIND=JPRB),PROTECTED :: DEG2RAD
+(  234) 
+(  235) ! A1.3 Radiation
+(  236) ! * RSIGMA       : Stefan-Bolzman constant
+(  237) ! * RI0          : solar constant
+(  238) REAL(KIND=JPRB),PROTECTED :: RSIGMA
+(  239) REAL(KIND=JPRB),PROTECTED :: RI0
+(  240) 
+(  241) ! A1.4 Thermodynamic gas phase
+(  242) ! * R            : perfect gas constant
+(  243) ! * RMD          : dry air molar mass
+(  244) ! * RMV          : vapour water molar mass
+(  245) ! * RMO3         : ozone molar mass
+(  246) ! * RD           : R_dry (dry air constant)
+(  247) ! * RV           : R_vap (vapour water constant)
+(  248) ! * RCPD         : Cp_dry (dry air calorific capacity at constant pressure)
+(  249) ! * RCPV         : Cp_vap (vapour calorific capacity at constant pressure)
+(  250) ! * RCVD         : Cv_dry (dry air calorific capacity at constant volume)
+(  251) ! * RCVV         : Cv_vap (vapour calorific capacity at constant volume)
+(  252) ! * RKAPPA       : Kappa = R_dry/Cp_dry
+(  253) ! * RETV         : R_vap/R_dry - 1
+(  254) ! * RMCO2        : CO2 (carbon dioxide) molar mass
+(  255) ! * RMCH4        : CH4 (methane) molar mass
+(  256) ! * RMN2O        : N2O molar mass
+(  257) ! * RMCO         : CO (carbon monoxide) molar mass
+(  258) ! * RMHCHO       : HCHO molar mass
+(  259) ! * RMNO2        : NO2 (nitrogen dioxide) molar mass
+(  260) ! * RMSO2        : SO2 (sulfur dioxide) molar mass
+(  261) ! * RMSO4        : SO4 (sulphate) molar mass
+(  262) ! * RMCFC11      : CFC11 molar mass
+(  263) ! * RMCFC12      : CFC12 molar mass
+(  264) ! * RMHCFC12     : HCFC22 molar mass
+(  265) ! * RMCCL4       : CCl4 molar mass
+(  266) REAL(KIND=JPRB),PROTECTED :: R
+(  267) REAL(KIND=JPRB),PROTECTED :: RMD
+(  268) REAL(KIND=JPRB),PROTECTED :: RMV
+(  269) REAL(KIND=JPRB),PROTECTED :: RMO3
+(  270) REAL(KIND=JPRB),PROTECTED :: RD
+(  271) REAL(KIND=JPRB),PROTECTED :: RV
+(  272) REAL(KIND=JPRB),PROTECTED :: RCPD
+(  273) REAL(KIND=JPRB),PROTECTED :: RCPV
+(  274) REAL(KIND=JPRB),PROTECTED :: RCVD
+(  275) REAL(KIND=JPRB),PROTECTED :: RCVV
+(  276) REAL(KIND=JPRB),PROTECTED :: RKAPPA
+(  277) REAL(KIND=JPRB),PROTECTED :: RETV
+(  278) REAL(KIND=JPRB),PROTECTED :: RMCO2
+(  279) REAL(KIND=JPRB),PROTECTED :: RMCH4
+(  280) REAL(KIND=JPRB),PROTECTED :: RMN2O
+(  281) REAL(KIND=JPRB),PROTECTED :: RMCO
+(  282) REAL(KIND=JPRB),PROTECTED :: RMHCHO
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:28      page 6
+
+(  283) REAL(KIND=JPRB),PROTECTED :: RMNO2
+(  284) REAL(KIND=JPRB),PROTECTED :: RMSO2
+(  285) REAL(KIND=JPRB),PROTECTED :: RMSO4
+(  286) REAL(KIND=JPRB),PROTECTED :: RMCFC11
+(  287) REAL(KIND=JPRB),PROTECTED :: RMCFC12
+(  288) REAL(KIND=JPRB),PROTECTED :: RMHCFC22
+(  289) REAL(KIND=JPRB),PROTECTED :: RMCCL4
+(  290) 
+(  291) ! A1.5,6 Thermodynamic liquid,solid phases
+(  292) ! * RCW          : Cw (calorific capacity of liquid water)
+(  293) ! * RCS          : Cs (calorific capacity of solid water)
+(  294) REAL(KIND=JPRB),PROTECTED :: RCW
+(  295) REAL(KIND=JPRB),PROTECTED :: RCS
+(  296) 
+(  297) ! A1.7 Thermodynamic transition of phase
+(  298) ! * RATM         : pre_n = "normal" pressure
+(  299) ! * RTT          : Tt = temperature of water fusion at "pre_n"
+(  300) ! * RLVTT        : RLvTt = vaporisation latent heat at T=Tt
+(  301) ! * RLSTT        : RLsTt = sublimation latent heat at T=Tt
+(  302) ! * RLVZER       : RLv0 = vaporisation latent heat at T=0K
+(  303) ! * RLSZER       : RLs0 = sublimation latent heat at T=0K
+(  304) ! * RLMLT        : RLMlt = melting latent heat at T=Tt
+(  305) ! * RDT          : Tt - Tx(ew-ei)
+(  306) REAL(KIND=JPRB),PROTECTED :: RATM
+(  307) REAL(KIND=JPRB),PROTECTED :: RTT
+(  308) REAL(KIND=JPRB),PROTECTED :: RLVTT
+(  309) REAL(KIND=JPRB),PROTECTED :: RLSTT
+(  310) REAL(KIND=JPRB),PROTECTED :: RLVZER
+(  311) REAL(KIND=JPRB),PROTECTED :: RLSZER
+(  312) REAL(KIND=JPRB),PROTECTED :: RLMLT
+(  313) REAL(KIND=JPRB),PROTECTED :: RDT
+(  314) 
+(  315) ! A1.8 Curve of saturation
+(  316) ! * RESTT        : es(Tt) = saturation vapour tension at T=Tt
+(  317) ! * RGAMW        : Rgamw = (Cw-Cp_vap)/R_vap
+(  318) ! * RBETW        : Rbetw = RLvTt/R_vap + Rgamw*Tt
+(  319) ! * RALPW        : Ralpw = log(es(Tt)) + Rbetw/Tt + Rgamw*log(Tt)
+(  320) ! * RGAMS        : Rgams = (Cs-Cp_vap)/R_vap
+(  321) ! * RBETS        : Rbets = RLsTt/R_vap + Rgams*Tt
+(  322) ! * RALPS        : Ralps = log(es(Tt)) + Rbets/Tt + Rgams*log(Tt)
+(  323) ! * RALPD        : Ralpd = Ralps - Ralpw
+(  324) ! * RBETD        : Rbetd = Rbets - Rbetw
+(  325) ! * RGAMD        : Rgamd = Rgams - Rgamw
+(  326) REAL(KIND=JPRB),PROTECTED :: RESTT
+(  327) REAL(KIND=JPRB),PROTECTED :: RGAMW
+(  328) REAL(KIND=JPRB),PROTECTED :: RBETW
+(  329) REAL(KIND=JPRB),PROTECTED :: RALPW
+(  330) REAL(KIND=JPRB),PROTECTED :: RGAMS
+(  331) REAL(KIND=JPRB),PROTECTED :: RBETS
+(  332) REAL(KIND=JPRB),PROTECTED :: RALPS
+(  333) REAL(KIND=JPRB),PROTECTED :: RALPD
+(  334) REAL(KIND=JPRB),PROTECTED :: RBETD
+(  335) REAL(KIND=JPRB),PROTECTED :: RGAMD
+(  336) 
+(  337) ! MISSING VALUE
+(  338) REAL(KIND=JPRB),PROTECTED :: RUNDEF2
+(  339) 
+(  340) ! NaN value
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:28      page 7
+
+(  341) CHARACTER(LEN=8), PARAMETER :: CSNAN = &
+(  342)   & CHAR(0)//CHAR(0)//CHAR(0)//CHAR(0)//CHAR(0)//CHAR(0)//CHAR(244)//CHAR(127)
+(  343) REAL(KIND=JPRB),PROTECTED :: RSNAN
+(  344) 
+(  345) ! A1.9 Slant total delay constats
+(  346) ! * RK1 Atmospheric refractivity constant Thayer (1974)
+(  347) ! * RK2 Atmospheric refractivity constant Bevis (1994)
+(  348) ! * RK3 Atmospheric refractivity constant Bevis (1994)
+(  349) ! * RGNSSSAT Distance from geocentre to GNSS satellite
+(  350) ! * RGNSSEAR Earth radius
+(  351) ! * RAWGS WGS 84 equatorial radius
+(  352) ! * REWGS WGS 84 first eccentricity
+(  353) ! * RFWGS WGS 84 flattening
+(  354) ! * RGEQU gravity at equator
+(  355) ! * RGRAT gravity ratio???
+(  356) ! * RKSSOM ???
+(  357) 
+(  358) REAL(KIND=JPRB),PROTECTED :: RK1
+(  359) REAL(KIND=JPRB),PROTECTED :: RK2
+(  360) REAL(KIND=JPRB),PROTECTED :: RK3
+(  361) REAL(KIND=JPRB),PROTECTED :: RGNSSSAT
+(  362) REAL(KIND=JPRB),PROTECTED :: RGNSSEAR
+(  363) REAL(KIND=JPRB),PROTECTED :: RAWGS
+(  364) REAL(KIND=JPRB),PROTECTED :: REWGS
+(  365) REAL(KIND=JPRB),PROTECTED :: RFWGS
+(  366) REAL(KIND=JPRB),PROTECTED :: RGEQU
+(  367) REAL(KIND=JPRB),PROTECTED :: RGRAT
+(  368) REAL(KIND=JPRB),PROTECTED :: RKSSOM
+(  369) 
+(  370) LOGICAL,PROTECTED :: L_HAS_BEEN_SETUP=.FALSE.
+(  371) 
+(  372) TYPE (TCST), TARGET :: YRCST
+(  373) 
+(  374) 
+(  375) END MODULE YOMCST
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:28      page 8
+
+(    1) # 1 "./yomcst.F90"
+(    1) ! (C) Copyright 1988- ECMWF.
+(    2) !
+(    3) ! This software is licensed under the terms of the Apache Licence Version 2.0
+(    4) ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+(    5) !
+(    6) ! In applying this licence, ECMWF does not waive the privileges and immunities
+(    7) ! granted to it by virtue of its status as an intergovernmental organisation
+(    8) ! nor does it submit to any jurisdiction.
+(    9) # 10 "./yomcst.F90"
+(   10) MODULE YOMCST
+(   11) # 12 "./yomcst.F90"
+(   12) USE PARKIND1  ,ONLY : JPRB
+(   13) # 14 "./yomcst.F90"
+(   14) IMPLICIT NONE
+(   15) # 16 "./yomcst.F90"
+(   16) SAVE
+(   17) # 18 "./yomcst.F90"
+(   18) !     ------------------------------------------------------------------
+(   19) # 20 "./yomcst.F90"
+(   20) TYPE TCST
+(   21) !*    Common of physical constants
+(   22) !     You will find the meanings in the annex 1 of the documentation
+(   23)   
+(   24) ! A1.0 Fundamental constants
+(   25) ! * RPI          : number Pi
+(   26) ! * RCLUM        : light velocity
+(   27) ! * RHPLA        : Planck constant
+(   28) ! * RKBOL        : Bolzmann constant
+(   29) ! * RNAVO        : Avogadro number
+(   30)   REAL(KIND=JPRB) :: RPI
+(   31)   REAL(KIND=JPRB) :: RCLUM
+(   32)   REAL(KIND=JPRB) :: RHPLA
+(   33)   REAL(KIND=JPRB) :: RKBOL
+(   34)   REAL(KIND=JPRB) :: RNAVO
+(   35)   
+(   36) ! A1.1 Astronomical constants
+(   37) ! * RDAY         : duration of the solar day
+(   38) ! * RDAYI        : invariant time unit of 86400s
+(   39) ! * RHOUR        : duration of the solar hour 
+(   40) ! * REA          : astronomical unit (mean distance Earth-sun)
+(   41) ! * REPSM        : polar axis tilting angle
+(   42) ! * RSIYEA       : duration of the sideral year
+(   43) ! * RSIDAY       : duration of the sideral day
+(   44) ! * ROMEGA       : angular velocity of the Earth rotation
+(   45)   REAL(KIND=JPRB) :: RDAY
+(   46)   REAL(KIND=JPRB) :: RDAYI
+(   47)   REAL(KIND=JPRB) :: RHOUR
+(   48)   REAL(KIND=JPRB) :: REA
+(   49)   REAL(KIND=JPRB) :: REPSM
+(   50)   REAL(KIND=JPRB) :: RSIYEA
+(   51)   REAL(KIND=JPRB) :: RSIDAY
+(   52)   REAL(KIND=JPRB) :: ROMEGA
+(   53)   
+(   54) ! A1.2 Geoide
+(   55) ! * RA           : Earth radius
+(   56) ! * RG           : gravity constant
+(   57) ! * R1SA         : 1/RA
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:28      page 9
+
+(   58) ! * DEG2RAD      : 180./RPI
+(   59)   REAL(KIND=JPRB) :: RA
+(   60)   REAL(KIND=JPRB) :: RG
+(   61)   REAL(KIND=JPRB) :: R1SA
+(   62)   REAL(KIND=JPRB) :: DEG2RAD
+(   63)   
+(   64) ! A1.3 Radiation
+(   65) ! * RSIGMA       : Stefan-Bolzman constant
+(   66) ! * RI0          : solar constant
+(   67)   REAL(KIND=JPRB) :: RSIGMA
+(   68)   REAL(KIND=JPRB) :: RI0
+(   69)   
+(   70) ! A1.4 Thermodynamic gas phase
+(   71) ! * R            : perfect gas constant
+(   72) ! * RMD          : dry air molar mass
+(   73) ! * RMV          : vapour water molar mass
+(   74) ! * RMO3         : ozone molar mass
+(   75) ! * RD           : R_dry (dry air constant)
+(   76) ! * RV           : R_vap (vapour water constant)
+(   77) ! * RCPD         : Cp_dry (dry air calorific capacity at constant pressure)
+(   78) ! * RCPV         : Cp_vap (vapour calorific capacity at constant pressure)
+(   79) ! * RCVD         : Cv_dry (dry air calorific capacity at constant volume)
+(   80) ! * RCVV         : Cv_vap (vapour calorific capacity at constant volume)
+(   81) ! * RKAPPA       : Kappa = R_dry/Cp_dry
+(   82) ! * RETV         : R_vap/R_dry - 1
+(   83) ! * RMCO2        : CO2 (carbon dioxide) molar mass
+(   84) ! * RMCH4        : CH4 (methane) molar mass
+(   85) ! * RMN2O        : N2O molar mass
+(   86) ! * RMCO         : CO (carbon monoxide) molar mass
+(   87) ! * RMHCHO       : HCHO molar mass
+(   88) ! * RMNO2        : NO2 (nitrogen dioxide) molar mass
+(   89) ! * RMSO2        : SO2 (sulfur dioxide) molar mass
+(   90) ! * RMSO4        : SO4 (sulphate) molar mass
+(   91) ! * RMCFC11      : CFC11 molar mass
+(   92) ! * RMCFC12      : CFC12 molar mass
+(   93) ! * RMHCFC12     : HCFC22 molar mass
+(   94) ! * RMCCL4       : CCl4 molar mass
+(   95)   REAL(KIND=JPRB) :: R
+(   96)   REAL(KIND=JPRB) :: RMD
+(   97)   REAL(KIND=JPRB) :: RMV
+(   98)   REAL(KIND=JPRB) :: RMO3
+(   99)   REAL(KIND=JPRB) :: RD
+(  100)   REAL(KIND=JPRB) :: RV
+(  101)   REAL(KIND=JPRB) :: RCPD
+(  102)   REAL(KIND=JPRB) :: RCPV
+(  103)   REAL(KIND=JPRB) :: RCVD
+(  104)   REAL(KIND=JPRB) :: RCVV
+(  105)   REAL(KIND=JPRB) :: RKAPPA
+(  106)   REAL(KIND=JPRB) :: RETV
+(  107)   REAL(KIND=JPRB) :: RMCO2
+(  108)   REAL(KIND=JPRB) :: RMCH4
+(  109)   REAL(KIND=JPRB) :: RMN2O
+(  110)   REAL(KIND=JPRB) :: RMCO
+(  111)   REAL(KIND=JPRB) :: RMHCHO
+(  112)   REAL(KIND=JPRB) :: RMNO2
+(  113)   REAL(KIND=JPRB) :: RMSO2
+(  114)   REAL(KIND=JPRB) :: RMSO4
+(  115)   REAL(KIND=JPRB) :: RMCFC11
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:28      page 10
+
+(  116)   REAL(KIND=JPRB) :: RMCFC12
+(  117)   REAL(KIND=JPRB) :: RMHCFC22
+(  118)   REAL(KIND=JPRB) :: RMCCL4
+(  119)   
+(  120) ! A1.5,6 Thermodynamic liquid,solid phases
+(  121) ! * RCW          : Cw (calorific capacity of liquid water)
+(  122) ! * RCS          : Cs (calorific capacity of solid water)
+(  123)   REAL(KIND=JPRB) :: RCW
+(  124)   REAL(KIND=JPRB) :: RCS
+(  125)   
+(  126) ! A1.7 Thermodynamic transition of phase
+(  127) ! * RATM         : pre_n = "normal" pressure
+(  128) ! * RTT          : Tt = temperature of water fusion at "pre_n"
+(  129) ! * RLVTT        : RLvTt = vaporisation latent heat at T=Tt
+(  130) ! * RLSTT        : RLsTt = sublimation latent heat at T=Tt
+(  131) ! * RLVZER       : RLv0 = vaporisation latent heat at T=0K
+(  132) ! * RLSZER       : RLs0 = sublimation latent heat at T=0K
+(  133) ! * RLMLT        : RLMlt = melting latent heat at T=Tt
+(  134) ! * RDT          : Tt - Tx(ew-ei)
+(  135)   REAL(KIND=JPRB) :: RATM
+(  136)   REAL(KIND=JPRB) :: RTT
+(  137)   REAL(KIND=JPRB) :: RLVTT
+(  138)   REAL(KIND=JPRB) :: RLSTT
+(  139)   REAL(KIND=JPRB) :: RLVZER
+(  140)   REAL(KIND=JPRB) :: RLSZER
+(  141)   REAL(KIND=JPRB) :: RLMLT
+(  142)   REAL(KIND=JPRB) :: RDT
+(  143)   
+(  144) ! A1.8 Curve of saturation
+(  145) ! * RESTT        : es(Tt) = saturation vapour tension at T=Tt
+(  146) ! * RGAMW        : Rgamw = (Cw-Cp_vap)/R_vap
+(  147) ! * RBETW        : Rbetw = RLvTt/R_vap + Rgamw*Tt
+(  148) ! * RALPW        : Ralpw = log(es(Tt)) + Rbetw/Tt + Rgamw*log(Tt)
+(  149) ! * RGAMS        : Rgams = (Cs-Cp_vap)/R_vap
+(  150) ! * RBETS        : Rbets = RLsTt/R_vap + Rgams*Tt
+(  151) ! * RALPS        : Ralps = log(es(Tt)) + Rbets/Tt + Rgams*log(Tt)
+(  152) ! * RALPD        : Ralpd = Ralps - Ralpw
+(  153) ! * RBETD        : Rbetd = Rbets - Rbetw
+(  154) ! * RGAMD        : Rgamd = Rgams - Rgamw
+(  155)   REAL(KIND=JPRB) :: RESTT
+(  156)   REAL(KIND=JPRB) :: RGAMW
+(  157)   REAL(KIND=JPRB) :: RBETW
+(  158)   REAL(KIND=JPRB) :: RALPW
+(  159)   REAL(KIND=JPRB) :: RGAMS
+(  160)   REAL(KIND=JPRB) :: RBETS
+(  161)   REAL(KIND=JPRB) :: RALPS
+(  162)   REAL(KIND=JPRB) :: RALPD
+(  163)   REAL(KIND=JPRB) :: RBETD
+(  164)   REAL(KIND=JPRB) :: RGAMD
+(  165) # 166 "./yomcst.F90"
+(  166) ! A1.9 Slant total delay constats
+(  167) ! * RK1 Atmospheric refractivity constant Thayer (1974)
+(  168) ! * RK2 Atmospheric refractivity constant Bevis (1994)
+(  169) ! * RK3 Atmospheric refractivity constant Bevis (1994)
+(  170) ! * RGNSSSAT Distance from geocentre to GNSS satellite
+(  171) ! * RGNSSEAR Earth radius
+(  172) ! * RAWGS WGS 84 equatorial radius
+(  173) ! * REWGS WGS 84 first eccentricity
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:28      page 11
+
+(  174) ! * RFWGS WGS 84 flattening
+(  175) ! * RGEQU gravity at equator
+(  176) ! * RGRAT gravity ratio???
+(  177) ! * RKSSOM ???
+(  178) # 179 "./yomcst.F90"
+(  179)   REAL(KIND=JPRB) :: RK1
+(  180)   REAL(KIND=JPRB) :: RK2
+(  181)   REAL(KIND=JPRB) :: RK3
+(  182)   REAL(KIND=JPRB) :: RGNSSSAT
+(  183)   REAL(KIND=JPRB) :: RGNSSEAR
+(  184)   REAL(KIND=JPRB) :: RAWGS
+(  185)   REAL(KIND=JPRB) :: REWGS
+(  186)   REAL(KIND=JPRB) :: RFWGS
+(  187)   REAL(KIND=JPRB) :: RGEQU
+(  188)   REAL(KIND=JPRB) :: RGRAT
+(  189)   REAL(KIND=JPRB) :: RKSSOM
+(  190) END TYPE TCST
+(  191) # 192 "./yomcst.F90"
+(  192) !*    Common of physical constants
+(  193) !     You will find the meanings in the annex 1 of the documentation
+(  194) # 195 "./yomcst.F90"
+(  195) ! A1.0 Fundamental constants
+(  196) ! * RPI          : number Pi
+(  197) ! * RCLUM        : light velocity
+(  198) ! * RHPLA        : Planck constant
+(  199) ! * RKBOL        : Bolzmann constant
+(  200) ! * RNAVO        : Avogadro number
+(  201) REAL(KIND=JPRB),PROTECTED :: RPI
+(  202) REAL(KIND=JPRB),PROTECTED :: RCLUM
+(  203) REAL(KIND=JPRB),PROTECTED :: RHPLA
+(  204) REAL(KIND=JPRB),PROTECTED :: RKBOL
+(  205) REAL(KIND=JPRB),PROTECTED :: RNAVO
+(  206) # 207 "./yomcst.F90"
+(  207) ! A1.1 Astronomical constants
+(  208) ! * RDAY         : duration of the solar day
+(  209) ! * RDAYI        : invariant time unit of 86400s
+(  210) ! * RHOUR        : duration of the solar hour 
+(  211) ! * REA          : astronomical unit (mean distance Earth-sun)
+(  212) ! * REPSM        : polar axis tilting angle
+(  213) ! * RSIYEA       : duration of the sideral year
+(  214) ! * RSIDAY       : duration of the sideral day
+(  215) ! * ROMEGA       : angular velocity of the Earth rotation
+(  216) REAL(KIND=JPRB),PROTECTED :: RDAY
+(  217) REAL(KIND=JPRB),PROTECTED :: RDAYI
+(  218) REAL(KIND=JPRB),PROTECTED :: RHOUR
+(  219) REAL(KIND=JPRB),PROTECTED :: REA
+(  220) REAL(KIND=JPRB),PROTECTED :: REPSM
+(  221) REAL(KIND=JPRB),PROTECTED :: RSIYEA
+(  222) REAL(KIND=JPRB),PROTECTED :: RSIDAY
+(  223) REAL(KIND=JPRB),PROTECTED :: ROMEGA
+(  224) # 225 "./yomcst.F90"
+(  225) ! A1.2 Geoide
+(  226) ! * RA           : Earth radius
+(  227) ! * RG           : gravity constant
+(  228) ! * R1SA         : 1/RA
+(  229) ! * DEG2RAD      : 180./RPI
+(  230) REAL(KIND=JPRB),PROTECTED :: RA
+(  231) REAL(KIND=JPRB),PROTECTED :: RG
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:28      page 12
+
+(  232) REAL(KIND=JPRB),PROTECTED :: R1SA
+(  233) REAL(KIND=JPRB),PROTECTED :: DEG2RAD
+(  234) # 235 "./yomcst.F90"
+(  235) ! A1.3 Radiation
+(  236) ! * RSIGMA       : Stefan-Bolzman constant
+(  237) ! * RI0          : solar constant
+(  238) REAL(KIND=JPRB),PROTECTED :: RSIGMA
+(  239) REAL(KIND=JPRB),PROTECTED :: RI0
+(  240) # 241 "./yomcst.F90"
+(  241) ! A1.4 Thermodynamic gas phase
+(  242) ! * R            : perfect gas constant
+(  243) ! * RMD          : dry air molar mass
+(  244) ! * RMV          : vapour water molar mass
+(  245) ! * RMO3         : ozone molar mass
+(  246) ! * RD           : R_dry (dry air constant)
+(  247) ! * RV           : R_vap (vapour water constant)
+(  248) ! * RCPD         : Cp_dry (dry air calorific capacity at constant pressure)
+(  249) ! * RCPV         : Cp_vap (vapour calorific capacity at constant pressure)
+(  250) ! * RCVD         : Cv_dry (dry air calorific capacity at constant volume)
+(  251) ! * RCVV         : Cv_vap (vapour calorific capacity at constant volume)
+(  252) ! * RKAPPA       : Kappa = R_dry/Cp_dry
+(  253) ! * RETV         : R_vap/R_dry - 1
+(  254) ! * RMCO2        : CO2 (carbon dioxide) molar mass
+(  255) ! * RMCH4        : CH4 (methane) molar mass
+(  256) ! * RMN2O        : N2O molar mass
+(  257) ! * RMCO         : CO (carbon monoxide) molar mass
+(  258) ! * RMHCHO       : HCHO molar mass
+(  259) ! * RMNO2        : NO2 (nitrogen dioxide) molar mass
+(  260) ! * RMSO2        : SO2 (sulfur dioxide) molar mass
+(  261) ! * RMSO4        : SO4 (sulphate) molar mass
+(  262) ! * RMCFC11      : CFC11 molar mass
+(  263) ! * RMCFC12      : CFC12 molar mass
+(  264) ! * RMHCFC12     : HCFC22 molar mass
+(  265) ! * RMCCL4       : CCl4 molar mass
+(  266) REAL(KIND=JPRB),PROTECTED :: R
+(  267) REAL(KIND=JPRB),PROTECTED :: RMD
+(  268) REAL(KIND=JPRB),PROTECTED :: RMV
+(  269) REAL(KIND=JPRB),PROTECTED :: RMO3
+(  270) REAL(KIND=JPRB),PROTECTED :: RD
+(  271) REAL(KIND=JPRB),PROTECTED :: RV
+(  272) REAL(KIND=JPRB),PROTECTED :: RCPD
+(  273) REAL(KIND=JPRB),PROTECTED :: RCPV
+(  274) REAL(KIND=JPRB),PROTECTED :: RCVD
+(  275) REAL(KIND=JPRB),PROTECTED :: RCVV
+(  276) REAL(KIND=JPRB),PROTECTED :: RKAPPA
+(  277) REAL(KIND=JPRB),PROTECTED :: RETV
+(  278) REAL(KIND=JPRB),PROTECTED :: RMCO2
+(  279) REAL(KIND=JPRB),PROTECTED :: RMCH4
+(  280) REAL(KIND=JPRB),PROTECTED :: RMN2O
+(  281) REAL(KIND=JPRB),PROTECTED :: RMCO
+(  282) REAL(KIND=JPRB),PROTECTED :: RMHCHO
+(  283) REAL(KIND=JPRB),PROTECTED :: RMNO2
+(  284) REAL(KIND=JPRB),PROTECTED :: RMSO2
+(  285) REAL(KIND=JPRB),PROTECTED :: RMSO4
+(  286) REAL(KIND=JPRB),PROTECTED :: RMCFC11
+(  287) REAL(KIND=JPRB),PROTECTED :: RMCFC12
+(  288) REAL(KIND=JPRB),PROTECTED :: RMHCFC22
+(  289) REAL(KIND=JPRB),PROTECTED :: RMCCL4
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:28      page 13
+
+(  290) # 291 "./yomcst.F90"
+(  291) ! A1.5,6 Thermodynamic liquid,solid phases
+(  292) ! * RCW          : Cw (calorific capacity of liquid water)
+(  293) ! * RCS          : Cs (calorific capacity of solid water)
+(  294) REAL(KIND=JPRB),PROTECTED :: RCW
+(  295) REAL(KIND=JPRB),PROTECTED :: RCS
+(  296) # 297 "./yomcst.F90"
+(  297) ! A1.7 Thermodynamic transition of phase
+(  298) ! * RATM         : pre_n = "normal" pressure
+(  299) ! * RTT          : Tt = temperature of water fusion at "pre_n"
+(  300) ! * RLVTT        : RLvTt = vaporisation latent heat at T=Tt
+(  301) ! * RLSTT        : RLsTt = sublimation latent heat at T=Tt
+(  302) ! * RLVZER       : RLv0 = vaporisation latent heat at T=0K
+(  303) ! * RLSZER       : RLs0 = sublimation latent heat at T=0K
+(  304) ! * RLMLT        : RLMlt = melting latent heat at T=Tt
+(  305) ! * RDT          : Tt - Tx(ew-ei)
+(  306) REAL(KIND=JPRB),PROTECTED :: RATM
+(  307) REAL(KIND=JPRB),PROTECTED :: RTT
+(  308) REAL(KIND=JPRB),PROTECTED :: RLVTT
+(  309) REAL(KIND=JPRB),PROTECTED :: RLSTT
+(  310) REAL(KIND=JPRB),PROTECTED :: RLVZER
+(  311) REAL(KIND=JPRB),PROTECTED :: RLSZER
+(  312) REAL(KIND=JPRB),PROTECTED :: RLMLT
+(  313) REAL(KIND=JPRB),PROTECTED :: RDT
+(  314) # 315 "./yomcst.F90"
+(  315) ! A1.8 Curve of saturation
+(  316) ! * RESTT        : es(Tt) = saturation vapour tension at T=Tt
+(  317) ! * RGAMW        : Rgamw = (Cw-Cp_vap)/R_vap
+(  318) ! * RBETW        : Rbetw = RLvTt/R_vap + Rgamw*Tt
+(  319) ! * RALPW        : Ralpw = log(es(Tt)) + Rbetw/Tt + Rgamw*log(Tt)
+(  320) ! * RGAMS        : Rgams = (Cs-Cp_vap)/R_vap
+(  321) ! * RBETS        : Rbets = RLsTt/R_vap + Rgams*Tt
+(  322) ! * RALPS        : Ralps = log(es(Tt)) + Rbets/Tt + Rgams*log(Tt)
+(  323) ! * RALPD        : Ralpd = Ralps - Ralpw
+(  324) ! * RBETD        : Rbetd = Rbets - Rbetw
+(  325) ! * RGAMD        : Rgamd = Rgams - Rgamw
+(  326) REAL(KIND=JPRB),PROTECTED :: RESTT
+(  327) REAL(KIND=JPRB),PROTECTED :: RGAMW
+(  328) REAL(KIND=JPRB),PROTECTED :: RBETW
+(  329) REAL(KIND=JPRB),PROTECTED :: RALPW
+(  330) REAL(KIND=JPRB),PROTECTED :: RGAMS
+(  331) REAL(KIND=JPRB),PROTECTED :: RBETS
+(  332) REAL(KIND=JPRB),PROTECTED :: RALPS
+(  333) REAL(KIND=JPRB),PROTECTED :: RALPD
+(  334) REAL(KIND=JPRB),PROTECTED :: RBETD
+(  335) REAL(KIND=JPRB),PROTECTED :: RGAMD
+(  336) # 337 "./yomcst.F90"
+(  337) ! MISSING VALUE
+(  338) REAL(KIND=JPRB),PROTECTED :: RUNDEF2
+(  339) # 340 "./yomcst.F90"
+(  340) ! NaN value
+(  341) CHARACTER(LEN=8), PARAMETER :: CSNAN = &
+(  342)   & CHAR(0)//CHAR(0)//CHAR(0)//CHAR(0)//CHAR(0)//CHAR(0)//CHAR(244)//CHAR(127)
+(  343) REAL(KIND=JPRB),PROTECTED :: RSNAN
+(  344) # 345 "./yomcst.F90"
+(  345) ! A1.9 Slant total delay constats
+(  346) ! * RK1 Atmospheric refractivity constant Thayer (1974)
+(  347) ! * RK2 Atmospheric refractivity constant Bevis (1994)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:28      page 14
+
+(  348) ! * RK3 Atmospheric refractivity constant Bevis (1994)
+(  349) ! * RGNSSSAT Distance from geocentre to GNSS satellite
+(  350) ! * RGNSSEAR Earth radius
+(  351) ! * RAWGS WGS 84 equatorial radius
+(  352) ! * REWGS WGS 84 first eccentricity
+(  353) ! * RFWGS WGS 84 flattening
+(  354) ! * RGEQU gravity at equator
+(  355) ! * RGRAT gravity ratio???
+(  356) ! * RKSSOM ???
+(  357) # 358 "./yomcst.F90"
+(  358) REAL(KIND=JPRB),PROTECTED :: RK1
+(  359) REAL(KIND=JPRB),PROTECTED :: RK2
+(  360) REAL(KIND=JPRB),PROTECTED :: RK3
+(  361) REAL(KIND=JPRB),PROTECTED :: RGNSSSAT
+(  362) REAL(KIND=JPRB),PROTECTED :: RGNSSEAR
+(  363) REAL(KIND=JPRB),PROTECTED :: RAWGS
+(  364) REAL(KIND=JPRB),PROTECTED :: REWGS
+(  365) REAL(KIND=JPRB),PROTECTED :: RFWGS
+(  366) REAL(KIND=JPRB),PROTECTED :: RGEQU
+(  367) REAL(KIND=JPRB),PROTECTED :: RGRAT
+(  368) REAL(KIND=JPRB),PROTECTED :: RKSSOM
+(  369) # 370 "./yomcst.F90"
+(  370) LOGICAL,PROTECTED :: L_HAS_BEEN_SETUP=.FALSE.
+(  371) # 372 "./yomcst.F90"
+(  372) TYPE (TCST), TARGET :: YRCST
+(  373) # 375 "./yomcst.F90"
+(  375) END MODULE YOMCST

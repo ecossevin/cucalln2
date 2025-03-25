@@ -1,0 +1,115 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:23      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./model_physics_ecmwf_mod.F90
+
+(    1) ! (C) Copyright 2017- ECMWF.
+(    2) !
+(    3) ! This software is licensed under the terms of the Apache Licence Version 2.0
+(    4) ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+(    5) !
+(    6) ! In applying this licence, ECMWF does not waive the privileges and immunities
+(    7) ! granted to it by virtue of its status as an intergovernmental organisation
+(    8) ! nor does it submit to any jurisdiction.
+(    9) 
+(   10) MODULE MODEL_PHYSICS_ECMWF_MOD
+(   11)   USE YOEPHY      , ONLY : TEPHY
+(   12)   USE YOECLD      , ONLY : TECLD
+(   13)   USE YOECLDP     , ONLY : TECLDP
+(   14)   USE YOECND      , ONLY : TECND
+(   15)   USE YOECUMF     , ONLY : TECUMF
+(   16)   USE YOE_CUCONVCA, ONLY : TECUCONVCA
+(   17)   USE YOEGWD      , ONLY : TEGWD
+(   18)   USE YOEGWWMS    , ONLY : TEGWWMS
+(   19)   USE YOETHF      , ONLY : TTHF
+(   20)   IMPLICIT NONE
+(   21) 
+(   22)   TYPE MODEL_PHYSICS_ECMWF_TYPE
+(   23) 
+(   24)   TYPE(TEPHY)         :: YREPHY
+(   25)   ! cloudy stuff
+(   26)   TYPE(TECLD)         :: YRECLD  !! explicit clouds (diagnostic)
+(   27)   TYPE(TECLDP)        :: YRECLDP !! explicit clouds (prognostic)
+(   28)   TYPE(TECND)         :: YRECND  !! moist processes
+(   29)   ! convection
+(   30)   TYPE(TECUMF)        :: YRECUMF !! cumulus mass flux
+(   31)   TYPE(TECUCONVCA)    :: YRECUCONVCA !! cellular automaton
+(   32)   ! gravity wave drag
+(   33)   TYPE(TEGWD)         :: YREGWD   !! parameters
+(   34)   TYPE(TEGWWMS)       :: YREGWWMS !! WarnerMcIntyre GW parameterization
+(   35) 
+(   36)   TYPE(TTHF)          :: YRTHF
+(   37) 
+(   38)   CONTAINS
+(   39) 
+(   40) END TYPE MODEL_PHYSICS_ECMWF_TYPE
+(   41) 
+(   42) END MODULE MODEL_PHYSICS_ECMWF_MOD
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:23      page 2
+
+(    1) # 1 "./model_physics_ecmwf_mod.F90"
+(    1) ! (C) Copyright 2017- ECMWF.
+(    2) !
+(    3) ! This software is licensed under the terms of the Apache Licence Version 2.0
+(    4) ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+(    5) !
+(    6) ! In applying this licence, ECMWF does not waive the privileges and immunities
+(    7) ! granted to it by virtue of its status as an intergovernmental organisation
+(    8) ! nor does it submit to any jurisdiction.
+(    9) # 10 "./model_physics_ecmwf_mod.F90"
+(   10) MODULE MODEL_PHYSICS_ECMWF_MOD
+(   11)   USE YOEPHY      , ONLY : TEPHY
+(   12)   USE YOECLD      , ONLY : TECLD
+(   13)   USE YOECLDP     , ONLY : TECLDP
+(   14)   USE YOECND      , ONLY : TECND
+(   15)   USE YOECUMF     , ONLY : TECUMF
+(   16)   USE YOE_CUCONVCA, ONLY : TECUCONVCA
+(   17)   USE YOEGWD      , ONLY : TEGWD
+(   18)   USE YOEGWWMS    , ONLY : TEGWWMS
+(   19)   USE YOETHF      , ONLY : TTHF
+(   20)   IMPLICIT NONE
+(   21) # 22 "./model_physics_ecmwf_mod.F90"
+(   22)   TYPE MODEL_PHYSICS_ECMWF_TYPE
+(   23) # 24 "./model_physics_ecmwf_mod.F90"
+(   24)   TYPE(TEPHY)         :: YREPHY
+(   25)   ! cloudy stuff
+(   26)   TYPE(TECLD)         :: YRECLD  !! explicit clouds (diagnostic)
+(   27)   TYPE(TECLDP)        :: YRECLDP !! explicit clouds (prognostic)
+(   28)   TYPE(TECND)         :: YRECND  !! moist processes
+(   29)   ! convection
+(   30)   TYPE(TECUMF)        :: YRECUMF !! cumulus mass flux
+(   31)   TYPE(TECUCONVCA)    :: YRECUCONVCA !! cellular automaton
+(   32)   ! gravity wave drag
+(   33)   TYPE(TEGWD)         :: YREGWD   !! parameters
+(   34)   TYPE(TEGWWMS)       :: YREGWWMS !! WarnerMcIntyre GW parameterization
+(   35) # 36 "./model_physics_ecmwf_mod.F90"
+(   36)   TYPE(TTHF)          :: YRTHF
+(   37) # 38 "./model_physics_ecmwf_mod.F90"
+(   38)   CONTAINS
+(   39) # 40 "./model_physics_ecmwf_mod.F90"
+(   40) END TYPE MODEL_PHYSICS_ECMWF_TYPE
+(   41) # 42 "./model_physics_ecmwf_mod.F90"
+(   42) END MODULE MODEL_PHYSICS_ECMWF_MOD

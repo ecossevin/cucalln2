@@ -1,0 +1,459 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./cuentr.scc_stack.F90
+
+(    1) MODULE CUENTR_LOKI_MOD
+(    2)   CONTAINS
+(    3)   SUBROUTINE CUENTR_LOKI (YDCST, YDECUMF, YDSPP_CONFIG, KIDIA, KFDIA, KLON, KLEV, KK, KCBOT, KTYPE, LDCUM, LDWORK, PQSEN, PA
+(    4)   & PGEOH, PMFU, PGP2DSPP, PDMFEN, PDMFDE, YDSTACK_L)
+(    5)     
+(    6)     !          M.TIEDTKE         E.C.M.W.F.     12/89
+(    7)     !          P.BECHTOLD        E.C.M.W.F.     06/07
+(    8)     !          P.BECHTOLD        E.C.M.W.F.     03/12
+(    9)     
+(   10)     !          PURPOSE.
+(   11)     !          --------
+(   12)     !          THIS ROUTINE CALCULATES ENTRAINMENT/DETRAINMENT RATES
+(   13)     !          FOR UPDRAFTS IN CUMULUS PARAMETERIZATION
+(   14)     
+(   15)     !          INTERFACE
+(   16)     !          ---------
+(   17)     
+(   18)     !          THIS ROUTINE IS CALLED FROM *CUASC*.
+(   19)     !          INPUT ARE ENVIRONMENTAL VALUES T,Q ETC
+(   20)     !          AND UPDRAFT VALUES T,Q ETC
+(   21)     !          IT RETURNS ENTRAINMENT/DETRAINMENT RATES
+(   22)     
+(   23)     !          METHOD.
+(   24)     !          --------
+(   25)     !          TURBULENT ENTRAINMENT IS SIMULATED BY A CONSTANT
+(   26)     !          MULTIPLIED BY A VERTICAL SCALING FUNCTION
+(   27)     
+(   28)     !     PARAMETER     DESCRIPTION                                   UNITS
+(   29)     !     ---------     -----------                                   -----
+(   30)     !     INPUT PARAMETERS (INTEGER):
+(   31)     
+(   32)     !    *KIDIA*        START POINT
+(   33)     !    *KFDIA*        END POINT
+(   34)     !    *KLON*         NUMBER OF GRID POINTS PER PACKET
+(   35)     !    *KLEV*         NUMBER OF LEVELS
+(   36)     !    *KK*           CURRENT LEVEL
+(   37)     !    *KCBOT*        CLOUD BASE LEVEL
+(   38)     
+(   39)     !    INPUT PARAMETERS (LOGICAL):
+(   40)     
+(   41)     !    *LDCUM*        FLAG: .TRUE. FOR CONVECTIVE POINTS
+(   42)     
+(   43)     !    INPUT PARAMETERS (REAL):
+(   44)     
+(   45)     !    *PQSEN*        SATURATION SPEC. HUMIDITY                   KG/KG
+(   46)     !    *PAPH*         PROVISIONAL PRESSURE ON HALF LEVELS          PA
+(   47)     !    *PGEOH*        PROVISIONAL GEOPOTENTIAL ON HALF LEVELS      PA
+(   48)     !    *PMFU*         MASSFLUX IN UPDRAFTS                        KG/(M2*S)
+(   49)     !    *PGP2DSPP*     Standard stochastic variable (mean=0, SD=1)
+(   50)     
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 2
+
+(   51)     !    OUTPUT PARAMETERS (REAL):
+(   52)     
+(   53)     !    *PDMFEN*       ENTRAINMENT RATE                            KG/(M2*S)
+(   54)     !    *PDMFDE*       DETRAINMENT RATE                            KG/(M2*S)
+(   55)     
+(   56)     !          EXTERNALS
+(   57)     !          ---------
+(   58)     !          NONE
+(   59)     !
+(   60)     !
+(   61)     !    MODIFICATIONS.
+(   62)     !    --------------
+(   63)     !
+(   64)     !    M. Leutbecher & S.-J. Lock (Jan 2016) Introduced SPP scheme (LSPP)
+(   65)     !    M. Leutbecher (Oct 2020) SPP abstraction
+(   66)     !     R. El Khatib 22-Jun-2022 A contribution to simplify phasing after the refactoring of YOMCLI/YOMCST/YOETHF.
+(   67)     !----------------------------------------------------------------------
+(   68)     
+(   69)     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY: REAL64
+(   70)     USE, intrinsic :: ISO_C_BINDING, ONLY: C_SIZEOF
+(   71)     USE PARKIND1, ONLY: JPIM, JPRB
+(   72)     USE YOMHOOK, ONLY: LHOOK, JPHOOK
+(   73)     
+(   74)     USE YOMCST, ONLY: TCST
+(   75)     USE YOECUMF, ONLY: TECUMF
+(   76)     USE SPP_MOD, ONLY: TSPP_CONFIG
+(   77)     USE SPP_GEN_MOD, ONLY: SPP_PERT
+(   78)     
+(   79)     IMPLICIT NONE
+(   80)     
+(   81)     TYPE(TCST), INTENT(IN) :: YDCST
+(   82)     TYPE(TECUMF), INTENT(IN) :: YDECUMF
+(   83)     TYPE(TSPP_CONFIG), INTENT(IN) :: YDSPP_CONFIG
+(   84)     INTEGER(KIND=JPIM), INTENT(IN) :: KLON
+(   85)     INTEGER(KIND=JPIM), INTENT(IN) :: KLEV
+(   86)     INTEGER(KIND=JPIM), INTENT(IN) :: KIDIA
+(   87)     INTEGER(KIND=JPIM), INTENT(IN) :: KFDIA
+(   88)     INTEGER(KIND=JPIM), INTENT(IN) :: KK
+(   89)     INTEGER(KIND=JPIM), INTENT(IN) :: KCBOT(KLON)
+(   90)     INTEGER(KIND=JPIM), INTENT(IN) :: KTYPE(KLON)
+(   91)     LOGICAL, INTENT(IN) :: LDCUM(KLON)
+(   92)     LOGICAL, INTENT(IN) :: LDWORK
+(   93)     REAL(KIND=JPRB), INTENT(IN) :: PQSEN(KLON, KLEV)
+(   94)     REAL(KIND=JPRB), INTENT(IN) :: PAPH(KLON, KLEV + 1)
+(   95)     REAL(KIND=JPRB), INTENT(IN) :: PGEOH(KLON, KLEV + 1)
+(   96)     REAL(KIND=JPRB), INTENT(IN) :: PMFU(KLON, KLEV)
+(   97)     REAL(KIND=JPRB), INTENT(IN) :: PGP2DSPP(KLON, YDSPP_CONFIG%SM%NRFTOTAL)
+(   98)     REAL(KIND=JPRB), INTENT(OUT) :: PDMFEN(KLON)
+(   99)     REAL(KIND=JPRB), INTENT(OUT) :: PDMFDE(KLON)
+(  100)     
+(  101)     LOGICAL :: LLO1
+(  102)     
+(  103)     INTEGER(KIND=JPIM) :: JL
+(  104)     
+(  105)     ! A bunch of SPP variables that are saved between calls for efficiency reasons
+(  106)     LOGICAL :: LLPERT_DETRPEN    ! SPP perturbation on?
+(  107)     INTEGER(KIND=JPIM) :: IPDETRPEN    ! SPP random field pointer
+(  108)     INTEGER(KIND=JPIM) :: IPN    ! SPP perturbation pointer
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 3
+
+(  109)     TYPE(SPP_PERT) :: PN1    ! SPP pertn. config. for RTAU
+(  110)     
+(  111)     REAL(KIND=JPRB) :: ZDZ, ZENTR, ZMF, ZRG, ZXDETRPEN
+(  112)     REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+(  113) !$acc routine vector
+(  114)     INTEGER(KIND=8) :: YLSTACK_L
+(  115)     INTEGER(KIND=8), INTENT(INOUT) :: YDSTACK_L
+(  116)     YLSTACK_L = YDSTACK_L
+(  117) !$acc data present( KCBOT, KTYPE, LDCUM, PQSEN, PAPH, PGEOH, PMFU, PGP2DSPP, PDMFEN, PDMFDE, YDCST, YDECUMF, YDSPP_CONFIG )
+(  118)     
+(  119)     !----------------------------------------------------------------------
+(  120)     
+(  121)     !*    1.           CALCULATE ENTRAINMENT AND DETRAINMENT RATES
+(  122)     !                  -------------------------------------------
+(  123)     
+(  124)     
+(  125) !$acc loop vector
+(  126)     DO JL=KIDIA,KFDIA
+(  127)       IF (LDWORK) THEN
+(  128)         
+(  129)         ZRG = 1.0_JPRB / YDCST%RG
+(  130)         
+(  131)         ! prepare SPP perturbations (just once)
+(  132)         IF (YDSPP_CONFIG%LSPP) THEN
+(  133)           IPN = YDSPP_CONFIG%PPTR%DETRPEN
+(  134)           LLPERT_DETRPEN = IPN > 0
+(  135)           IF (LLPERT_DETRPEN) THEN
+(  136)             PN1 = YDSPP_CONFIG%SM%PN(IPN)
+(  137)             IPDETRPEN = PN1%MP
+(  138)           END IF
+(  139)         ELSE
+(  140)           LLPERT_DETRPEN = .false.
+(  141)         END IF
+(  142)         
+(  143)         PDMFEN(JL) = 0.0_JPRB
+(  144)         PDMFDE(JL) = 0.0_JPRB
+(  145)         ZENTR = 0.0
+(  146)         
+(  147)         !*    1.1          SPECIFY ENTRAINMENT RATES
+(  148)         !                  -------------------------
+(  149)         
+(  150)         IF (LDCUM(JL)) THEN
+(  151)           ZDZ = (PGEOH(JL, KK) - PGEOH(JL, KK + 1))*ZRG
+(  152)           ZMF = PMFU(JL, KK + 1)*ZDZ
+(  153)           LLO1 = KK < KCBOT(JL)
+(  154)           IF (LLO1) THEN
+(  155)             IF (YDSPP_CONFIG%LSPP .and. LLPERT_DETRPEN) THEN
+(  156)               ZXDETRPEN = YDECUMF%DETRPEN*EXP(PN1%MU(1) + PN1%XMAG(1)*PGP2DSPP(JL, IPDETRPEN))
+(  157)             ELSE
+(  158)               ZXDETRPEN = YDECUMF%DETRPEN
+(  159)             END IF
+(  160)             PDMFEN(JL) = ZENTR*ZMF
+(  161)             PDMFDE(JL) = ZXDETRPEN*ZMF
+(  162)           END IF
+(  163)         END IF
+(  164)         
+(  165)       END IF
+(  166)     END DO
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 4
+
+(  167)     
+(  168)     
+(  169)     
+(  170) !$acc end data
+(  171)   END SUBROUTINE CUENTR_LOKI
+(  172) END MODULE CUENTR_LOKI_MOD
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 5
+
+(    1) # 1 "./cuentr.scc_stack.F90"
+(    1) MODULE CUENTR_LOKI_MOD
+(    2)   CONTAINS
+(    3)   SUBROUTINE CUENTR_LOKI (YDCST, YDECUMF, YDSPP_CONFIG, KIDIA, KFDIA, KLON, KLEV, KK, KCBOT, KTYPE, LDCUM, LDWORK, PQSEN, PAPH,  &
+(    4)   & PGEOH, PMFU, PGP2DSPP, PDMFEN, PDMFDE, YDSTACK_L)
+(    5)     
+(    6)     !          M.TIEDTKE         E.C.M.W.F.     12/89
+(    7)     !          P.BECHTOLD        E.C.M.W.F.     06/07
+(    8)     !          P.BECHTOLD        E.C.M.W.F.     03/12
+(    9)     
+(   10)     !          PURPOSE.
+(   11)     !          --------
+(   12)     !          THIS ROUTINE CALCULATES ENTRAINMENT/DETRAINMENT RATES
+(   13)     !          FOR UPDRAFTS IN CUMULUS PARAMETERIZATION
+(   14)     
+(   15)     !          INTERFACE
+(   16)     !          ---------
+(   17)     
+(   18)     !          THIS ROUTINE IS CALLED FROM *CUASC*.
+(   19)     !          INPUT ARE ENVIRONMENTAL VALUES T,Q ETC
+(   20)     !          AND UPDRAFT VALUES T,Q ETC
+(   21)     !          IT RETURNS ENTRAINMENT/DETRAINMENT RATES
+(   22)     
+(   23)     !          METHOD.
+(   24)     !          --------
+(   25)     !          TURBULENT ENTRAINMENT IS SIMULATED BY A CONSTANT
+(   26)     !          MULTIPLIED BY A VERTICAL SCALING FUNCTION
+(   27)     
+(   28)     !     PARAMETER     DESCRIPTION                                   UNITS
+(   29)     !     ---------     -----------                                   -----
+(   30)     !     INPUT PARAMETERS (INTEGER):
+(   31)     
+(   32)     !    *KIDIA*        START POINT
+(   33)     !    *KFDIA*        END POINT
+(   34)     !    *KLON*         NUMBER OF GRID POINTS PER PACKET
+(   35)     !    *KLEV*         NUMBER OF LEVELS
+(   36)     !    *KK*           CURRENT LEVEL
+(   37)     !    *KCBOT*        CLOUD BASE LEVEL
+(   38)     
+(   39)     !    INPUT PARAMETERS (LOGICAL):
+(   40)     
+(   41)     !    *LDCUM*        FLAG: .TRUE. FOR CONVECTIVE POINTS
+(   42)     
+(   43)     !    INPUT PARAMETERS (REAL):
+(   44)     
+(   45)     !    *PQSEN*        SATURATION SPEC. HUMIDITY                   KG/KG
+(   46)     !    *PAPH*         PROVISIONAL PRESSURE ON HALF LEVELS          PA
+(   47)     !    *PGEOH*        PROVISIONAL GEOPOTENTIAL ON HALF LEVELS      PA
+(   48)     !    *PMFU*         MASSFLUX IN UPDRAFTS                        KG/(M2*S)
+(   49)     !    *PGP2DSPP*     Standard stochastic variable (mean=0, SD=1)
+(   50)     
+(   51)     !    OUTPUT PARAMETERS (REAL):
+(   52)     
+(   53)     !    *PDMFEN*       ENTRAINMENT RATE                            KG/(M2*S)
+(   54)     !    *PDMFDE*       DETRAINMENT RATE                            KG/(M2*S)
+(   55)     
+(   56)     !          EXTERNALS
+(   57)     !          ---------
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 6
+
+(   58)     !          NONE
+(   59)     !
+(   60)     !
+(   61)     !    MODIFICATIONS.
+(   62)     !    --------------
+(   63)     !
+(   64)     !    M. Leutbecher & S.-J. Lock (Jan 2016) Introduced SPP scheme (LSPP)
+(   65)     !    M. Leutbecher (Oct 2020) SPP abstraction
+(   66)     !     R. El Khatib 22-Jun-2022 A contribution to simplify phasing after the refactoring of YOMCLI/YOMCST/YOETHF.
+(   67)     !----------------------------------------------------------------------
+(   68)     
+(   69)     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY: REAL64
+(   70)     USE, intrinsic :: ISO_C_BINDING, ONLY: C_SIZEOF
+(   71)     USE PARKIND1, ONLY: JPIM, JPRB
+(   72)     USE YOMHOOK, ONLY: LHOOK, JPHOOK
+(   73)     
+(   74)     USE YOMCST, ONLY: TCST
+(   75)     USE YOECUMF, ONLY: TECUMF
+(   76)     USE SPP_MOD, ONLY: TSPP_CONFIG
+(   77)     USE SPP_GEN_MOD, ONLY: SPP_PERT
+(   78)     
+(   79)     IMPLICIT NONE
+(   80)     
+(   81)     TYPE(TCST), INTENT(IN) :: YDCST
+(   82)     TYPE(TECUMF), INTENT(IN) :: YDECUMF
+(   83)     TYPE(TSPP_CONFIG), INTENT(IN) :: YDSPP_CONFIG
+(   84)     INTEGER(KIND=JPIM), INTENT(IN) :: KLON
+(   85)     INTEGER(KIND=JPIM), INTENT(IN) :: KLEV
+(   86)     INTEGER(KIND=JPIM), INTENT(IN) :: KIDIA
+(   87)     INTEGER(KIND=JPIM), INTENT(IN) :: KFDIA
+(   88)     INTEGER(KIND=JPIM), INTENT(IN) :: KK
+(   89)     INTEGER(KIND=JPIM), INTENT(IN) :: KCBOT(KLON)
+(   90)     INTEGER(KIND=JPIM), INTENT(IN) :: KTYPE(KLON)
+(   91)     LOGICAL, INTENT(IN) :: LDCUM(KLON)
+(   92)     LOGICAL, INTENT(IN) :: LDWORK
+(   93)     REAL(KIND=JPRB), INTENT(IN) :: PQSEN(KLON, KLEV)
+(   94)     REAL(KIND=JPRB), INTENT(IN) :: PAPH(KLON, KLEV + 1)
+(   95)     REAL(KIND=JPRB), INTENT(IN) :: PGEOH(KLON, KLEV + 1)
+(   96)     REAL(KIND=JPRB), INTENT(IN) :: PMFU(KLON, KLEV)
+(   97)     REAL(KIND=JPRB), INTENT(IN) :: PGP2DSPP(KLON, YDSPP_CONFIG%SM%NRFTOTAL)
+(   98)     REAL(KIND=JPRB), INTENT(OUT) :: PDMFEN(KLON)
+(   99)     REAL(KIND=JPRB), INTENT(OUT) :: PDMFDE(KLON)
+(  100)     
+(  101)     LOGICAL :: LLO1
+(  102)     
+(  103)     INTEGER(KIND=JPIM) :: JL
+(  104)     
+(  105)     ! A bunch of SPP variables that are saved between calls for efficiency reasons
+(  106)     LOGICAL :: LLPERT_DETRPEN    ! SPP perturbation on?
+(  107)     INTEGER(KIND=JPIM) :: IPDETRPEN    ! SPP random field pointer
+(  108)     INTEGER(KIND=JPIM) :: IPN    ! SPP perturbation pointer
+(  109)     TYPE(SPP_PERT) :: PN1    ! SPP pertn. config. for RTAU
+(  110)     
+(  111)     REAL(KIND=JPRB) :: ZDZ, ZENTR, ZMF, ZRG, ZXDETRPEN
+(  112)     REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+(  113) !$acc routine vector
+(  114)     INTEGER(KIND=8) :: YLSTACK_L
+(  115)     INTEGER(KIND=8), INTENT(INOUT) :: YDSTACK_L
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 7
+
+(  116)     YLSTACK_L = YDSTACK_L
+(  117) !$acc data present( KCBOT, KTYPE, LDCUM, PQSEN, PAPH, PGEOH, PMFU, PGP2DSPP, PDMFEN, PDMFDE, YDCST, YDECUMF, YDSPP_CONFIG )
+(  118)     
+(  119)     !----------------------------------------------------------------------
+(  120)     
+(  121)     !*    1.           CALCULATE ENTRAINMENT AND DETRAINMENT RATES
+(  122)     !                  -------------------------------------------
+(  123)     
+(  124)     
+(  125) !$acc loop vector
+(  126)     DO JL=KIDIA,KFDIA
+(  127)       IF (LDWORK) THEN
+(  128)         
+(  129)         ZRG = 1.0_JPRB / YDCST%RG
+(  130)         
+(  131)         ! prepare SPP perturbations (just once)
+(  132)         IF (YDSPP_CONFIG%LSPP) THEN
+(  133)           IPN = YDSPP_CONFIG%PPTR%DETRPEN
+(  134)           LLPERT_DETRPEN = IPN > 0
+(  135)           IF (LLPERT_DETRPEN) THEN
+(  136)             PN1 = YDSPP_CONFIG%SM%PN(IPN)
+(  137)             IPDETRPEN = PN1%MP
+(  138)           END IF
+(  139)         ELSE
+(  140)           LLPERT_DETRPEN = .false.
+(  141)         END IF
+(  142)         
+(  143)         PDMFEN(JL) = 0.0_JPRB
+(  144)         PDMFDE(JL) = 0.0_JPRB
+(  145)         ZENTR = 0.0
+(  146)         
+(  147)         !*    1.1          SPECIFY ENTRAINMENT RATES
+(  148)         !                  -------------------------
+(  149)         
+(  150)         IF (LDCUM(JL)) THEN
+(  151)           ZDZ = (PGEOH(JL, KK) - PGEOH(JL, KK + 1))*ZRG
+(  152)           ZMF = PMFU(JL, KK + 1)*ZDZ
+(  153)           LLO1 = KK < KCBOT(JL)
+(  154)           IF (LLO1) THEN
+(  155)             IF (YDSPP_CONFIG%LSPP .and. LLPERT_DETRPEN) THEN
+(  156)               ZXDETRPEN = YDECUMF%DETRPEN*EXP(PN1%MU(1) + PN1%XMAG(1)*PGP2DSPP(JL, IPDETRPEN))
+(  157)             ELSE
+(  158)               ZXDETRPEN = YDECUMF%DETRPEN
+(  159)             END IF
+(  160)             PDMFEN(JL) = ZENTR*ZMF
+(  161)             PDMFDE(JL) = ZXDETRPEN*ZMF
+(  162)           END IF
+(  163)         END IF
+(  164)         
+(  165)       END IF
+(  166)     END DO
+(  167)     
+(  168)     
+(  169)     
+(  170) !$acc end data
+(  171)   END SUBROUTINE CUENTR_LOKI
+(  172) END MODULE CUENTR_LOKI_MOD

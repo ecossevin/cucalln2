@@ -216,7 +216,7 @@ MODULE CUBASEN_LOKI_MOD
     REAL(KIND=JPRB) :: Z1S, Z2S, CUADJTQ_ZCOND, ZCOND1, CUADJTQ_ZCOR, ZFOEEWI, ZFOEEWL, CUADJTQ_ZOEALFA, ZQMAX, ZQSAT,  &
     & CUADJTQ_ZTARG, ZQP
     REAL(KIND=JPRB) :: ZL, ZI, ZF
-    LOGICAL :: LLFLAG
+    LOGICAL :: CUADJTQ_LLFLAG
     REAL(KIND=JPHOOK) :: CUADJTQ_ZHOOK_HANDLE
 #include "abor1.intfb.h"
 #include "cuadjtq.func.h"
@@ -536,9 +536,9 @@ MODULE CUBASEN_LOKI_MOD
             
             !   mixed phase saturation
             
-            LLFLAG = LLGO_ON
+            CUADJTQ_LLFLAG = LLGO_ON
             
-            IF (LLFLAG) THEN
+            IF (CUADJTQ_LLFLAG) THEN
               ZQP = 1.0_JPRB / ZPH
               ZL = 1.0_JPRB / (ZTU(JL, IK) - YDTHF%R4LES)
               ZI = 1.0_JPRB / (ZTU(JL, IK) - YDTHF%R4IES)

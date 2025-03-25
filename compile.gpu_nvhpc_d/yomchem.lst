@@ -1,0 +1,455 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:27      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./yomchem.F90
+
+(    1) !****  YOMCHEM
+(    2) !
+(    3) !     PURPOSE.
+(    4) !     --------
+(    5) !       MODULE CONTAINING VARIABLES FOR CHEMISTRY 
+(    6) !
+(    7) !     PARAMETER        DESCRIPTION                                  
+(    8) !     ---------         -----------                                  !      
+(    9) !     CHEM_SCHEME      Name of chemistry scheme
+(   10) !
+(   11) !     REFERENCE.
+(   12) !     ----------
+(   13) !                   
+(   14) !     AUTHOR.
+(   15) !     -------
+(   16) !     2009-08-20   J. Flemming
+(   17) 
+(   18) !     MODIFICATIONS.
+(   19) !     --------------
+(   20) !     2012-12-01   M. Diamantakis  Move LTRCMFIX_PS to YOM_YGFL to allow use by other GFL fields 
+(   21) !     2014-12-01   M. Diamantakis  Move all mass fixers to YOM_YGFL to allow use by other 
+(   22) !                                  GFL fields
+(   23) !     2015-12-22   S. Massart     Add the linear carbon monoxide (CO) scheme
+(   24) !     2018-07-06   V. Huijnen     Add options for ASIS solver for MOC-chemistry, following implementation 
+(   25) !                                 by Philippe Moinat (CERFACS)
+(   26) !     2018-09      M. Michou       Add key to ARPEGE-Climat 6.3 chemistry scheme  
+(   27) MODULE YOMCHEM
+(   28) 
+(   29) USE PARKIND1  ,ONLY : JPIM, JPRB
+(   30) 
+(   31) IMPLICIT NONE
+(   32) SAVE
+(   33) 
+(   34) ! minimum value for chemistry tracer  
+(   35)      REAL(KIND=JPRB), PARAMETER :: REPSCHEM = 1.0E-25_JPRB 
+(   36) 
+(   37) !   pointer to mass budget fields in extra array 
+(   38) 
+(   39)     ! general fields always required by LCHEM_DIA
+(   40)     INTEGER(KIND=JPIM),PARAMETER:: IEXTR_EM=1, IEXTR_DD=2, IEXTR_WD=3, IEXTR_CH=4, IEXTR_CHTR=5, IEXTR_NG=6, IEXTR_FE=7
+(   41) 
+(   42)     ! additional fields required by LCHEM_DIA if GLOMAP is used
+(   43)     INTEGER(KIND=JPIM),PARAMETER:: IEXTR_SDM=8, IEXTR_COND=9, IEXTR_NUC=10, IEXTR_RMOD=11
+(   44) 
+(   45)     ! additional fields required by LCHEM_DIAC
+(   46)     INTEGER(KIND=JPIM),PARAMETER:: IEXTR_ROH=12,IEXTR_PH=13, IEXTR_ROH_TROP=14, IEXTR_CHEMX=15
+(   47) 
+(   48) TYPE :: TCHEM
+(   49)      CHARACTER(LEN=20)    :: CHEM_SCHEME 
+(   50) !  mass diagnostics switch for specific chemistry budget  (OH PHOTO OH_TROP PHOTO_trop ) 
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:27      page 2
+
+(   51)      LOGICAL    :: LCHEM_DIAC
+(   52) !  switch to use online J-rate ('J-ONline') computation for BASCOE chemistry, or alternatively LUT
+(   53)      LOGICAL    :: LCHEM_BASCOE_JON
+(   54) !  switch to use heterogeneous chemistry in BASCOE-stratospheric chemistry. Default is true.
+(   55) !  Only set to false in case of an emergency.
+(   56)      LOGICAL    :: LCHEM_BASCOE_HETCHEM
+(   57) !  switch to use JNO2 from tropo (CBO5) in strato (BASCOE)
+(   58)      LOGICAL    :: LCHEM_EXTENDJNO2
+(   59) !  MOZART: use a dummy RSF table for testing without huge lookup table
+(   60)      LOGICAL    :: LMOZART_RSF_DUMMY
+(   61) !  output of photolysis rates in extra ) 
+(   62)      LOGICAL    :: LCHEM_JOUT
+(   63) !  Lightning emissions active  
+(   64)      LOGICAL    :: LCHEM_LIGHT
+(   65) !  Lightning NOx emissions tuning factor
+(   66)      REAL(KIND=JPRB) :: RCHEM_LINOX_SCALING
+(   67) !  Air craft emissions active  
+(   68)      LOGICAL    :: LCHEM_ACNOX
+(   69) !  NOX (1) /NOy (2) Family advection  
+(   70)      INTEGER(KIND=JPIM) :: KCHEM_NOXADV
+(   71) ! Chemistry wet deposition
+(   72)      INTEGER(KIND=JPIM)   :: KCHEM_WETDEP
+(   73) ! Dry deposition option switch
+(   74)     INTEGER(KIND=JPIM)   :: KCHEM_DRYDEP
+(   75) !    apply both O3 CBM4 and Cariolle in Stratopshere
+(   76)      LOGICAL    :: LCHEM_REVCHEM
+(   77) !    apply revised (updated) CB05 chemistry
+(   78)      LOGICAL    :: LCHEM_STMA
+(   79) !    use analysed ozone of ic in startosphere 
+(   80)      LOGICAL    :: LCHEM_ANAO3
+(   81) !   mass change in SL pressure fixer
+(   82)     ! 1: after MF 2: before MF 3: troposphere after 4: troposphere before MF        
+(   83)     REAL(KIND=JPRB)        :: SMASSCOR (300,4)  
+(   84) !  surpress NOx in Stratopshere by setting it to zero  
+(   85)     LOGICAL     :: LCHEM_0NOX
+(   86) !  use CH4 analysis as IC for methane   
+(   87)     LOGICAL     :: LCHEM_ANACH4
+(   88) !  use weak relaxation for CH4 (set true when emissions present in CB05)
+(   89)     LOGICAL     :: LCHEM_WEAK_CH4_RELAXATION
+(   90) !  apply scvangening in convection, but not removal   
+(   91)     LOGICAL     :: LCHEM_CONVSCAV
+(   92) !  apply C-SHAPE NOx LI profile   
+(   93)     LOGICAL     :: LCHEM_CSHAPE 
+(   94) !  original C-SHAPE profile for LiNOx (from Pickering et al., 1998)
+(   95)     LOGICAL     :: LCHEM_CSHAPE98
+(   96) !  apply grid scaling in wet deposition   
+(   97)     LOGICAL     :: LCHEM_WDFR 
+(   98) !  apply htap setting   
+(   99)     LOGICAL     :: LCHEM_HTAP 
+(  100) !  year if pre-historic application (pre 2000)    
+(  101)     INTEGER(KIND=JPIM) :: KCHEM_YEARPI 
+(  102) ! fixed CH4 value 
+(  103)     REAL(KIND=JPRB) :: RCH4CONST  
+(  104) ! variable to select the solver type (CB05-chemistry)
+(  105)     INTEGER(KIND=JPIM) :: KCHEM_SOLVE
+(  106) ! variable use chemistry o3 in radiation (need NGHGRAD=20,  LEPO3RA=true )
+(  107)     LOGICAL :: LCHEM_O3RAD
+(  108) !  Chemistry TL/AD
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:27      page 3
+
+(  109)    LOGICAL  :: LCHEM_TL 
+(  110) ! variable use prognostic aersol for photolysis and heterogenous uptake
+(  111)     LOGICAL :: LCHEM_AEROI
+(  112) !   arrays with of unused fields in extra arrays for IEXTR_EM, IEXTR_DD and IEXTR_WD 
+(  113)     INTEGER(KIND=JPIM) :: IEXTR_FREE(3,160) 
+(  114) 
+(  115) !     NUCOCH1:   unit number for reading the carbon monoxide coefficient file 1
+(  116) !     NUCOCH2:   unit number for reading the carbon monoxide coefficient file 2
+(  117) 
+(  118)     INTEGER(KIND=JPIM) :: NUCOCH1
+(  119)     INTEGER(KIND=JPIM) :: NUCOCH2
+(  120) 
+(  121) !   number of coeficients for the linco scheme
+(  122)     INTEGER(KIND=JPIM) :: NCHEM_LCOCOEF
+(  123) !   version of the coeficient to read
+(  124)     CHARACTER(LEN=5)   :: CHEM_LCOVERS
+(  125) !   TRUE to have a mesospheric source
+(  126)     LOGICAL             :: LCHEM_LCOMESO
+(  127) !   climatological (True) or derived from the scheme coeficients (False) values for the  source 
+(  128)     LOGICAL             :: LCHEM_LCOCSTCLIM
+(  129) !   climatological relaxation time (in days)
+(  130)     REAL(KIND=JPRB)     :: RCHEM_LCOTAUTOP
+(  131) !   climatological relaxation value (in kg/kg)
+(  132)     REAL(KIND=JPRB)     :: RCHEM_LCOCLIMTOP
+(  133) !   TRUE to limit the CO tendency and concentration
+(  134)     LOGICAL             :: LCHEM_LCOLIMIT
+(  135) !   Coeficient to apply to the A1 coeficient of the scheme
+(  136)     REAL(KIND=JPRB)     :: RCHEM_LCOCOEFA1
+(  137) !   ASIS solution method
+(  138)     CHARACTER(LEN=5)   :: CSOLMET_ASIS             ! DGESV, GMRES or GSEID  or others to be added (NAG methods)
+(  139)     INTEGER(KIND=JPIM) :: M_soliter_ASIS           ! Max number of iterations, iterative method
+(  140)     REAL(KIND=JPRB)    :: solcv_ASIS               ! Convergence criterion, iterative method
+(  141) 
+(  142)     REAL(KIND=JPRB)    :: RTOL_ASIS                ! Relative Tolerance parameter of ASIS
+(  143)     REAL(KIND=JPRB)    :: ATOL_ASIS                ! Absolute Tolerance parameter of ASIS
+(  144) 
+(  145)     INTEGER(KIND=JPIM) :: N_F_RTOL_ASIS            ! function applied to ASIS_RTOL to modulate its value
+(  146)                                                    ! according eg to the altitude or latitude
+(  147)                                                    ! (0 = no function applied, 1 = vertical profile with RTOL=0.1 at 100hPa,
+(  148)                                                    !  2 = vertical profile with RTOL=0.05 at 100hPa)
+(  149)     INTEGER(KIND=JPIM) :: N_F_ATOL_ASIS            ! function applied to ASIS_RTOL to modulate its value
+(  150)                                                    ! (0 = no function applied, 1 = ATOL=1.E-13*density of air molecules)
+(  151) 
+(  152) !     GRID POINT ARRAYS FOR CARBON MONOXYDE: DM-GLOBAL VERSIONS
+(  153) 
+(  154)     !REAL(KIND=JPRB),ALLOCATABLE:: TCO1D(:)
+(  155)     REAL(KIND=JPRB),ALLOCATABLE:: TCO2DG(:,:)
+(  156)     !REAL(KIND=JPRB),ALLOCATABLE:: TCO3DBG(:,:,:)
+(  157)     REAL(KIND=JPRB),ALLOCATABLE:: TCOTOP(:)
+(  158) 
+(  159) !   apply ARPEGE-Climat chemistry specificities    
+(  160)     LOGICAL             :: LCHEM_ARPCLIM
+(  161) !   Emission-driven mode for methane (else, default to concentration driven)
+(  162)     LOGICAL             :: LCHEM_EMICH4
+(  163)     
+(  164) END TYPE TCHEM
+(  165) 
+(  166) !!TYPE(TCHEM), POINTER :: YRCHEM => NULL()
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:27      page 4
+
+(  167) 
+(  168) END MODULE YOMCHEM
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:27      page 5
+
+(    1) # 1 "./yomchem.F90"
+(    1) !****  YOMCHEM
+(    2) !
+(    3) !     PURPOSE.
+(    4) !     --------
+(    5) !       MODULE CONTAINING VARIABLES FOR CHEMISTRY 
+(    6) !
+(    7) !     PARAMETER        DESCRIPTION                                  
+(    8) !     ---------         -----------                                  !      
+(    9) !     CHEM_SCHEME      Name of chemistry scheme
+(   10) !
+(   11) !     REFERENCE.
+(   12) !     ----------
+(   13) !                   
+(   14) !     AUTHOR.
+(   15) !     -------
+(   16) !     2009-08-20   J. Flemming
+(   17) # 18 "./yomchem.F90"
+(   18) !     MODIFICATIONS.
+(   19) !     --------------
+(   20) !     2012-12-01   M. Diamantakis  Move LTRCMFIX_PS to YOM_YGFL to allow use by other GFL fields 
+(   21) !     2014-12-01   M. Diamantakis  Move all mass fixers to YOM_YGFL to allow use by other 
+(   22) !                                  GFL fields
+(   23) !     2015-12-22   S. Massart     Add the linear carbon monoxide (CO) scheme
+(   24) !     2018-07-06   V. Huijnen     Add options for ASIS solver for MOC-chemistry, following implementation 
+(   25) !                                 by Philippe Moinat (CERFACS)
+(   26) !     2018-09      M. Michou       Add key to ARPEGE-Climat 6.3 chemistry scheme  
+(   27) MODULE YOMCHEM
+(   28) # 29 "./yomchem.F90"
+(   29) USE PARKIND1  ,ONLY : JPIM, JPRB
+(   30) # 31 "./yomchem.F90"
+(   31) IMPLICIT NONE
+(   32) SAVE
+(   33) # 34 "./yomchem.F90"
+(   34) ! minimum value for chemistry tracer  
+(   35)      REAL(KIND=JPRB), PARAMETER :: REPSCHEM = 1.0E-25_JPRB 
+(   36) # 37 "./yomchem.F90"
+(   37) !   pointer to mass budget fields in extra array 
+(   38) # 39 "./yomchem.F90"
+(   39)     ! general fields always required by LCHEM_DIA
+(   40)     INTEGER(KIND=JPIM),PARAMETER:: IEXTR_EM=1, IEXTR_DD=2, IEXTR_WD=3, IEXTR_CH=4, IEXTR_CHTR=5, IEXTR_NG=6, IEXTR_FE=7
+(   41) # 42 "./yomchem.F90"
+(   42)     ! additional fields required by LCHEM_DIA if GLOMAP is used
+(   43)     INTEGER(KIND=JPIM),PARAMETER:: IEXTR_SDM=8, IEXTR_COND=9, IEXTR_NUC=10, IEXTR_RMOD=11
+(   44) # 45 "./yomchem.F90"
+(   45)     ! additional fields required by LCHEM_DIAC
+(   46)     INTEGER(KIND=JPIM),PARAMETER:: IEXTR_ROH=12,IEXTR_PH=13, IEXTR_ROH_TROP=14, IEXTR_CHEMX=15
+(   47) # 48 "./yomchem.F90"
+(   48) TYPE :: TCHEM
+(   49)      CHARACTER(LEN=20)    :: CHEM_SCHEME 
+(   50) !  mass diagnostics switch for specific chemistry budget  (OH PHOTO OH_TROP PHOTO_trop ) 
+(   51)      LOGICAL    :: LCHEM_DIAC
+(   52) !  switch to use online J-rate ('J-ONline') computation for BASCOE chemistry, or alternatively LUT
+(   53)      LOGICAL    :: LCHEM_BASCOE_JON
+(   54) !  switch to use heterogeneous chemistry in BASCOE-stratospheric chemistry. Default is true.
+(   55) !  Only set to false in case of an emergency.
+(   56)      LOGICAL    :: LCHEM_BASCOE_HETCHEM
+(   57) !  switch to use JNO2 from tropo (CBO5) in strato (BASCOE)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:27      page 6
+
+(   58)      LOGICAL    :: LCHEM_EXTENDJNO2
+(   59) !  MOZART: use a dummy RSF table for testing without huge lookup table
+(   60)      LOGICAL    :: LMOZART_RSF_DUMMY
+(   61) !  output of photolysis rates in extra ) 
+(   62)      LOGICAL    :: LCHEM_JOUT
+(   63) !  Lightning emissions active  
+(   64)      LOGICAL    :: LCHEM_LIGHT
+(   65) !  Lightning NOx emissions tuning factor
+(   66)      REAL(KIND=JPRB) :: RCHEM_LINOX_SCALING
+(   67) !  Air craft emissions active  
+(   68)      LOGICAL    :: LCHEM_ACNOX
+(   69) !  NOX (1) /NOy (2) Family advection  
+(   70)      INTEGER(KIND=JPIM) :: KCHEM_NOXADV
+(   71) ! Chemistry wet deposition
+(   72)      INTEGER(KIND=JPIM)   :: KCHEM_WETDEP
+(   73) ! Dry deposition option switch
+(   74)     INTEGER(KIND=JPIM)   :: KCHEM_DRYDEP
+(   75) !    apply both O3 CBM4 and Cariolle in Stratopshere
+(   76)      LOGICAL    :: LCHEM_REVCHEM
+(   77) !    apply revised (updated) CB05 chemistry
+(   78)      LOGICAL    :: LCHEM_STMA
+(   79) !    use analysed ozone of ic in startosphere 
+(   80)      LOGICAL    :: LCHEM_ANAO3
+(   81) !   mass change in SL pressure fixer
+(   82)     ! 1: after MF 2: before MF 3: troposphere after 4: troposphere before MF        
+(   83)     REAL(KIND=JPRB)        :: SMASSCOR (300,4)  
+(   84) !  surpress NOx in Stratopshere by setting it to zero  
+(   85)     LOGICAL     :: LCHEM_0NOX
+(   86) !  use CH4 analysis as IC for methane   
+(   87)     LOGICAL     :: LCHEM_ANACH4
+(   88) !  use weak relaxation for CH4 (set true when emissions present in CB05)
+(   89)     LOGICAL     :: LCHEM_WEAK_CH4_RELAXATION
+(   90) !  apply scvangening in convection, but not removal   
+(   91)     LOGICAL     :: LCHEM_CONVSCAV
+(   92) !  apply C-SHAPE NOx LI profile   
+(   93)     LOGICAL     :: LCHEM_CSHAPE 
+(   94) !  original C-SHAPE profile for LiNOx (from Pickering et al., 1998)
+(   95)     LOGICAL     :: LCHEM_CSHAPE98
+(   96) !  apply grid scaling in wet deposition   
+(   97)     LOGICAL     :: LCHEM_WDFR 
+(   98) !  apply htap setting   
+(   99)     LOGICAL     :: LCHEM_HTAP 
+(  100) !  year if pre-historic application (pre 2000)    
+(  101)     INTEGER(KIND=JPIM) :: KCHEM_YEARPI 
+(  102) ! fixed CH4 value 
+(  103)     REAL(KIND=JPRB) :: RCH4CONST  
+(  104) ! variable to select the solver type (CB05-chemistry)
+(  105)     INTEGER(KIND=JPIM) :: KCHEM_SOLVE
+(  106) ! variable use chemistry o3 in radiation (need NGHGRAD=20,  LEPO3RA=true )
+(  107)     LOGICAL :: LCHEM_O3RAD
+(  108) !  Chemistry TL/AD
+(  109)    LOGICAL  :: LCHEM_TL 
+(  110) ! variable use prognostic aersol for photolysis and heterogenous uptake
+(  111)     LOGICAL :: LCHEM_AEROI
+(  112) !   arrays with of unused fields in extra arrays for IEXTR_EM, IEXTR_DD and IEXTR_WD 
+(  113)     INTEGER(KIND=JPIM) :: IEXTR_FREE(3,160) 
+(  114) # 115 "./yomchem.F90"
+(  115) !     NUCOCH1:   unit number for reading the carbon monoxide coefficient file 1
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:27      page 7
+
+(  116) !     NUCOCH2:   unit number for reading the carbon monoxide coefficient file 2
+(  117) # 118 "./yomchem.F90"
+(  118)     INTEGER(KIND=JPIM) :: NUCOCH1
+(  119)     INTEGER(KIND=JPIM) :: NUCOCH2
+(  120) # 121 "./yomchem.F90"
+(  121) !   number of coeficients for the linco scheme
+(  122)     INTEGER(KIND=JPIM) :: NCHEM_LCOCOEF
+(  123) !   version of the coeficient to read
+(  124)     CHARACTER(LEN=5)   :: CHEM_LCOVERS
+(  125) !   TRUE to have a mesospheric source
+(  126)     LOGICAL             :: LCHEM_LCOMESO
+(  127) !   climatological (True) or derived from the scheme coeficients (False) values for the  source 
+(  128)     LOGICAL             :: LCHEM_LCOCSTCLIM
+(  129) !   climatological relaxation time (in days)
+(  130)     REAL(KIND=JPRB)     :: RCHEM_LCOTAUTOP
+(  131) !   climatological relaxation value (in kg/kg)
+(  132)     REAL(KIND=JPRB)     :: RCHEM_LCOCLIMTOP
+(  133) !   TRUE to limit the CO tendency and concentration
+(  134)     LOGICAL             :: LCHEM_LCOLIMIT
+(  135) !   Coeficient to apply to the A1 coeficient of the scheme
+(  136)     REAL(KIND=JPRB)     :: RCHEM_LCOCOEFA1
+(  137) !   ASIS solution method
+(  138)     CHARACTER(LEN=5)   :: CSOLMET_ASIS             ! DGESV, GMRES or GSEID  or others to be added (NAG methods)
+(  139)     INTEGER(KIND=JPIM) :: M_soliter_ASIS           ! Max number of iterations, iterative method
+(  140)     REAL(KIND=JPRB)    :: solcv_ASIS               ! Convergence criterion, iterative method
+(  141) # 142 "./yomchem.F90"
+(  142)     REAL(KIND=JPRB)    :: RTOL_ASIS                ! Relative Tolerance parameter of ASIS
+(  143)     REAL(KIND=JPRB)    :: ATOL_ASIS                ! Absolute Tolerance parameter of ASIS
+(  144) # 145 "./yomchem.F90"
+(  145)     INTEGER(KIND=JPIM) :: N_F_RTOL_ASIS            ! function applied to ASIS_RTOL to modulate its value
+(  146)                                                    ! according eg to the altitude or latitude
+(  147)                                                    ! (0 = no function applied, 1 = vertical profile with RTOL=0.1 at 100hPa,
+(  148)                                                    !  2 = vertical profile with RTOL=0.05 at 100hPa)
+(  149)     INTEGER(KIND=JPIM) :: N_F_ATOL_ASIS            ! function applied to ASIS_RTOL to modulate its value
+(  150)                                                    ! (0 = no function applied, 1 = ATOL=1.E-13*density of air molecules)
+(  151) # 152 "./yomchem.F90"
+(  152) !     GRID POINT ARRAYS FOR CARBON MONOXYDE: DM-GLOBAL VERSIONS
+(  153) # 154 "./yomchem.F90"
+(  154)     !REAL(KIND=JPRB),ALLOCATABLE:: TCO1D(:)
+(  155)     REAL(KIND=JPRB),ALLOCATABLE:: TCO2DG(:,:)
+(  156)     !REAL(KIND=JPRB),ALLOCATABLE:: TCO3DBG(:,:,:)
+(  157)     REAL(KIND=JPRB),ALLOCATABLE:: TCOTOP(:)
+(  158) # 159 "./yomchem.F90"
+(  159) !   apply ARPEGE-Climat chemistry specificities    
+(  160)     LOGICAL             :: LCHEM_ARPCLIM
+(  161) !   Emission-driven mode for methane (else, default to concentration driven)
+(  162)     LOGICAL             :: LCHEM_EMICH4
+(  163)     
+(  164) END TYPE TCHEM
+(  165) # 166 "./yomchem.F90"
+(  166) !!TYPE(TCHEM), POINTER :: YRCHEM => NULL()
+(  167) # 168 "./yomchem.F90"
+(  168) END MODULE YOMCHEM

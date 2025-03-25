@@ -1,0 +1,95 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:23      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./yoegwdwms.F90
+
+(    1) MODULE YOEGWDWMS
+(    2) 
+(    3) USE PARKIND1  ,ONLY : JPRB
+(    4) 
+(    5) IMPLICIT NONE
+(    6) 
+(    7) SAVE
+(    8) 
+(    9) ! ------  CONTROLS FOR SIMPLIFIED NON-OROGRAPHIC GRAVITY WAVE SCHEME
+(   10) 
+(   11) ! LREGNOGWD: .TRUE. if the regularization for non-orographic GWD is used
+(   12) 
+(   13) TYPE :: TEGWDWMS
+(   14) LOGICAL :: LREGWWMS
+(   15) !----------------------------------------------------------------------------
+(   16) CONTAINS
+(   17) END TYPE TEGWDWMS
+(   18) !============================================================================
+(   19) 
+(   20) !!TYPE(TEGWDWMS), POINTER :: YREGWDWMS => NULL()
+(   21) 
+(   22) END MODULE YOEGWDWMS
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:23      page 2
+
+(    1) # 1 "./yoegwdwms.F90"
+(    1) MODULE YOEGWDWMS
+(    2) # 3 "./yoegwdwms.F90"
+(    3) USE PARKIND1  ,ONLY : JPRB
+(    4) # 5 "./yoegwdwms.F90"
+(    5) IMPLICIT NONE
+(    6) # 7 "./yoegwdwms.F90"
+(    7) SAVE
+(    8) # 9 "./yoegwdwms.F90"
+(    9) ! ------  CONTROLS FOR SIMPLIFIED NON-OROGRAPHIC GRAVITY WAVE SCHEME
+(   10) # 11 "./yoegwdwms.F90"
+(   11) ! LREGNOGWD: .TRUE. if the regularization for non-orographic GWD is used
+(   12) # 13 "./yoegwdwms.F90"
+(   13) TYPE :: TEGWDWMS
+(   14) LOGICAL :: LREGWWMS
+(   15) !----------------------------------------------------------------------------
+(   16) CONTAINS
+(   17) END TYPE TEGWDWMS
+(   18) !============================================================================
+(   19) # 20 "./yoegwdwms.F90"
+(   20) !!TYPE(TEGWDWMS), POINTER :: YREGWDWMS => NULL()
+(   21) # 22 "./yoegwdwms.F90"
+(   22) END MODULE YOEGWDWMS

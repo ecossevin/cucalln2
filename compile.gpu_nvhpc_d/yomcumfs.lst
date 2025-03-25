@@ -1,0 +1,110 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:23      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./yomcumfs.F90
+
+(    1) MODULE YOMCUMFS
+(    2) USE PARKIND1, ONLY : JPRB
+(    3) USE YOMHOOK, ONLY : LHOOK, DR_HOOK, JPHOOK
+(    4) 
+(    5) IMPLICIT NONE
+(    6) 
+(    7) SAVE
+(    8) 
+(    9) !       ----------------------------------------------------------------
+(   10) !**    ** *YOMCUMFS* CONTAINS VARIABLES FOR SIMPLIFIED CONVECTION SCHEME 
+(   11) !       ----------------------------------------------------------------
+(   12) 
+(   13) TYPE :: TCUMFS
+(   14) LOGICAL :: LECUMFS
+(   15) LOGICAL :: LREGCV
+(   16) LOGICAL :: LMFCFL2_SHSTEP
+(   17) !----------------------------------------------------------------------------
+(   18) CONTAINS
+(   19) END TYPE TCUMFS
+(   20) !============================================================================
+(   21) 
+(   22) !!TYPE(TCUMFS), POINTER :: YRCUMFS => NULL()
+(   23) 
+(   24) !*    *YOMCUMFS* CONTAINS VARIABLES FOR SIMPLIFIED CONVECTION SCHEME 
+(   25) 
+(   26) !     P. LOPEZ      E.C.M.W.F.    09/01/2002
+(   27) 
+(   28) !     NAME            TYPE     DESCRIPTION
+(   29) !     ----            ----     -----------
+(   30) 
+(   31) !***  LECUMFS         LOGICAL  SWITCH ON SIMPLIFIED CONVECTIVE MASS-FLUX SCHEME IN TRAJECTORY
+(   32) !***  LREGCV          LOGICAL  SWITCH ON REGULARIZATIONS OF SIMPLIFIED CONVECTION SCHEME 
+(   33) !***                           IN TANGENT-LINEAR AND ADJOINT CALCULATIONS
+(   34) !***  LMFCFL2_SHSTEP  LOGICAL  SWITCH ON REDUCTION OF MASS FLUX CFL CRITERION FOR SHORT TIME STEPS 
+(   35) 
+(   36) !     ------------------------------------------------------------------
+(   37) END MODULE YOMCUMFS
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:23      page 2
+
+(    1) # 1 "./yomcumfs.F90"
+(    1) MODULE YOMCUMFS
+(    2) USE PARKIND1, ONLY : JPRB
+(    3) USE YOMHOOK, ONLY : LHOOK, DR_HOOK, JPHOOK
+(    4) # 5 "./yomcumfs.F90"
+(    5) IMPLICIT NONE
+(    6) # 7 "./yomcumfs.F90"
+(    7) SAVE
+(    8) # 9 "./yomcumfs.F90"
+(    9) !       ----------------------------------------------------------------
+(   10) !**    ** *YOMCUMFS* CONTAINS VARIABLES FOR SIMPLIFIED CONVECTION SCHEME 
+(   11) !       ----------------------------------------------------------------
+(   12) # 13 "./yomcumfs.F90"
+(   13) TYPE :: TCUMFS
+(   14) LOGICAL :: LECUMFS
+(   15) LOGICAL :: LREGCV
+(   16) LOGICAL :: LMFCFL2_SHSTEP
+(   17) !----------------------------------------------------------------------------
+(   18) CONTAINS
+(   19) END TYPE TCUMFS
+(   20) !============================================================================
+(   21) # 22 "./yomcumfs.F90"
+(   22) !!TYPE(TCUMFS), POINTER :: YRCUMFS => NULL()
+(   23) # 24 "./yomcumfs.F90"
+(   24) !*    *YOMCUMFS* CONTAINS VARIABLES FOR SIMPLIFIED CONVECTION SCHEME 
+(   25) # 26 "./yomcumfs.F90"
+(   26) !     P. LOPEZ      E.C.M.W.F.    09/01/2002
+(   27) # 28 "./yomcumfs.F90"
+(   28) !     NAME            TYPE     DESCRIPTION
+(   29) !     ----            ----     -----------
+(   30) # 31 "./yomcumfs.F90"
+(   31) !***  LECUMFS         LOGICAL  SWITCH ON SIMPLIFIED CONVECTIVE MASS-FLUX SCHEME IN TRAJECTORY
+(   32) !***  LREGCV          LOGICAL  SWITCH ON REGULARIZATIONS OF SIMPLIFIED CONVECTION SCHEME 
+(   33) !***                           IN TANGENT-LINEAR AND ADJOINT CALCULATIONS
+(   34) !***  LMFCFL2_SHSTEP  LOGICAL  SWITCH ON REDUCTION OF MASS FLUX CFL CRITERION FOR SHORT TIME STEPS 
+(   35) # 36 "./yomcumfs.F90"
+(   36) !     ------------------------------------------------------------------
+(   37) END MODULE YOMCUMFS

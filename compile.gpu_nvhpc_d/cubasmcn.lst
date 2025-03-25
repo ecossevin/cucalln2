@@ -1,0 +1,384 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:02      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./cubasmcn.F90
+
+(    1) SUBROUTINE CUBASMCN &
+(    2)  & (YDCST, YDECUMF,KIDIA,    KFDIA,    KLON,    KLEV,&
+(    3)  & KK,&
+(    4)  & PTEN,     PQEN,     PQSEN,&
+(    5)  & PVERVEL,  PGEO,     PGEOH,    LDCUM,    KTYPE,    KLAB,&
+(    6)  & KCBOT,    PMFU,     PMFUB,    PLRAIN,&
+(    7)  & PTU,      PQU,      PLU,&
+(    8)  & PMFUS,    PMFUQ,    PMFUL,    PDMFUP )  
+(    9) 
+(   10) !          M.TIEDTKE         E.C.M.W.F.     12/89
+(   11) 
+(   12) !          PURPOSE.
+(   13) !          --------
+(   14) !          THIS ROUTINE CALCULATES CLOUD BASE VALUES
+(   15) !          FOR MIDLEVEL CONVECTION
+(   16) 
+(   17) !          INTERFACE
+(   18) !          ---------
+(   19) 
+(   20) !          THIS ROUTINE IS CALLED FROM *CUASC*.
+(   21) !          INPUT ARE ENVIRONMENTAL VALUES T,Q ETC
+(   22) !          IT RETURNS CLOUDBASE VALUES FOR MIDLEVEL CONVECTION
+(   23) 
+(   24) !          METHOD.
+(   25) !          --------
+(   26) !          S. TIEDTKE (1989)
+(   27) 
+(   28) !     PARAMETER     DESCRIPTION                                   UNITS
+(   29) !     ---------     -----------                                   -----
+(   30) !     INPUT PARAMETERS (INTEGER):
+(   31) 
+(   32) !    *KIDIA*        START POINT
+(   33) !    *KFDIA*        END POINT
+(   34) !    *KLON*         NUMBER OF GRID POINTS PER PACKET
+(   35) !    *KLEV*         NUMBER OF LEVELS
+(   36) !    *KK*           ACTUAL LEVEL
+(   37) 
+(   38) !    INPUT PARAMETERS (REAL):
+(   39) 
+(   40) !    *PTEN*         PROVISIONAL ENVIRONMENT TEMPERATURE (T+1)       K
+(   41) !    *PQEN*         PROVISIONAL ENVIRONMENT SPEC. HUMIDITY (T+1)  KG/KG
+(   42) !    *PQSEN*        ENVIRONMENT SPEC. SATURATION HUMIDITY (T+1)   KG/KG
+(   43) !    *PVERVEL*      VERTICAL VELOCITY                             PA/S
+(   44) !    *PGEO*         GEOPOTENTIAL                                  M2/S2
+(   45) !    *PGEOH*        GEOPOTENTIAL ON HALF LEVELS                   M2/S2
+(   46) !    *PLRAIN*       RAIN WATER CONTENT IN UPDRAFTS                KG/KG
+(   47) 
+(   48) !    INPUT PARAMETERS (LOGICAL):
+(   49) 
+(   50) !    *LDCUM*        FLAG: .TRUE. FOR CONVECTIVE POINTS 
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:02      page 2
+
+(   51) 
+(   52) !    UPDATED PARAMETERS (INTEGER):
+(   53) 
+(   54) !    *KTYPE*        TYPE OF CONVECTION
+(   55) !                       1 = PENETRATIVE CONVECTION
+(   56) !                       2 = SHALLOW CONVECTION
+(   57) !                       3 = MIDLEVEL CONVECTION
+(   58) !    *KLAB*         FLAG KLAB=1 FOR SUBCLOUD LEVELS
+(   59) !                        KLAB=2 FOR CLOUD LEVELS
+(   60) !    *KCBOT*        CLOUD BASE LEVEL
+(   61) 
+(   62) !    OUTPUT PARAMETERS (REAL):
+(   63) 
+(   64) !    *PMFU*         MASSFLUX IN UPDRAFTS                          KG/(M2*S)
+(   65) !    *PMFUB*        MASSFLUX IN UPDRAFTS AT CLOUD BASE            KG/(M2*S)
+(   66) !    *PTU*          TEMPERATURE IN UPDRAFTS                         K
+(   67) !    *PQU*          SPEC. HUMIDITY IN UPDRAFTS                    KG/KG
+(   68) !    *PLU*          LIQUID WATER CONTENT IN UPDRAFTS              KG/KG
+(   69) !    *PMFUS*        FLUX OF DRY STATIC ENERGY IN UPDRAFTS          J/(M2*S)
+(   70) !    *PMFUQ*        FLUX OF SPEC. HUMIDITY IN UPDRAFTS            KG/(M2*S)
+(   71) !    *PMFUL*        FLUX OF LIQUID WATER IN UPDRAFTS              KG/(M2*S)
+(   72) !    *PDMFUP*       FLUX DIFFERENCE OF PRECIP. IN UPDRAFTS        KG/(M2*S)
+(   73) 
+(   74) !          EXTERNALS
+(   75) !          ---------
+(   76) !          NONE
+(   77) 
+(   78) !     R. El Khatib 22-Jun-2022 A contribution to simplify phasing after the refactoring of YOMCLI/YOMCST/YOETHF.
+(   79) !     R. El Khatib 06-Sep-2023 vectorization
+(   80) !----------------------------------------------------------------------
+(   81) 
+(   82) USE PARKIND1  ,ONLY : JPIM     ,JPRB
+(   83) USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
+(   84) 
+(   85) USE YOMCST   , ONLY : TCST
+(   86) USE YOECUMF  , ONLY : TECUMF
+(   87) 
+(   88) IMPLICIT NONE
+(   89) 
+(   90) TYPE(TCST)        ,INTENT(IN)    :: YDCST
+(   91) TYPE(TECUMF)      ,INTENT(IN)    :: YDECUMF
+(   92) INTEGER(KIND=JPIM),INTENT(IN)    :: KLON 
+(   93) INTEGER(KIND=JPIM),INTENT(IN)    :: KLEV 
+(   94) INTEGER(KIND=JPIM),INTENT(IN)    :: KIDIA 
+(   95) INTEGER(KIND=JPIM),INTENT(IN)    :: KFDIA 
+(   96) INTEGER(KIND=JPIM),INTENT(IN)    :: KK 
+(   97) REAL(KIND=JPRB)   ,INTENT(IN)    :: PTEN(KLON,KLEV) 
+(   98) REAL(KIND=JPRB)   ,INTENT(IN)    :: PQEN(KLON,KLEV) 
+(   99) REAL(KIND=JPRB)   ,INTENT(IN)    :: PQSEN(KLON,KLEV) 
+(  100) REAL(KIND=JPRB)   ,INTENT(IN)    :: PVERVEL(KLON,KLEV) 
+(  101) REAL(KIND=JPRB)   ,INTENT(IN)    :: PGEO(KLON,KLEV) 
+(  102) REAL(KIND=JPRB)   ,INTENT(IN)    :: PGEOH(KLON,KLEV+1) 
+(  103) LOGICAL           ,INTENT(IN)    :: LDCUM(KLON) 
+(  104) INTEGER(KIND=JPIM),INTENT(OUT)   :: KTYPE(KLON) 
+(  105) INTEGER(KIND=JPIM),INTENT(INOUT) :: KLAB(KLON,KLEV) 
+(  106) INTEGER(KIND=JPIM),INTENT(OUT)   :: KCBOT(KLON) 
+(  107) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PMFU(KLON,KLEV) 
+(  108) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PMFUB(KLON) 
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:02      page 3
+
+(  109) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PLRAIN(KLON,KLEV) 
+(  110) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PTU(KLON,KLEV) 
+(  111) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PQU(KLON,KLEV) 
+(  112) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PLU(KLON,KLEV) 
+(  113) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PMFUS(KLON,KLEV) 
+(  114) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PMFUQ(KLON,KLEV) 
+(  115) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PMFUL(KLON,KLEV) 
+(  116) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PDMFUP(KLON,KLEV) 
+(  117) INTEGER(KIND=JPIM) :: JL
+(  118) 
+(  119) REAL(KIND=JPRB) :: ZZZMB, ZRG, ZORCPD
+(  120) REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+(  121) 
+(  122) !----------------------------------------------------------------------
+(  123) 
+(  124) IF (LHOOK) CALL DR_HOOK('CUBASMCN',0,ZHOOK_HANDLE)
+(  125) 
+(  126) !*    1.           CALCULATE ENTRAINMENT AND DETRAINMENT RATES
+(  127) !                  -------------------------------------------
+(  128) 
+(  129) ASSOCIATE(LMFMID=>YDECUMF%LMFMID, NJKT7=>YDECUMF%NJKT7, &
+(  130)  & RMFLIA=>YDECUMF%RMFLIA, RMFCMIN=>YDECUMF%RMFCMIN, &
+(  131)  & RCPD=>YDCST%RCPD, RG=>YDCST%RG)
+(  132) 
+(  133) ZRG=1.0_JPRB/RG
+(  134) ZORCPD=1.0_JPRB/RCPD
+(  135) !DIR$ IVDEP
+(  136) !OCL NOVREC
+(  137) DO JL=KIDIA,KFDIA
+(  138)   IF(.NOT.LDCUM(JL).AND.KLAB(JL,KK+1) == 0 ) THEN
+(  139)     IF(LMFMID.AND.KK>NJKT7&
+(  140)        & .AND.PQEN(JL,KK) > 0.80_JPRB*PQSEN(JL,KK)) THEN  
+(  141)       PTU(JL,KK+1)=(RCPD*PTEN(JL,KK)+PGEO(JL,KK)-PGEOH(JL,KK+1))*ZORCPD
+(  142)       PQU(JL,KK+1)=PQEN(JL,KK)
+(  143)       PLU(JL,KK+1)=0.0_JPRB
+(  144)     ! ZZZMB=MAX(RMFCMIN,-PVERVEL(JL,KK)/RG)
+(  145)       ZZZMB=MAX(1.E-6_JPRB,-PVERVEL(JL,KK)*ZRG)
+(  146)       ZZZMB=MIN(ZZZMB,RMFLIA)
+(  147)       PMFUB(JL)=ZZZMB
+(  148)       PMFU(JL,KK+1)=PMFUB(JL)
+(  149)       PMFUS(JL,KK+1)=PMFUB(JL)*(RCPD*PTU(JL,KK+1)+PGEOH(JL,KK+1))
+(  150)       PMFUQ(JL,KK+1)=PMFUB(JL)*PQU(JL,KK+1)
+(  151)       PMFUL(JL,KK+1)=0.0_JPRB
+(  152)       PDMFUP(JL,KK+1)=0.0_JPRB
+(  153)       PLRAIN(JL,KK+1)=0.0_JPRB
+(  154)       KCBOT(JL)=KK
+(  155)       KLAB(JL,KK+1)=1
+(  156)       KTYPE(JL)=3
+(  157)     ENDIF
+(  158)   ENDIF
+(  159) ENDDO
+(  160) 
+(  161) END ASSOCIATE
+(  162) IF (LHOOK) CALL DR_HOOK('CUBASMCN',1,ZHOOK_HANDLE)
+(  163) END SUBROUTINE CUBASMCN
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:02      page 4
+
+(    1) # 1 "./cubasmcn.F90"
+(    1) SUBROUTINE CUBASMCN &
+(    2)  & (YDCST, YDECUMF,KIDIA,    KFDIA,    KLON,    KLEV,&
+(    3)  & KK,&
+(    4)  & PTEN,     PQEN,     PQSEN,&
+(    5)  & PVERVEL,  PGEO,     PGEOH,    LDCUM,    KTYPE,    KLAB,&
+(    6)  & KCBOT,    PMFU,     PMFUB,    PLRAIN,&
+(    7)  & PTU,      PQU,      PLU,&
+(    8)  & PMFUS,    PMFUQ,    PMFUL,    PDMFUP )  
+(    9) # 10 "./cubasmcn.F90"
+(   10) !          M.TIEDTKE         E.C.M.W.F.     12/89
+(   11) # 12 "./cubasmcn.F90"
+(   12) !          PURPOSE.
+(   13) !          --------
+(   14) !          THIS ROUTINE CALCULATES CLOUD BASE VALUES
+(   15) !          FOR MIDLEVEL CONVECTION
+(   16) # 17 "./cubasmcn.F90"
+(   17) !          INTERFACE
+(   18) !          ---------
+(   19) # 20 "./cubasmcn.F90"
+(   20) !          THIS ROUTINE IS CALLED FROM *CUASC*.
+(   21) !          INPUT ARE ENVIRONMENTAL VALUES T,Q ETC
+(   22) !          IT RETURNS CLOUDBASE VALUES FOR MIDLEVEL CONVECTION
+(   23) # 24 "./cubasmcn.F90"
+(   24) !          METHOD.
+(   25) !          --------
+(   26) !          S. TIEDTKE (1989)
+(   27) # 28 "./cubasmcn.F90"
+(   28) !     PARAMETER     DESCRIPTION                                   UNITS
+(   29) !     ---------     -----------                                   -----
+(   30) !     INPUT PARAMETERS (INTEGER):
+(   31) # 32 "./cubasmcn.F90"
+(   32) !    *KIDIA*        START POINT
+(   33) !    *KFDIA*        END POINT
+(   34) !    *KLON*         NUMBER OF GRID POINTS PER PACKET
+(   35) !    *KLEV*         NUMBER OF LEVELS
+(   36) !    *KK*           ACTUAL LEVEL
+(   37) # 38 "./cubasmcn.F90"
+(   38) !    INPUT PARAMETERS (REAL):
+(   39) # 40 "./cubasmcn.F90"
+(   40) !    *PTEN*         PROVISIONAL ENVIRONMENT TEMPERATURE (T+1)       K
+(   41) !    *PQEN*         PROVISIONAL ENVIRONMENT SPEC. HUMIDITY (T+1)  KG/KG
+(   42) !    *PQSEN*        ENVIRONMENT SPEC. SATURATION HUMIDITY (T+1)   KG/KG
+(   43) !    *PVERVEL*      VERTICAL VELOCITY                             PA/S
+(   44) !    *PGEO*         GEOPOTENTIAL                                  M2/S2
+(   45) !    *PGEOH*        GEOPOTENTIAL ON HALF LEVELS                   M2/S2
+(   46) !    *PLRAIN*       RAIN WATER CONTENT IN UPDRAFTS                KG/KG
+(   47) # 48 "./cubasmcn.F90"
+(   48) !    INPUT PARAMETERS (LOGICAL):
+(   49) # 50 "./cubasmcn.F90"
+(   50) !    *LDCUM*        FLAG: .TRUE. FOR CONVECTIVE POINTS 
+(   51) # 52 "./cubasmcn.F90"
+(   52) !    UPDATED PARAMETERS (INTEGER):
+(   53) # 54 "./cubasmcn.F90"
+(   54) !    *KTYPE*        TYPE OF CONVECTION
+(   55) !                       1 = PENETRATIVE CONVECTION
+(   56) !                       2 = SHALLOW CONVECTION
+(   57) !                       3 = MIDLEVEL CONVECTION
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:02      page 5
+
+(   58) !    *KLAB*         FLAG KLAB=1 FOR SUBCLOUD LEVELS
+(   59) !                        KLAB=2 FOR CLOUD LEVELS
+(   60) !    *KCBOT*        CLOUD BASE LEVEL
+(   61) # 62 "./cubasmcn.F90"
+(   62) !    OUTPUT PARAMETERS (REAL):
+(   63) # 64 "./cubasmcn.F90"
+(   64) !    *PMFU*         MASSFLUX IN UPDRAFTS                          KG/(M2*S)
+(   65) !    *PMFUB*        MASSFLUX IN UPDRAFTS AT CLOUD BASE            KG/(M2*S)
+(   66) !    *PTU*          TEMPERATURE IN UPDRAFTS                         K
+(   67) !    *PQU*          SPEC. HUMIDITY IN UPDRAFTS                    KG/KG
+(   68) !    *PLU*          LIQUID WATER CONTENT IN UPDRAFTS              KG/KG
+(   69) !    *PMFUS*        FLUX OF DRY STATIC ENERGY IN UPDRAFTS          J/(M2*S)
+(   70) !    *PMFUQ*        FLUX OF SPEC. HUMIDITY IN UPDRAFTS            KG/(M2*S)
+(   71) !    *PMFUL*        FLUX OF LIQUID WATER IN UPDRAFTS              KG/(M2*S)
+(   72) !    *PDMFUP*       FLUX DIFFERENCE OF PRECIP. IN UPDRAFTS        KG/(M2*S)
+(   73) # 74 "./cubasmcn.F90"
+(   74) !          EXTERNALS
+(   75) !          ---------
+(   76) !          NONE
+(   77) # 78 "./cubasmcn.F90"
+(   78) !     R. El Khatib 22-Jun-2022 A contribution to simplify phasing after the refactoring of YOMCLI/YOMCST/YOETHF.
+(   79) !     R. El Khatib 06-Sep-2023 vectorization
+(   80) !----------------------------------------------------------------------
+(   81) # 82 "./cubasmcn.F90"
+(   82) USE PARKIND1  ,ONLY : JPIM     ,JPRB
+(   83) USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
+(   84) # 85 "./cubasmcn.F90"
+(   85) USE YOMCST   , ONLY : TCST
+(   86) USE YOECUMF  , ONLY : TECUMF
+(   87) # 88 "./cubasmcn.F90"
+(   88) IMPLICIT NONE
+(   89) # 90 "./cubasmcn.F90"
+(   90) TYPE(TCST)        ,INTENT(IN)    :: YDCST
+(   91) TYPE(TECUMF)      ,INTENT(IN)    :: YDECUMF
+(   92) INTEGER(KIND=JPIM),INTENT(IN)    :: KLON 
+(   93) INTEGER(KIND=JPIM),INTENT(IN)    :: KLEV 
+(   94) INTEGER(KIND=JPIM),INTENT(IN)    :: KIDIA 
+(   95) INTEGER(KIND=JPIM),INTENT(IN)    :: KFDIA 
+(   96) INTEGER(KIND=JPIM),INTENT(IN)    :: KK 
+(   97) REAL(KIND=JPRB)   ,INTENT(IN)    :: PTEN(KLON,KLEV) 
+(   98) REAL(KIND=JPRB)   ,INTENT(IN)    :: PQEN(KLON,KLEV) 
+(   99) REAL(KIND=JPRB)   ,INTENT(IN)    :: PQSEN(KLON,KLEV) 
+(  100) REAL(KIND=JPRB)   ,INTENT(IN)    :: PVERVEL(KLON,KLEV) 
+(  101) REAL(KIND=JPRB)   ,INTENT(IN)    :: PGEO(KLON,KLEV) 
+(  102) REAL(KIND=JPRB)   ,INTENT(IN)    :: PGEOH(KLON,KLEV+1) 
+(  103) LOGICAL           ,INTENT(IN)    :: LDCUM(KLON) 
+(  104) INTEGER(KIND=JPIM),INTENT(OUT)   :: KTYPE(KLON) 
+(  105) INTEGER(KIND=JPIM),INTENT(INOUT) :: KLAB(KLON,KLEV) 
+(  106) INTEGER(KIND=JPIM),INTENT(OUT)   :: KCBOT(KLON) 
+(  107) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PMFU(KLON,KLEV) 
+(  108) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PMFUB(KLON) 
+(  109) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PLRAIN(KLON,KLEV) 
+(  110) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PTU(KLON,KLEV) 
+(  111) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PQU(KLON,KLEV) 
+(  112) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PLU(KLON,KLEV) 
+(  113) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PMFUS(KLON,KLEV) 
+(  114) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PMFUQ(KLON,KLEV) 
+(  115) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PMFUL(KLON,KLEV) 
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:02      page 6
+
+(  116) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PDMFUP(KLON,KLEV) 
+(  117) INTEGER(KIND=JPIM) :: JL
+(  118) # 119 "./cubasmcn.F90"
+(  119) REAL(KIND=JPRB) :: ZZZMB, ZRG, ZORCPD
+(  120) REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+(  121) # 122 "./cubasmcn.F90"
+(  122) !----------------------------------------------------------------------
+(  123) # 124 "./cubasmcn.F90"
+(  124) IF (LHOOK) CALL DR_HOOK('CUBASMCN',0,ZHOOK_HANDLE)
+(  125) # 126 "./cubasmcn.F90"
+(  126) !*    1.           CALCULATE ENTRAINMENT AND DETRAINMENT RATES
+(  127) !                  -------------------------------------------
+(  128) # 129 "./cubasmcn.F90"
+(  129) ASSOCIATE(LMFMID=>YDECUMF%LMFMID, NJKT7=>YDECUMF%NJKT7, &
+(  130)  & RMFLIA=>YDECUMF%RMFLIA, RMFCMIN=>YDECUMF%RMFCMIN, &
+(  131)  & RCPD=>YDCST%RCPD, RG=>YDCST%RG)
+(  132) # 133 "./cubasmcn.F90"
+(  133) ZRG=1.0_JPRB/RG
+(  134) ZORCPD=1.0_JPRB/RCPD
+(  135) !DIR$ IVDEP
+(  136) !OCL NOVREC
+(  137) DO JL=KIDIA,KFDIA
+(  138)   IF(.NOT.LDCUM(JL).AND.KLAB(JL,KK+1) == 0 ) THEN
+(  139)     IF(LMFMID.AND.KK>NJKT7&
+(  140)        & .AND.PQEN(JL,KK) > 0.80_JPRB*PQSEN(JL,KK)) THEN  
+(  141)       PTU(JL,KK+1)=(RCPD*PTEN(JL,KK)+PGEO(JL,KK)-PGEOH(JL,KK+1))*ZORCPD
+(  142)       PQU(JL,KK+1)=PQEN(JL,KK)
+(  143)       PLU(JL,KK+1)=0.0_JPRB
+(  144)     ! ZZZMB=MAX(RMFCMIN,-PVERVEL(JL,KK)/RG)
+(  145)       ZZZMB=MAX(1.E-6_JPRB,-PVERVEL(JL,KK)*ZRG)
+(  146)       ZZZMB=MIN(ZZZMB,RMFLIA)
+(  147)       PMFUB(JL)=ZZZMB
+(  148)       PMFU(JL,KK+1)=PMFUB(JL)
+(  149)       PMFUS(JL,KK+1)=PMFUB(JL)*(RCPD*PTU(JL,KK+1)+PGEOH(JL,KK+1))
+(  150)       PMFUQ(JL,KK+1)=PMFUB(JL)*PQU(JL,KK+1)
+(  151)       PMFUL(JL,KK+1)=0.0_JPRB
+(  152)       PDMFUP(JL,KK+1)=0.0_JPRB
+(  153)       PLRAIN(JL,KK+1)=0.0_JPRB
+(  154)       KCBOT(JL)=KK
+(  155)       KLAB(JL,KK+1)=1
+(  156)       KTYPE(JL)=3
+(  157)     ENDIF
+(  158)   ENDIF
+(  159) ENDDO
+(  160) # 161 "./cubasmcn.F90"
+(  161) END ASSOCIATE
+(  162) IF (LHOOK) CALL DR_HOOK('CUBASMCN',1,ZHOOK_HANDLE)
+(  163) END SUBROUTINE CUBASMCN

@@ -1,0 +1,1147 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:25      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./yoerad.F90
+
+(    1) MODULE YOERAD
+(    2) 
+(    3) USE PARKIND1,            ONLY : JPIM, JPRB
+(    4) USE YOE_SPECTRAL_PLANCK, ONLY : TSPECTRALPLANCK
+(    5) 
+(    6) IMPLICIT NONE
+(    7) 
+(    8) SAVE
+(    9) 
+(   10) !     ------------------------------------------------------------------
+(   11) !*    ** *YOERAD* - CONTROL OPTIONS FOR RADIATION CONFIGURATION
+(   12) !     ------------------------------------------------------------------
+(   13) 
+(   14) ! Here we have hard-coded the options that configure the radiation
+(   15) ! scheme; in the IFS they are set in suecrad.F90 with the option to
+(   16) ! override them using the NAERAD namelist
+(   17) TYPE :: TERAD
+(   18) 
+(   19)   INTEGER(KIND=JPIM) :: NAER
+(   20)   INTEGER(KIND=JPIM) :: NMODE
+(   21)   INTEGER(KIND=JPIM) :: NOZOCL
+(   22)   INTEGER(KIND=JPIM) :: NRADFR
+(   23)   INTEGER(KIND=JPIM) :: NRADPFR
+(   24)   INTEGER(KIND=JPIM) :: NRADPLA
+(   25)   INTEGER(KIND=JPIM) :: NRADINT
+(   26)   INTEGER(KIND=JPIM) :: NRADRES
+(   27)   INTEGER(KIND=JPIM) :: NRADNFR
+(   28)   INTEGER(KIND=JPIM) :: NRADSFR
+(   29)   INTEGER(KIND=JPIM) :: NRADE1H, NRADE3H
+(   30)   INTEGER(KIND=JPIM) :: NRADELG
+(   31)   INTEGER(KIND=JPIM) :: NOVLP
+(   32)   INTEGER(KIND=JPIM) :: NRPROMA
+(   33) INTEGER(KIND=JPIM) :: NLW
+(   34)   INTEGER(KIND=JPIM) :: NSWNL
+(   35)   INTEGER(KIND=JPIM) :: NSWTL
+(   36) INTEGER(KIND=JPIM) :: NTLW
+(   37)   INTEGER(KIND=JPIM) :: NTSW
+(   38)   INTEGER(KIND=JPIM) :: NUV
+(   39)   INTEGER(KIND=JPIM) :: NCSRADF
+(   40)   INTEGER(KIND=JPIM) :: NINHOM
+(   41)   INTEGER(KIND=JPIM) :: NLAYINH
+(   42)   INTEGER(KIND=JPIM) :: NLNGR1H
+(   43)   INTEGER(KIND=JPIM) :: NPERTAER
+(   44)   INTEGER(KIND=JPIM) :: NPERTOZ
+(   45)   INTEGER(KIND=JPIM) :: NSCEN
+(   46)   INTEGER(KIND=JPIM) :: NHINCSOL
+(   47)   INTEGER(KIND=JPIM) :: NMCICA
+(   48)   INTEGER(KIND=JPIM) :: NGHGRAD
+(   49)   INTEGER(KIND=JPIM) :: NVOLCVERT
+(   50)   INTEGER(KIND=JPIM) :: NREDGLW
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:25      page 2
+
+(   51)   INTEGER(KIND=JPIM) :: NREDGSW
+(   52)   INTEGER(KIND=JPIM) :: NSPMAPL(16), NSPMAPS(14)
+(   53) 
+(   54)   INTEGER(KIND=JPIM) :: NSW = 6
+(   55)   INTEGER(KIND=JPIM) :: NLWEMISS = 2
+(   56)   INTEGER(KIND=JPIM) :: NICEOPT = 3
+(   57)   INTEGER(KIND=JPIM) :: NLIQOPT = 4
+(   58)   INTEGER(KIND=JPIM) :: NRADIP = 3
+(   59)   INTEGER(KIND=JPIM) :: NRADLP = 2
+(   60)   INTEGER(KIND=JPIM) :: NLWOUT = 1
+(   61)   INTEGER(KIND=JPIM) :: NDECOLAT = 2
+(   62)   INTEGER(KIND=JPIM) :: NMINICE = 1
+(   63)   INTEGER(KIND=JPIM) :: NAERMACC = 1
+(   64)   INTEGER(KIND=JPIM) :: NMCVAR = 12
+(   65)   INTEGER(KIND=JPIM) :: NLWSCATTERING = 1
+(   66)   INTEGER(KIND=JPIM) :: NSWSOLVER = 3 ! Tripleclouds
+(   67)   INTEGER(KIND=JPIM) :: NLWSOLVER = 3 ! Tripleclouds
+(   68)   INTEGER(KIND=JPIM) :: NSOLARSPECTRUM = 0
+(   69)   INTEGER(KIND=JPIM) :: NDUMPBADINPUTS = 0
+(   70)   INTEGER(KIND=JPIM) :: NDUMPINPUTS = 0
+(   71)   INTEGER(KIND=JPIM) :: NCLOUDOVERLAP = 3
+(   72)   REAL(KIND=JPRB)    :: RCLOUD_FRAC_STD = 1.0_JPRB
+(   73)   REAL(KIND=JPRB)    :: RCLOUD_SEPARATION_SCALE_TOA = 14000.0_JPRB
+(   74)   REAL(KIND=JPRB)    :: RCLOUD_SEPARATION_SCALE_SURF = 2500.0_JPRB
+(   75)   LOGICAL :: LFU_LW_ICE_OPTICS_BUG = .FALSE.
+(   76)   LOGICAL :: LDIAGFORCING = .FALSE.
+(   77)   LOGICAL :: LAPPROXLWUPDATE = .TRUE.
+(   78)   LOGICAL :: LAPPROXSWUPDATE = .FALSE.
+(   79)   INTEGER(KIND=JPIM) :: NSWICEOPT
+(   80)   INTEGER(KIND=JPIM) :: NSWLIQOPT
+(   81)   INTEGER(KIND=JPIM) :: NLWICEOPT
+(   82)   INTEGER(KIND=JPIM) :: NLWLIQOPT
+(   83)   LOGICAL :: LCCNL = .TRUE.
+(   84)   LOGICAL :: LCCNO = .TRUE.
+(   85)   REAL(KIND=JPRB) :: RCCNLND = 900.0_JPRB
+(   86)   REAL(KIND=JPRB) :: RCCNSEA = 50.0_JPRB
+(   87)   REAL(KIND=JPRB) :: RRE2DE = 0.64952_JPRB
+(   88)   REAL(KIND=JPRB) :: RMINICE = 60.0_JPRB
+(   89)   INTEGER(KIND=JPIM) :: NMCLAT, NMCLON, NMCLEV
+(   90)   INTEGER(KIND=JPIM) :: NSWGASOPTICS, NLWGASOPTICS
+(   91)   INTEGER(KIND=JPIM) :: NGASOPTICSSCHEME
+(   92)   INTEGER(KIND=JPIM) :: KMODTS
+(   93)   INTEGER(KIND=JPIM) :: NSWWVCONTINUUM
+(   94) 
+(   95) INTEGER(KIND=JPIM) :: NRTCALL
+(   96) INTEGER(KIND=JPIM) :: IRTCALLREF
+(   97) INTEGER(KIND=JPIM) :: IRTCALLCLN
+(   98) 
+(   99)   LOGICAL :: LINTERPINCLOUDMEAN
+(  100) 
+(  101)   LOGICAL :: LERAD1H
+(  102)   LOGICAL :: LEPO3RA
+(  103)   LOGICAL :: LONEWSW
+(  104)   LOGICAL :: LECSRAD
+(  105)   LOGICAL :: LRRTM
+(  106)   LOGICAL :: LSRTM
+(  107)   LOGICAL :: LDIFFC
+(  108)   LOGICAL :: LHVOLCA
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:25      page 3
+
+(  109)   LOGICAL :: LNEWAER
+(  110)   LOGICAL :: LNOTROAER
+(  111)   LOGICAL :: LRAYL
+(  112)   LOGICAL :: LOPTRPROMA
+(  113)   LOGICAL :: LECO2VAR
+(  114)   LOGICAL :: LHGHG
+(  115)   LOGICAL :: LESO4HIS
+(  116)   LOGICAL :: LETRACGMS
+(  117) 
+(  118)   LOGICAL :: LAERCLIM, LAERVISI, LAER3D
+(  119)   LOGICAL :: LVOLCSPEC
+(  120)   LOGICAL :: LVOLCDAMP
+(  121)   LOGICAL :: LAERADCLI
+(  122)   LOGICAL :: LAERADJDU
+(  123)   LOGICAL :: LMANNERSSWUPDATE
+(  124)   LOGICAL :: LCENTREDTIMESZA
+(  125)   LOGICAL :: LAVERAGESZA
+(  126)   LOGICAL :: LECOMPGRID
+(  127)   LOGICAL :: LUSEPRE2017RAD
+(  128)   LOGICAL :: LDUSEASON
+(  129) 
+(  130)   LOGICAL :: LPERPET
+(  131) LOGICAL :: LCLEAN
+(  132) 
+(  133)   REAL(KIND=JPRB) :: RAOVLP , RBOVLP
+(  134)   LOGICAL :: LEDBUG
+(  135)   REAL(KIND=JPRB) :: RPERTOZ
+(  136)   REAL(KIND=JPRB) :: RLWINHF, RSWINHF
+(  137)   REAL(KIND=JPRB) :: RVOLCSPEC(3)
+(  138)   REAL(KIND=JPRB) :: RNS, RSIGAIR
+(  139) 
+(  140)   REAL(KIND=JPRB) :: RAESHSS, RAESHDU, RAESHOM, RAESHBC, RAESHSU
+(  141)   REAL(KIND=JPRB) :: TRBKG
+(  142)   REAL(KIND=JPRB) :: STBKG
+(  143)   CHARACTER(LEN=256) :: CGHGCLIMFILE = ' '
+(  144)   CHARACTER(LEN=256) :: CGHGTIMESERIESFILE = ' '
+(  145)   CHARACTER(LEN=256) :: CSOLARIRRADIANCEFILE = ' '
+(  146) 
+(  147)   REAL(KIND=JPRB) :: RRATSEA, RRATLAND,RRATDRI
+(  148)   REAL(KIND=JPRB) :: RCADECOR,RCBDECOR
+(  149)   REAL(KIND=JPRB) :: RFACDICE
+(  150) 
+(  151)   REAL(KIND=JPRB),ALLOCATABLE:: CVDAESS(:)
+(  152)   REAL(KIND=JPRB),ALLOCATABLE:: CVDAEDU(:)
+(  153)   REAL(KIND=JPRB),ALLOCATABLE:: CVDAEOM(:)
+(  154)   REAL(KIND=JPRB),ALLOCATABLE:: CVDAEBC(:)
+(  155)   REAL(KIND=JPRB),ALLOCATABLE:: CVDAESU(:)
+(  156) 
+(  157)   CHARACTER(LEN=8)   :: CECRADARCH
+(  158)   LOGICAL            :: LECRADACC
+(  159)   INTEGER(KIND=JPIM) :: NECRADLEN
+(  160) 
+(  161) ! Look-up table for Planck function in emissivity intervals
+(  162)   TYPE(TSPECTRALPLANCK) :: YSPECTPLANCK
+(  163) !----------------------------------------------------------------------------
+(  164) CONTAINS
+(  165) 
+(  166) END TYPE TERAD
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:25      page 4
+
+(  167) !============================================================================
+(  168) 
+(  169) TYPE(TERAD), POINTER :: YRERAD => NULL()
+(  170) 
+(  171) !        * E.C.M.W.F. PHYSICS PACKAGE *
+(  172) 
+(  173) !     J.-J. MORCRETTE       E.C.M.W.F.      89/07/14
+(  174) ! Modifications
+(  175) !    R J Hogan 20 May  2014: Added LApproxLwUpdate
+(  176) !    R J Hogan 19 June 2014: Added LApproxSwUpdate
+(  177) !    R J Hogan 19 Nov  2014: Added LCentredTimeSZA
+(  178) !    R J Hogan 15 Apr  2015: Added LMannersSwUpdate
+(  179) !    R J Hogan 24 Apr  2015: Added LAverageSZA
+(  180) !    R J Hogan 18 Sept 2015: Added LUsePre2017Rad (was LUsePre2015Rad)
+(  181) !    R J Hogan 1  Mar  2016: Added NLwSolver, NSwSolver, NLwScattering
+(  182) !    A Bozzo      Feb  2017: Added logical to enable 3D aerosol climatology
+(  183) !    R J Hogan 9  Mar  2018: Added NDUMPBADINPUTS
+(  184) !    R J Hogan 22 Jan  2019: Added NLWEMISS, NCLOUDOVERLAP, NDUMPINPUTS
+(  185) !    R J Hogan 4  Feb  2019: Added NLWOUT
+(  186) !    R J Hogan 5  Feb  2019: Added YSPECTPLANCK
+(  187) !    R J Hogan 11 Mar  2019: Added CGHG*FILE, CSOLARIRRADIANCEFILE
+(  188) !    M. Michou, P. Nabat Jan 2023    : Modifications related to the use of chemistry and/or aerosol schemes
+(  189) !    R J Hogan 24 Jun  2021: Added NSWGASOPTICS, NLWGASOPTICS
+(  190) !    P Ukkonen 2  Feb  2022: Added NGasOpticsScheme
+(  191) 
+(  192) !  NAME     TYPE     PURPOSE
+(  193) !  ----  :  ----   : ---------------------------------------------------
+(  194) ! LERAD1H: LOGICAL : .T. TO ALLOW MORE FREQUENT RADIATION CALCULATIONS
+(  195) !                  : DURING FIRST N HOURS OF FORECAST
+(  196) ! NLNGR1H: INTEGER : NUMBER FORECAST HOURS DURING WHICH MORE FREQUENT
+(  197) !                    RADIATION CALCULATIONS ARE REQUIRED
+(  198) ! LEPO3RA: LOGICAL : .T. IF PROGNOSTIC OZONE (EC) IS PASSED TO RADIATION
+(  199) ! NAER   : INTEGER : CONFIGURATION INDEX FOR AEROSOLS
+(  200) ! NMODE  : INTEGER : CONFIGURATION FOR RADIATION CODE: FLUX VS. RADIANCE
+(  201) ! NOZOCL : INTEGER : CHOICE OF OZONE/GHG CLIMATOLOGY (0: old O3, 1: new O3, 2: O3 climatological profile, 
+(  202) !                                                 3-4: MACC/CAMS O3 and GHG monthly climatology,
+(  203) !                                                 5-6: 3D concentrations of O3 and GHG from chemistry scheme)
+(  204) ! NRADFR : INTEGER : FREQUENCY OF FULL RADIATION COMPUTATIONS
+(  205) !                    IF(NRADFR.GT.0): RAD EVERY 'NRADFR' TIME-STEPS
+(  206) !                    IF(NRADFR.LT.0): RAD EVERY '-NRADFR' HOURS
+(  207) ! NRADPFR: INTEGER : PRINT FREQUENCY FOR RAD.STATISTICS (in RAD.T.STEPS)
+(  208) ! NRADPLA: INTEGER : PRINT RAD.STATISTICS EVERY 'NRADPLA' ROWS
+(  209) ! NRADINT: INTEGER : RADIATION INTERPOLATION METHOD
+(  210) !                  : 1 = SPECTRAL TRANSFORM INTERPOLATION
+(  211) !                  : 2 =  4 POINT HORIZONTAL INTERPOLATION
+(  212) !                  : 3 = 12 POINT HORIZONTAL INTERPOLATION
+(  213) ! NRADRES: INTEGER : RADIATION GRID SPECTRAL RESOLUTION
+(  214) ! NRADNFR: INTEGER : NORMAL   FREQUENCY OF RADIATION STEPS
+(  215) ! NRADSFR: INTEGER : START-UP FREQUENCY OF RADIATION STEPS
+(  216) ! NRADE1H: INTEGER : START-UP FREQUENCY OF RADIATION STEPS FOR EPS
+(  217) ! NRADE3H: INTEGER : SUBSEQUENT FREQUENCY OF RADIATION STEPS FOR EPS
+(  218) ! NRADELG: INTEGER : LENGTH IN HOURS DURING WHICH THE FREQUENCY OF RADIATION IS INCREASED FOR EPS
+(  219) ! NOVLP  : INTEGER : CLOUD OVERLAP CONFIGURATION IN PRE-MCRAD/ECRAD SCHEME
+(  220) !                  : 1 = Max-rand (Geleyn & Hollingsworth)
+(  221) !                  : 2 = Maximum
+(  222) !                  : 3 = Random
+(  223) ! NRPROMA: INTEGER : VECTOR LENGTH FOR RADIATION CALCULATIONS
+(  224) ! NSW    : INTEGER : NUMBER OF SHORTWAVE SPECTRAL INTERVALS
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:25      page 5
+
+(  225) ! NSWNL  : INTEGER : NUMBER OF SHORTWAVE SPECTRAL INTERVALS IN NL MODEL
+(  226) ! NSWTL  : INTEGER : NUMBER OF SHORTWAVE SPECTRAL INTERVALS IN TL MODEL
+(  227) ! NTLW   : INTEGER : MAXIMUM POSSIBLE NUMBER OF LW SPECTRAL INTERVALS 
+(  228) ! NTSW   : INTEGER : MAXIMUM POSSIBLE NUMBER OF SW SPECTRAL INTERVALS 
+(  229) ! NUV    : INTEGER : NUMBER OF UV SPECTRAL INTERVALS FOR THE UV PROCESSOR   
+(  230) ! LOPTRPROMA:LOGICAL: .T. NRPROMA will be optimised
+(  231) !                   : .F. NRPROMA will not be optimised (forced
+(  232) !                   :         by negative NRPROMA in namelist)
+(  233) 
+(  234) ! NRADIP : INTEGER : INDEX FOR DIAGNOSIS OF ICE CLOUD EFFECTIVE RADIUS
+(  235) !          0 = fixed at 40 microns
+(  236) !          1 = Liou & Ou (1994) capped between 40-130 microns
+(  237) !          2 = Liou & Ou but capped between 30 and 60 microns
+(  238) !          3 = Sun & Rikus (1999) revised by Sun (2001)
+(  239) ! NRADLP : INTEGER : INDEX FOR DIAGNOSIS OF LIQ. CLOUD EFFECTIVE RADIUS
+(  240) !          0 = ERA-15 function of pressure
+(  241) !          1 = 10 microns over land, 13 microns over sea
+(  242) !          2 = Martin_et_al (1994) in terms of land-sea number conc
+(  243) !          3 = Linked to prognostic aerosols
+(  244) !          4 = CAMS cloud droplets and ICE3 gamma laws for cloud droplet size distribution are used
+(  245) ! NICEOPT: INTEGER : INDEX FOR ICE CLOUD OPTICAL PROPERTIES
+(  246) !          0 = SW Ebert-Curry, LW Smith & Shi (1992)
+(  247) !          1 = SW Ebert-Curry, LW Ebert-Curry (1992)
+(  248) !          2 = SW & LW Fu-Liou (1993)
+(  249) !          3 = SW Fu (1996) LW Fu et al. (1998) + Chou et al. (1999) LW scatt approx
+(  250) !   the following only available in newer modular radiation scheme:
+(  251) !          4 = SW/LW Baran data fitted versus ice mixing ratio
+(  252) ! NLIQOPT: INTEGER : INDEX FOR LIQUID WATER CLOUD OPTICAL PROPERTIES
+(  253) !          0 = SW Fouquart (1991) LW Smith-Shi (1992) YF/SmSh 
+(  254) !          1 = SW Slingo (1989) LW Savijarvi (1997)
+(  255) !          2 = SW Slingo (1989) LW Lindner-Li (2000)
+(  256) !   the following only available in RADLSW, not RADLSWR:
+(  257) !          3 = SW Nielsen       LW Smith-Shi
+(  258) !   the following only available in newer modular radiation scheme:
+(  259) !          4 = SW/LW SOCRATES scheme
+(  260) !
+(  261) ! LONEWSW: LOGICAL : .T. IF NEW SW CODE IS ACTIVE
+(  262) ! LECSRAD: LOGICAL : .T. IF CLEAR-SKY RADIATION IS ARCHIVED AS PEXTR2
+(  263) ! NCSRADF: INTEGER : 1 IF ACCUMULATED, 2 IF INSTANTANEOUS
+(  264) ! LRRTM  : LOGICAL : .T. IF RRTM140MR IS USED FOR LW RADIATION TRANSFER
+(  265) 
+(  266) ! LHVOLCA: LOGICAL : .T. IF USING HISTORICAL VOLCANIC AEROSOLS 
+(  267) ! LNEWAER: LOGICAL : .T. IF AEROSOL MONTHLY DISTRIBUTIONS ARE USED
+(  268) ! LNOTROAER:LOGICAL: .T. IF NO TROPOSPHERIC AEROSOLS
+(  269) ! CRTABLEDIR: CHAR : IF NRADINT > 0 SPECIFIES DIRECTORY PATH FOR RADIATION
+(  270) !                  : GRID RTABLE NAMELIST
+(  271) ! CRTABLEFIL: CHAR : IF NRADINT > 0 SPECIFIES FILE NAME OF RADIATION 
+(  272) !                  : GRID RTABLE NAMELIST
+(  273) ! LRAYL  : LOGICAL : .T. NEW RAYLEIGH FOR SW-6 VERSION
+(  274) 
+(  275) ! RAOVLP : REAL    : COEFFICIENTS FOR ALPHA1 FACTOR IN HOGAN & 
+(  276) ! RBOVLP : REAL    : ILLINGWORTH's PARAMETRIZATION
+(  277) 
+(  278) ! LCCNL  : LOGICAL : .T. IF CCN CONCENTRATION OVER LAND IS DIAGNOSED
+(  279) ! LCCNO  : LOGICAL : .T. IF CCN CONCENTRATION OVER OCEAN IS DIAGNOSED
+(  280) ! RCCNLND: REAL    : NUMBER CONCENTRATION (CM-3) OF CCNs OVER LAND
+(  281) ! RCCNSEA: REAL    : NUMBER CONCENTRATION (CM-3) OF CCNs OVER SEA
+(  282) 
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:25      page 6
+
+(  283) ! LDIFFC : LOGICAL : .T. IF SAVIJARVI'S DIFFUSIVITY CORRECTION IS ON
+(  284) 
+(  285) ! NINHOM : INTEGER : 0 IF NO INHOMOGENEITY SCALING EFFECT 
+(  286) !                    1 IF SIMPLE 0.7 SCALING
+(  287) !                    2 IF BARKER, 3 IF CAIRNS ET AL.
+(  288) ! RLWINHF: REAL    : INHOMOG. SCALING FACTOR FOR CLOUD LW OPTICAL THICKNESS
+(  289) ! RSWINHF: REAL    : INHOMOG. SCALING FACTOR FOR CLOUD SW OPTICAL THICKNESS
+(  290) 
+(  291) ! NPERTAER : INTERGER : PERCENTAGE OF PERTURBATION FOR AEROSOL   
+(  292) ! NPERTOZONE : INTEGER : PERCENTAGE OF PERTURBATION FOR OZONE 
+(  293) ! NHINCSOL : INTEGER :  0: Total Solar Irradiance (TSI) fixed at 1366.0 W m-2
+(  294) !                       1: Deprecated - use default
+(  295) !                       2: Deprecated - use default
+(  296) !                       3: Deprecated (was CMIP5) - use default
+(  297) !                       4: TSI from CMIP6 NetCDF (default), or override with CSOLARIRRADIANCEFILE
+(  298) ! NSWWVCONTINUUM : INTEGER : 0 MT_CKD2.5 (SRTM default WV continuum)
+(  299) !                            1 CAVIAR continuum (Shine et al. 2016)
+(  300) ! LECO2VAR: LOGICAL: .T. IF ERA-40/AMIP2 VARIABILITY OF GHG IS ON (ignored)
+(  301) ! LHGHG  : LOGICAL : .T. IF VARIABILITY OF GREENHOUSE GASES (INCLUDING CO2) IS ON
+(  302) ! N.B.: LHGHG supersedes LECO2VAR and allows using better specification of trace gases
+(  303) ! NSCEN  : INTEGER : 21st CENTURY SCENARIO FOR GHG (1=A1B, 2=A2, 3=B1)
+(  304) ! RRe2De : REAL    : CONVERSION FACTOR BETWWEN EFFECTIVE RADIUS AND PARTICLE SIZE
+(  305) ! RMINICE: REAL    : MINIMUM SIZE FOR ICE PARTICLES (um)
+(  306) !                    FOR ICE
+(  307) ! NMINICE: INTEGER : 1-6 MINIMUM ICE PARTICLE SIZE DEPENDS ON LATITUDE, 0=INDEPENDENT OF LATITUDE
+(  308) ! NDECOLAT:INTEGER : DECORRELATION LENGTH FOR CF AND CW 
+(  309) !                     0: SPECIFIED INDEPENDENT OF LATITUDE, 1: SHONK-HOGAN, 2: IMPROVED
+(  310) ! NMCICA : INTEGER :  0: NO McICA
+(  311) !                     1: McICA w maximum-random in cloud generator
+(  312) !                     2: McICA w generalized overlap in cloud generator
+(  313) ! LESO4HIS: LOGICAL:.T.: Use historical/projected SO4 data per decade and month
+(  314) ! NGHGRAD: INTEGER : configuration of 3D GHG climatologies accounted for in radiation
+(  315) !                     0: global values
+(  316) !                     1: CO2       2: CH4    3: N2O    4: NO2    5:CFC11   6:CFC12
+(  317) !                    12: CO2+CH4  13: CO2+CH4+N2O     
+(  318) !                    16: CO2+CH4+N2O+CFC11+CFC12
+(  319) ! LETRACGMS: LOGICAL : F=Cariolle climatol. T=GEMS-derived clim for CO2, CH4, O3
+(  320) ! LAERCLIM : LOGICAL : .T. for output of the climatological aerosol optical depth at 550 nm
+(  321) ! LAERVISI : LOGICAL : .T. for output of the visibility (from diagnsotic or prognostic aerosols)
+(  322) ! NVOLCVERT: INTEGER : Vertical distribution of volcanic aerosol
+(  323) !                       0: original profile, diagnosed from T
+(  324) !                       1: original profile, but upper boundary at 10hPa
+(  325) !                       2: lower boundary diagnosed from ozone, upper boundary at 10hPa
+(  326) ! LVOLCSPEC: LOGICAL : T for specified volcanic aerosol
+(  327) ! LVOLCDAMP: LOGICAL : T for damping of specified volcanic aerosol from initial value
+(  328) ! RVOLCSPEC: REAL    : Specified volcanic aerosol (total optical depth) in NH/Tropics/SH
+(  329) ! RNs                : derived from Avogadro
+(  330) ! RSIGAIR: invariant terms in expression of Rayleigh scattering cross-section
+(  331) ! NREDGSW  : INTEGER : 0 full resolution for RRTM_SW (224)
+(  332) !                      1 ECMWF High resolution model configuration (_SW: 112)
+(  333) !                      2 ECMWF EPS configuration (_SW: 56)
+(  334) ! NREDGLW  : INTEGER : 0 full resolution for RRTM_LW (256)
+(  335) !                      1 ECMWF High resolution model configuration (_LW: 140)
+(  336) !                      2 ECMWF EPS configuration (_LW: 70)
+(  337) ! LDIAGFORCING : LOGICAL : T Write input ozone, ghg and aerosol forcing to 3D fields 
+(  338) !                            To be used for diagnostics only; do not use in production runs
+(  339) ! NAERMACC : INTEGER : MACC-derived aerosol climatology on a NMCLAT x NMCLON grid
+(  340) ! RAESHxx  : REAL    : parameters related to scale height of MACC-derived aerosol climatology
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:25      page 7
+
+(  341) ! CVDAExx  : REAL    : scale heights of MACC-derived aerosol climatology
+(  342) ! LAERADJDU: LOGICAL : T adjust MACC-derived DU climatology
+(  343) ! LAERADCLI: LOGICAL : T if radiation uses the MACC-derived aerosol climatology
+(  344) ! LApproxLwUpdate : LOGICAL : Update the longwave upwelling flux every
+(  345) !                             timestep/gridpoint using the stored rate
+(  346) !                             of change of the fluxes with respect to
+(  347) !                             the surface upwelling longwave flux
+(  348) ! LApproxSwUpdate : LOGICAL : Update the shortwave upwelling flux
+(  349) !                             every gridpoint to account for the local
+(  350) !                             value of surface albedo
+(  351) ! LMannersSwUpdate: LOGICAL : Update the shortwave flux every timestep
+(  352) !                             using Manners et al. (2009) correction
+(  353) !                             for solar zenith angle change
+(  354) ! LCentredTimeSZA : LOGICAL : Compute solar zenith angle in radiation
+(  355) !                             scheme half way between calls to
+(  356) !                             radiation scheme (rather than previous
+(  357) !                             behaviour, which is half way between
+(  358) !                             calls plus half a model timestep)
+(  359) ! LAverageSZA     : LOGICAL : Compute an averaged solar zenith angle
+(  360) !                             across the time interval required
+(  361) !                             (either a model timestep or a radiation
+(  362) !                             timestep). Should be used with 
+(  363) !                             LCentredTimeSZA=TRUE.
+(  364) ! LUsePre2017Rad  : LOGICAL : Use the pre-2017 radiation scheme, rather 
+(  365) !                             than the modular scheme contained in the
+(  366) !                             separate "radiation" library.  Note that
+(  367) !                             the radiation library may make use of the
+(  368) !                             pre-2017 RRTM-G gas optics.
+(  369) ! RCloud_Frac_Std : REAL    : Cloud water content horizontal fractional
+(  370) !                             standard deviation in a gridbox
+(  371) ! LInterpInCloudMean : LOGICAL : When interpolating model fields to
+(  372) !                             radiation grid, interpolate in-cloud
+(  373) !                             mean water contents?  Better
+(  374) !                             conservation achieved by interpolating
+(  375) !                             gridbox-means.
+(  376) ! CGHGCLIMFILE : STRING :     Location of greenhouse gas climatology file,
+(  377) !                             or empty if the default is to be used. If it
+(  378) !                             starts with "." or "/" then a relative path
+(  379) !                             is assumed, otherwise the default directory.
+(  380) ! CGHGTIMESERIESFILE:STRING : Location of greenhouse gas timeseries
+(  381) !                             file, or empty if it is to be worked out
+(  382) !                             from the NSCEN, YOECMIP%NGHGCMIP and
+(  383) !                             YOECMIP%NRCP variables. If it starts
+(  384) !                             with "." or "/" then a relative path is
+(  385) !                             assumed, otherwise the default
+(  386) !                             directory.
+(  387) ! CSOLARIRRADIANCEFILE:STRING:Location of Total Solar Irradiance file,
+(  388) !                             or empty if the default is to be
+(  389) !                             used. If it starts with "." or "/" then
+(  390) !                             a relative path is assumed, otherwise
+(  391) !                             the default directory.
+(  392) ! NLWEMISS      : INTEGER :   Number of emissivity spectral intervals, set 
+(  393) !                             according to the value of NEMISSSCHEME; traditionally
+(  394) !                             this has always been 2: outside the IR window and within
+(  395) ! NLWOUT        : INTEGER :   Number of spectral intervals to pass LW downwelling flux
+(  396) !                             to RADHEATN; traditionally this was 1, but this led
+(  397) !                             to errors with LAPPROXLWUPDATE=TRUE, which updated 
+(  398) !                             fluxes using a single broadband emissivity. Now we can
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:25      page 8
+
+(  399) !                             do approximate updates using full spectral emissivity.
+(  400) ! ------------------------------------------------------------------
+(  401) ! THE FOLLOWING ARE ONLY USED FOR THE ECRAD SCHEME (LUsePre2017Rad = .FALSE.)
+(  402) ! NLwScattering   : INTEGER : 0: No longwave scattering
+(  403) !                             1: Longwave scattering by clouds only
+(  404) !                             2: Longwave scattering by clouds and aerosols
+(  405) ! NSwSolver       : INTEGER :
+(  406) ! NLwSolver       : INTEGER : 0: McICA
+(  407) !                             1: SPARTACUS 1D
+(  408) !                             2: SPARTACUS 3D
+(  409) !                             3: TripleClouds
+(  410) ! NGasOpticsScheme : INTEGER :
+(  411) !                             0: RRTMG
+(  412) !                             1: ECCKD
+(  413) !                             2: RRTMGP
+(  414) !                             3: RRTMGP-NN
+(  415) ! NSwGasOptics    : INTEGER :
+(  416) ! NLwGasOptics    : INTEGER : 0: RRTMG
+(  417) !                             else: number of g-points of ecCKD gas optics scheme
+(  418) ! LFU_LW_ICE_OPTICS_BUG : LOGICAL : Continue to use bug in Fu LW ice
+(  419) !                             optics whereby single scattering albedo is
+(  420) !                             one minus what it should be
+(  421) ! NSOLARSPECTRUM : INTEGER :  0: Kurucz
+(  422) !                             1: WHI reference solar minimum spectrum
+(  423) !                             2: Mean of Coddington et al. (BAMS 2016) spectrum
+(  424) ! NDUMPBADINPUTS : INTEGER :  0: Warn only if fluxes out of physical bounds
+(  425) !                             n: Write netcdf file of bad inputs up to n times per task
+(  426) !                            -n: Abort if fluxes ever out of physical bounds
+(  427) ! NDUMPINPUTS    : INTEGER :  0: Do nothing
+(  428) !                             n: Write netcdf file of all inputs up to n times per task
+(  429) ! NCLOUDOVERLAP  : INTEGER :  Cloud overlap scheme
+(  430) !                             1: Maximum-random
+(  431) !                             2: Exponential-exponential (the actual behaviour of McRad)
+(  432) !                             3: Exponential-random (only option for Tripleclouds and SPARTACUS)
+(  433) ! RCLOUD_SEPARATION_SCALE_TOA, RCLOUD_SEPARATION_SCALE_SURF : REAL
+(  434) !                 Cloud horizontal length scale, in metres, used to
+(  435) !                 compute rate of horizontal exchange of radiation
+(  436) !                 between clouds and clear skies in SPARTACUS solver
+(  437) ! ------------------------------------------------------------------
+(  438) ! KMODTS : INTEGER   : (A Bozzo) switch for different radiative transfer schemes for UV 
+(  439) !                       = 0 Fouquart&Bonnel adapted by Morcrette and Arola
+(  440) !                       = 1 eddington (joseph et al., 1976)
+(  441) !                       = 2 pifm (zdunkowski et al., 1980)
+(  442) !                       = 3 discrete ordinates (liou, 1973)
+(  443) !     ------------------------------------------------------------------
+(  444) ! TRBKG : REAL tropospheric background OD@550nm for aerosol climatology.
+(  445) !                  default for Tegen climatology was 0.03
+(  446) ! STBKG : REAL stratospheric background OD@550nm for aerosol climatology.
+(  447) !     ------------------------------------------------------------------
+(  448) ! THE FOLLOWING ARE ONLY USED FOR THE ECRAD SCHEME (LUsePre2017Rad = .FALSE.)
+(  449) ! NLwScattering   : INTEGER : 0: No longwave scattering
+(  450) !                             1: Longwave scattering by clouds only
+(  451) !                             2: Longwave scattering by clouds and aerosols
+(  452) ! NSwSolver       : INTEGER :
+(  453) ! NLwSolver       : INTEGER : 0: McICA
+(  454) !                             1: SPARTACUS 1D
+(  455) !                             2: SPARTACUS 3D
+(  456) !                             3: TripleClouds
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:25      page 9
+
+(  457) ! ------------------------------------------------------------------
+(  458) ! KMODTS : INTEGER   : (A Bozzo) switch for different radiative transfer schemes for UV 
+(  459) !                       = 0 Fouquart&Bonnel adapted by Morcrette and Arola
+(  460) !                       = 1 eddington (joseph et al., 1976)
+(  461) !                       = 2 pifm (zdunkowski et al., 1980)
+(  462) !                       = 3 discrete ordinates (liou, 1973)
+(  463) !     ------------------------------------------------------------------
+(  464) ! TRBKG : REAL tropospheric background OD@550nm for aerosol climatology.
+(  465) !                  default for Tegen climatology was 0.03
+(  466) ! STBKG : REAL stratospheric background OD@550nm for aerosol climatology.
+(  467) !     ------------------------------------------------------------------
+(  468) ! LDUSEASON : LOGICAL enables a monthly-varying scale height for the 
+(  469) !                     dust aerosol climatology
+(  470) ! LAER3D : LOGICAL : to enable aerosol climatology in 3D
+(  471) ! RRATSEA : constant relating rvol to reff for cloud droplets over sea
+(  472) ! RRATLAND : constant relating rvol to reff for cloud droplets over land
+(  473) ! RRATDRI : constant relating rvol to reff for drizzle/rain droplets
+(  474) ! RCADECOR : if NDECOLAT=2, first coeff in the equation of the Decorrelation as a function of latitude (see radlswr.F90)
+(  475) ! RCBDECOR : if NDECOLAT=2 second coeff in the equation of Decorrelation as a function of latitude (see radlswr.F90)
+(  476) ! NRTCALL : INTEGER  Maximum possible number of calls to radiation transfert code
+(  477) !                    for array dimensions
+(  478) !                     general case : 1
+(  479) ! IRTCALLREF : INTEGER Reference call to radiation (=1)
+(  480) ! IRTCALLCLN : INTEGER Call number to radiation for clean-sky computations
+(  481) 
+(  482) END MODULE YOERAD
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:25      page 10
+
+(    1) # 1 "./yoerad.F90"
+(    1) MODULE YOERAD
+(    2) # 3 "./yoerad.F90"
+(    3) USE PARKIND1,            ONLY : JPIM, JPRB
+(    4) USE YOE_SPECTRAL_PLANCK, ONLY : TSPECTRALPLANCK
+(    5) # 6 "./yoerad.F90"
+(    6) IMPLICIT NONE
+(    7) # 8 "./yoerad.F90"
+(    8) SAVE
+(    9) # 10 "./yoerad.F90"
+(   10) !     ------------------------------------------------------------------
+(   11) !*    ** *YOERAD* - CONTROL OPTIONS FOR RADIATION CONFIGURATION
+(   12) !     ------------------------------------------------------------------
+(   13) # 14 "./yoerad.F90"
+(   14) ! Here we have hard-coded the options that configure the radiation
+(   15) ! scheme; in the IFS they are set in suecrad.F90 with the option to
+(   16) ! override them using the NAERAD namelist
+(   17) TYPE :: TERAD
+(   18) # 19 "./yoerad.F90"
+(   19)   INTEGER(KIND=JPIM) :: NAER
+(   20)   INTEGER(KIND=JPIM) :: NMODE
+(   21)   INTEGER(KIND=JPIM) :: NOZOCL
+(   22)   INTEGER(KIND=JPIM) :: NRADFR
+(   23)   INTEGER(KIND=JPIM) :: NRADPFR
+(   24)   INTEGER(KIND=JPIM) :: NRADPLA
+(   25)   INTEGER(KIND=JPIM) :: NRADINT
+(   26)   INTEGER(KIND=JPIM) :: NRADRES
+(   27)   INTEGER(KIND=JPIM) :: NRADNFR
+(   28)   INTEGER(KIND=JPIM) :: NRADSFR
+(   29)   INTEGER(KIND=JPIM) :: NRADE1H, NRADE3H
+(   30)   INTEGER(KIND=JPIM) :: NRADELG
+(   31)   INTEGER(KIND=JPIM) :: NOVLP
+(   32)   INTEGER(KIND=JPIM) :: NRPROMA
+(   33) INTEGER(KIND=JPIM) :: NLW
+(   34)   INTEGER(KIND=JPIM) :: NSWNL
+(   35)   INTEGER(KIND=JPIM) :: NSWTL
+(   36) INTEGER(KIND=JPIM) :: NTLW
+(   37)   INTEGER(KIND=JPIM) :: NTSW
+(   38)   INTEGER(KIND=JPIM) :: NUV
+(   39)   INTEGER(KIND=JPIM) :: NCSRADF
+(   40)   INTEGER(KIND=JPIM) :: NINHOM
+(   41)   INTEGER(KIND=JPIM) :: NLAYINH
+(   42)   INTEGER(KIND=JPIM) :: NLNGR1H
+(   43)   INTEGER(KIND=JPIM) :: NPERTAER
+(   44)   INTEGER(KIND=JPIM) :: NPERTOZ
+(   45)   INTEGER(KIND=JPIM) :: NSCEN
+(   46)   INTEGER(KIND=JPIM) :: NHINCSOL
+(   47)   INTEGER(KIND=JPIM) :: NMCICA
+(   48)   INTEGER(KIND=JPIM) :: NGHGRAD
+(   49)   INTEGER(KIND=JPIM) :: NVOLCVERT
+(   50)   INTEGER(KIND=JPIM) :: NREDGLW
+(   51)   INTEGER(KIND=JPIM) :: NREDGSW
+(   52)   INTEGER(KIND=JPIM) :: NSPMAPL(16), NSPMAPS(14)
+(   53) # 54 "./yoerad.F90"
+(   54)   INTEGER(KIND=JPIM) :: NSW = 6
+(   55)   INTEGER(KIND=JPIM) :: NLWEMISS = 2
+(   56)   INTEGER(KIND=JPIM) :: NICEOPT = 3
+(   57)   INTEGER(KIND=JPIM) :: NLIQOPT = 4
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:25      page 11
+
+(   58)   INTEGER(KIND=JPIM) :: NRADIP = 3
+(   59)   INTEGER(KIND=JPIM) :: NRADLP = 2
+(   60)   INTEGER(KIND=JPIM) :: NLWOUT = 1
+(   61)   INTEGER(KIND=JPIM) :: NDECOLAT = 2
+(   62)   INTEGER(KIND=JPIM) :: NMINICE = 1
+(   63)   INTEGER(KIND=JPIM) :: NAERMACC = 1
+(   64)   INTEGER(KIND=JPIM) :: NMCVAR = 12
+(   65)   INTEGER(KIND=JPIM) :: NLWSCATTERING = 1
+(   66)   INTEGER(KIND=JPIM) :: NSWSOLVER = 3 ! Tripleclouds
+(   67)   INTEGER(KIND=JPIM) :: NLWSOLVER = 3 ! Tripleclouds
+(   68)   INTEGER(KIND=JPIM) :: NSOLARSPECTRUM = 0
+(   69)   INTEGER(KIND=JPIM) :: NDUMPBADINPUTS = 0
+(   70)   INTEGER(KIND=JPIM) :: NDUMPINPUTS = 0
+(   71)   INTEGER(KIND=JPIM) :: NCLOUDOVERLAP = 3
+(   72)   REAL(KIND=JPRB)    :: RCLOUD_FRAC_STD = 1.0_JPRB
+(   73)   REAL(KIND=JPRB)    :: RCLOUD_SEPARATION_SCALE_TOA = 14000.0_JPRB
+(   74)   REAL(KIND=JPRB)    :: RCLOUD_SEPARATION_SCALE_SURF = 2500.0_JPRB
+(   75)   LOGICAL :: LFU_LW_ICE_OPTICS_BUG = .FALSE.
+(   76)   LOGICAL :: LDIAGFORCING = .FALSE.
+(   77)   LOGICAL :: LAPPROXLWUPDATE = .TRUE.
+(   78)   LOGICAL :: LAPPROXSWUPDATE = .FALSE.
+(   79)   INTEGER(KIND=JPIM) :: NSWICEOPT
+(   80)   INTEGER(KIND=JPIM) :: NSWLIQOPT
+(   81)   INTEGER(KIND=JPIM) :: NLWICEOPT
+(   82)   INTEGER(KIND=JPIM) :: NLWLIQOPT
+(   83)   LOGICAL :: LCCNL = .TRUE.
+(   84)   LOGICAL :: LCCNO = .TRUE.
+(   85)   REAL(KIND=JPRB) :: RCCNLND = 900.0_JPRB
+(   86)   REAL(KIND=JPRB) :: RCCNSEA = 50.0_JPRB
+(   87)   REAL(KIND=JPRB) :: RRE2DE = 0.64952_JPRB
+(   88)   REAL(KIND=JPRB) :: RMINICE = 60.0_JPRB
+(   89)   INTEGER(KIND=JPIM) :: NMCLAT, NMCLON, NMCLEV
+(   90)   INTEGER(KIND=JPIM) :: NSWGASOPTICS, NLWGASOPTICS
+(   91)   INTEGER(KIND=JPIM) :: NGASOPTICSSCHEME
+(   92)   INTEGER(KIND=JPIM) :: KMODTS
+(   93)   INTEGER(KIND=JPIM) :: NSWWVCONTINUUM
+(   94) # 95 "./yoerad.F90"
+(   95) INTEGER(KIND=JPIM) :: NRTCALL
+(   96) INTEGER(KIND=JPIM) :: IRTCALLREF
+(   97) INTEGER(KIND=JPIM) :: IRTCALLCLN
+(   98) # 99 "./yoerad.F90"
+(   99)   LOGICAL :: LINTERPINCLOUDMEAN
+(  100) # 101 "./yoerad.F90"
+(  101)   LOGICAL :: LERAD1H
+(  102)   LOGICAL :: LEPO3RA
+(  103)   LOGICAL :: LONEWSW
+(  104)   LOGICAL :: LECSRAD
+(  105)   LOGICAL :: LRRTM
+(  106)   LOGICAL :: LSRTM
+(  107)   LOGICAL :: LDIFFC
+(  108)   LOGICAL :: LHVOLCA
+(  109)   LOGICAL :: LNEWAER
+(  110)   LOGICAL :: LNOTROAER
+(  111)   LOGICAL :: LRAYL
+(  112)   LOGICAL :: LOPTRPROMA
+(  113)   LOGICAL :: LECO2VAR
+(  114)   LOGICAL :: LHGHG
+(  115)   LOGICAL :: LESO4HIS
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:25      page 12
+
+(  116)   LOGICAL :: LETRACGMS
+(  117) # 118 "./yoerad.F90"
+(  118)   LOGICAL :: LAERCLIM, LAERVISI, LAER3D
+(  119)   LOGICAL :: LVOLCSPEC
+(  120)   LOGICAL :: LVOLCDAMP
+(  121)   LOGICAL :: LAERADCLI
+(  122)   LOGICAL :: LAERADJDU
+(  123)   LOGICAL :: LMANNERSSWUPDATE
+(  124)   LOGICAL :: LCENTREDTIMESZA
+(  125)   LOGICAL :: LAVERAGESZA
+(  126)   LOGICAL :: LECOMPGRID
+(  127)   LOGICAL :: LUSEPRE2017RAD
+(  128)   LOGICAL :: LDUSEASON
+(  129) # 130 "./yoerad.F90"
+(  130)   LOGICAL :: LPERPET
+(  131) LOGICAL :: LCLEAN
+(  132) # 133 "./yoerad.F90"
+(  133)   REAL(KIND=JPRB) :: RAOVLP , RBOVLP
+(  134)   LOGICAL :: LEDBUG
+(  135)   REAL(KIND=JPRB) :: RPERTOZ
+(  136)   REAL(KIND=JPRB) :: RLWINHF, RSWINHF
+(  137)   REAL(KIND=JPRB) :: RVOLCSPEC(3)
+(  138)   REAL(KIND=JPRB) :: RNS, RSIGAIR
+(  139) # 140 "./yoerad.F90"
+(  140)   REAL(KIND=JPRB) :: RAESHSS, RAESHDU, RAESHOM, RAESHBC, RAESHSU
+(  141)   REAL(KIND=JPRB) :: TRBKG
+(  142)   REAL(KIND=JPRB) :: STBKG
+(  143)   CHARACTER(LEN=256) :: CGHGCLIMFILE = ' '
+(  144)   CHARACTER(LEN=256) :: CGHGTIMESERIESFILE = ' '
+(  145)   CHARACTER(LEN=256) :: CSOLARIRRADIANCEFILE = ' '
+(  146) # 147 "./yoerad.F90"
+(  147)   REAL(KIND=JPRB) :: RRATSEA, RRATLAND,RRATDRI
+(  148)   REAL(KIND=JPRB) :: RCADECOR,RCBDECOR
+(  149)   REAL(KIND=JPRB) :: RFACDICE
+(  150) # 151 "./yoerad.F90"
+(  151)   REAL(KIND=JPRB),ALLOCATABLE:: CVDAESS(:)
+(  152)   REAL(KIND=JPRB),ALLOCATABLE:: CVDAEDU(:)
+(  153)   REAL(KIND=JPRB),ALLOCATABLE:: CVDAEOM(:)
+(  154)   REAL(KIND=JPRB),ALLOCATABLE:: CVDAEBC(:)
+(  155)   REAL(KIND=JPRB),ALLOCATABLE:: CVDAESU(:)
+(  156) # 157 "./yoerad.F90"
+(  157)   CHARACTER(LEN=8)   :: CECRADARCH
+(  158)   LOGICAL            :: LECRADACC
+(  159)   INTEGER(KIND=JPIM) :: NECRADLEN
+(  160) # 161 "./yoerad.F90"
+(  161) ! Look-up table for Planck function in emissivity intervals
+(  162)   TYPE(TSPECTRALPLANCK) :: YSPECTPLANCK
+(  163) !----------------------------------------------------------------------------
+(  164) CONTAINS
+(  165) # 166 "./yoerad.F90"
+(  166) END TYPE TERAD
+(  167) !============================================================================
+(  168) # 169 "./yoerad.F90"
+(  169) TYPE(TERAD), POINTER :: YRERAD => NULL()
+(  170) # 171 "./yoerad.F90"
+(  171) !        * E.C.M.W.F. PHYSICS PACKAGE *
+(  172) # 173 "./yoerad.F90"
+(  173) !     J.-J. MORCRETTE       E.C.M.W.F.      89/07/14
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:25      page 13
+
+(  174) ! Modifications
+(  175) !    R J Hogan 20 May  2014: Added LApproxLwUpdate
+(  176) !    R J Hogan 19 June 2014: Added LApproxSwUpdate
+(  177) !    R J Hogan 19 Nov  2014: Added LCentredTimeSZA
+(  178) !    R J Hogan 15 Apr  2015: Added LMannersSwUpdate
+(  179) !    R J Hogan 24 Apr  2015: Added LAverageSZA
+(  180) !    R J Hogan 18 Sept 2015: Added LUsePre2017Rad (was LUsePre2015Rad)
+(  181) !    R J Hogan 1  Mar  2016: Added NLwSolver, NSwSolver, NLwScattering
+(  182) !    A Bozzo      Feb  2017: Added logical to enable 3D aerosol climatology
+(  183) !    R J Hogan 9  Mar  2018: Added NDUMPBADINPUTS
+(  184) !    R J Hogan 22 Jan  2019: Added NLWEMISS, NCLOUDOVERLAP, NDUMPINPUTS
+(  185) !    R J Hogan 4  Feb  2019: Added NLWOUT
+(  186) !    R J Hogan 5  Feb  2019: Added YSPECTPLANCK
+(  187) !    R J Hogan 11 Mar  2019: Added CGHG*FILE, CSOLARIRRADIANCEFILE
+(  188) !    M. Michou, P. Nabat Jan 2023    : Modifications related to the use of chemistry and/or aerosol schemes
+(  189) !    R J Hogan 24 Jun  2021: Added NSWGASOPTICS, NLWGASOPTICS
+(  190) !    P Ukkonen 2  Feb  2022: Added NGasOpticsScheme
+(  191) # 192 "./yoerad.F90"
+(  192) !  NAME     TYPE     PURPOSE
+(  193) !  ----  :  ----   : ---------------------------------------------------
+(  194) ! LERAD1H: LOGICAL : .T. TO ALLOW MORE FREQUENT RADIATION CALCULATIONS
+(  195) !                  : DURING FIRST N HOURS OF FORECAST
+(  196) ! NLNGR1H: INTEGER : NUMBER FORECAST HOURS DURING WHICH MORE FREQUENT
+(  197) !                    RADIATION CALCULATIONS ARE REQUIRED
+(  198) ! LEPO3RA: LOGICAL : .T. IF PROGNOSTIC OZONE (EC) IS PASSED TO RADIATION
+(  199) ! NAER   : INTEGER : CONFIGURATION INDEX FOR AEROSOLS
+(  200) ! NMODE  : INTEGER : CONFIGURATION FOR RADIATION CODE: FLUX VS. RADIANCE
+(  201) ! NOZOCL : INTEGER : CHOICE OF OZONE/GHG CLIMATOLOGY (0: old O3, 1: new O3, 2: O3 climatological profile, 
+(  202) !                                                 3-4: MACC/CAMS O3 and GHG monthly climatology,
+(  203) !                                                 5-6: 3D concentrations of O3 and GHG from chemistry scheme)
+(  204) ! NRADFR : INTEGER : FREQUENCY OF FULL RADIATION COMPUTATIONS
+(  205) !                    IF(NRADFR.GT.0): RAD EVERY 'NRADFR' TIME-STEPS
+(  206) !                    IF(NRADFR.LT.0): RAD EVERY '-NRADFR' HOURS
+(  207) ! NRADPFR: INTEGER : PRINT FREQUENCY FOR RAD.STATISTICS (in RAD.T.STEPS)
+(  208) ! NRADPLA: INTEGER : PRINT RAD.STATISTICS EVERY 'NRADPLA' ROWS
+(  209) ! NRADINT: INTEGER : RADIATION INTERPOLATION METHOD
+(  210) !                  : 1 = SPECTRAL TRANSFORM INTERPOLATION
+(  211) !                  : 2 =  4 POINT HORIZONTAL INTERPOLATION
+(  212) !                  : 3 = 12 POINT HORIZONTAL INTERPOLATION
+(  213) ! NRADRES: INTEGER : RADIATION GRID SPECTRAL RESOLUTION
+(  214) ! NRADNFR: INTEGER : NORMAL   FREQUENCY OF RADIATION STEPS
+(  215) ! NRADSFR: INTEGER : START-UP FREQUENCY OF RADIATION STEPS
+(  216) ! NRADE1H: INTEGER : START-UP FREQUENCY OF RADIATION STEPS FOR EPS
+(  217) ! NRADE3H: INTEGER : SUBSEQUENT FREQUENCY OF RADIATION STEPS FOR EPS
+(  218) ! NRADELG: INTEGER : LENGTH IN HOURS DURING WHICH THE FREQUENCY OF RADIATION IS INCREASED FOR EPS
+(  219) ! NOVLP  : INTEGER : CLOUD OVERLAP CONFIGURATION IN PRE-MCRAD/ECRAD SCHEME
+(  220) !                  : 1 = Max-rand (Geleyn & Hollingsworth)
+(  221) !                  : 2 = Maximum
+(  222) !                  : 3 = Random
+(  223) ! NRPROMA: INTEGER : VECTOR LENGTH FOR RADIATION CALCULATIONS
+(  224) ! NSW    : INTEGER : NUMBER OF SHORTWAVE SPECTRAL INTERVALS
+(  225) ! NSWNL  : INTEGER : NUMBER OF SHORTWAVE SPECTRAL INTERVALS IN NL MODEL
+(  226) ! NSWTL  : INTEGER : NUMBER OF SHORTWAVE SPECTRAL INTERVALS IN TL MODEL
+(  227) ! NTLW   : INTEGER : MAXIMUM POSSIBLE NUMBER OF LW SPECTRAL INTERVALS 
+(  228) ! NTSW   : INTEGER : MAXIMUM POSSIBLE NUMBER OF SW SPECTRAL INTERVALS 
+(  229) ! NUV    : INTEGER : NUMBER OF UV SPECTRAL INTERVALS FOR THE UV PROCESSOR   
+(  230) ! LOPTRPROMA:LOGICAL: .T. NRPROMA will be optimised
+(  231) !                   : .F. NRPROMA will not be optimised (forced
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:25      page 14
+
+(  232) !                   :         by negative NRPROMA in namelist)
+(  233) # 234 "./yoerad.F90"
+(  234) ! NRADIP : INTEGER : INDEX FOR DIAGNOSIS OF ICE CLOUD EFFECTIVE RADIUS
+(  235) !          0 = fixed at 40 microns
+(  236) !          1 = Liou & Ou (1994) capped between 40-130 microns
+(  237) !          2 = Liou & Ou but capped between 30 and 60 microns
+(  238) !          3 = Sun & Rikus (1999) revised by Sun (2001)
+(  239) ! NRADLP : INTEGER : INDEX FOR DIAGNOSIS OF LIQ. CLOUD EFFECTIVE RADIUS
+(  240) !          0 = ERA-15 function of pressure
+(  241) !          1 = 10 microns over land, 13 microns over sea
+(  242) !          2 = Martin_et_al (1994) in terms of land-sea number conc
+(  243) !          3 = Linked to prognostic aerosols
+(  244) !          4 = CAMS cloud droplets and ICE3 gamma laws for cloud droplet size distribution are used
+(  245) ! NICEOPT: INTEGER : INDEX FOR ICE CLOUD OPTICAL PROPERTIES
+(  246) !          0 = SW Ebert-Curry, LW Smith & Shi (1992)
+(  247) !          1 = SW Ebert-Curry, LW Ebert-Curry (1992)
+(  248) !          2 = SW & LW Fu-Liou (1993)
+(  249) !          3 = SW Fu (1996) LW Fu et al. (1998) + Chou et al. (1999) LW scatt approx
+(  250) !   the following only available in newer modular radiation scheme:
+(  251) !          4 = SW/LW Baran data fitted versus ice mixing ratio
+(  252) ! NLIQOPT: INTEGER : INDEX FOR LIQUID WATER CLOUD OPTICAL PROPERTIES
+(  253) !          0 = SW Fouquart (1991) LW Smith-Shi (1992) YF/SmSh 
+(  254) !          1 = SW Slingo (1989) LW Savijarvi (1997)
+(  255) !          2 = SW Slingo (1989) LW Lindner-Li (2000)
+(  256) !   the following only available in RADLSW, not RADLSWR:
+(  257) !          3 = SW Nielsen       LW Smith-Shi
+(  258) !   the following only available in newer modular radiation scheme:
+(  259) !          4 = SW/LW SOCRATES scheme
+(  260) !
+(  261) ! LONEWSW: LOGICAL : .T. IF NEW SW CODE IS ACTIVE
+(  262) ! LECSRAD: LOGICAL : .T. IF CLEAR-SKY RADIATION IS ARCHIVED AS PEXTR2
+(  263) ! NCSRADF: INTEGER : 1 IF ACCUMULATED, 2 IF INSTANTANEOUS
+(  264) ! LRRTM  : LOGICAL : .T. IF RRTM140MR IS USED FOR LW RADIATION TRANSFER
+(  265) # 266 "./yoerad.F90"
+(  266) ! LHVOLCA: LOGICAL : .T. IF USING HISTORICAL VOLCANIC AEROSOLS 
+(  267) ! LNEWAER: LOGICAL : .T. IF AEROSOL MONTHLY DISTRIBUTIONS ARE USED
+(  268) ! LNOTROAER:LOGICAL: .T. IF NO TROPOSPHERIC AEROSOLS
+(  269) ! CRTABLEDIR: CHAR : IF NRADINT > 0 SPECIFIES DIRECTORY PATH FOR RADIATION
+(  270) !                  : GRID RTABLE NAMELIST
+(  271) ! CRTABLEFIL: CHAR : IF NRADINT > 0 SPECIFIES FILE NAME OF RADIATION 
+(  272) !                  : GRID RTABLE NAMELIST
+(  273) ! LRAYL  : LOGICAL : .T. NEW RAYLEIGH FOR SW-6 VERSION
+(  274) # 275 "./yoerad.F90"
+(  275) ! RAOVLP : REAL    : COEFFICIENTS FOR ALPHA1 FACTOR IN HOGAN & 
+(  276) ! RBOVLP : REAL    : ILLINGWORTH's PARAMETRIZATION
+(  277) # 278 "./yoerad.F90"
+(  278) ! LCCNL  : LOGICAL : .T. IF CCN CONCENTRATION OVER LAND IS DIAGNOSED
+(  279) ! LCCNO  : LOGICAL : .T. IF CCN CONCENTRATION OVER OCEAN IS DIAGNOSED
+(  280) ! RCCNLND: REAL    : NUMBER CONCENTRATION (CM-3) OF CCNs OVER LAND
+(  281) ! RCCNSEA: REAL    : NUMBER CONCENTRATION (CM-3) OF CCNs OVER SEA
+(  282) # 283 "./yoerad.F90"
+(  283) ! LDIFFC : LOGICAL : .T. IF SAVIJARVI'S DIFFUSIVITY CORRECTION IS ON
+(  284) # 285 "./yoerad.F90"
+(  285) ! NINHOM : INTEGER : 0 IF NO INHOMOGENEITY SCALING EFFECT 
+(  286) !                    1 IF SIMPLE 0.7 SCALING
+(  287) !                    2 IF BARKER, 3 IF CAIRNS ET AL.
+(  288) ! RLWINHF: REAL    : INHOMOG. SCALING FACTOR FOR CLOUD LW OPTICAL THICKNESS
+(  289) ! RSWINHF: REAL    : INHOMOG. SCALING FACTOR FOR CLOUD SW OPTICAL THICKNESS
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:25      page 15
+
+(  290) # 291 "./yoerad.F90"
+(  291) ! NPERTAER : INTERGER : PERCENTAGE OF PERTURBATION FOR AEROSOL   
+(  292) ! NPERTOZONE : INTEGER : PERCENTAGE OF PERTURBATION FOR OZONE 
+(  293) ! NHINCSOL : INTEGER :  0: Total Solar Irradiance (TSI) fixed at 1366.0 W m-2
+(  294) !                       1: Deprecated - use default
+(  295) !                       2: Deprecated - use default
+(  296) !                       3: Deprecated (was CMIP5) - use default
+(  297) !                       4: TSI from CMIP6 NetCDF (default), or override with CSOLARIRRADIANCEFILE
+(  298) ! NSWWVCONTINUUM : INTEGER : 0 MT_CKD2.5 (SRTM default WV continuum)
+(  299) !                            1 CAVIAR continuum (Shine et al. 2016)
+(  300) ! LECO2VAR: LOGICAL: .T. IF ERA-40/AMIP2 VARIABILITY OF GHG IS ON (ignored)
+(  301) ! LHGHG  : LOGICAL : .T. IF VARIABILITY OF GREENHOUSE GASES (INCLUDING CO2) IS ON
+(  302) ! N.B.: LHGHG supersedes LECO2VAR and allows using better specification of trace gases
+(  303) ! NSCEN  : INTEGER : 21st CENTURY SCENARIO FOR GHG (1=A1B, 2=A2, 3=B1)
+(  304) ! RRe2De : REAL    : CONVERSION FACTOR BETWWEN EFFECTIVE RADIUS AND PARTICLE SIZE
+(  305) ! RMINICE: REAL    : MINIMUM SIZE FOR ICE PARTICLES (um)
+(  306) !                    FOR ICE
+(  307) ! NMINICE: INTEGER : 1-6 MINIMUM ICE PARTICLE SIZE DEPENDS ON LATITUDE, 0=INDEPENDENT OF LATITUDE
+(  308) ! NDECOLAT:INTEGER : DECORRELATION LENGTH FOR CF AND CW 
+(  309) !                     0: SPECIFIED INDEPENDENT OF LATITUDE, 1: SHONK-HOGAN, 2: IMPROVED
+(  310) ! NMCICA : INTEGER :  0: NO McICA
+(  311) !                     1: McICA w maximum-random in cloud generator
+(  312) !                     2: McICA w generalized overlap in cloud generator
+(  313) ! LESO4HIS: LOGICAL:.T.: Use historical/projected SO4 data per decade and month
+(  314) ! NGHGRAD: INTEGER : configuration of 3D GHG climatologies accounted for in radiation
+(  315) !                     0: global values
+(  316) !                     1: CO2       2: CH4    3: N2O    4: NO2    5:CFC11   6:CFC12
+(  317) !                    12: CO2+CH4  13: CO2+CH4+N2O     
+(  318) !                    16: CO2+CH4+N2O+CFC11+CFC12
+(  319) ! LETRACGMS: LOGICAL : F=Cariolle climatol. T=GEMS-derived clim for CO2, CH4, O3
+(  320) ! LAERCLIM : LOGICAL : .T. for output of the climatological aerosol optical depth at 550 nm
+(  321) ! LAERVISI : LOGICAL : .T. for output of the visibility (from diagnsotic or prognostic aerosols)
+(  322) ! NVOLCVERT: INTEGER : Vertical distribution of volcanic aerosol
+(  323) !                       0: original profile, diagnosed from T
+(  324) !                       1: original profile, but upper boundary at 10hPa
+(  325) !                       2: lower boundary diagnosed from ozone, upper boundary at 10hPa
+(  326) ! LVOLCSPEC: LOGICAL : T for specified volcanic aerosol
+(  327) ! LVOLCDAMP: LOGICAL : T for damping of specified volcanic aerosol from initial value
+(  328) ! RVOLCSPEC: REAL    : Specified volcanic aerosol (total optical depth) in NH/Tropics/SH
+(  329) ! RNs                : derived from Avogadro
+(  330) ! RSIGAIR: invariant terms in expression of Rayleigh scattering cross-section
+(  331) ! NREDGSW  : INTEGER : 0 full resolution for RRTM_SW (224)
+(  332) !                      1 ECMWF High resolution model configuration (_SW: 112)
+(  333) !                      2 ECMWF EPS configuration (_SW: 56)
+(  334) ! NREDGLW  : INTEGER : 0 full resolution for RRTM_LW (256)
+(  335) !                      1 ECMWF High resolution model configuration (_LW: 140)
+(  336) !                      2 ECMWF EPS configuration (_LW: 70)
+(  337) ! LDIAGFORCING : LOGICAL : T Write input ozone, ghg and aerosol forcing to 3D fields 
+(  338) !                            To be used for diagnostics only; do not use in production runs
+(  339) ! NAERMACC : INTEGER : MACC-derived aerosol climatology on a NMCLAT x NMCLON grid
+(  340) ! RAESHxx  : REAL    : parameters related to scale height of MACC-derived aerosol climatology
+(  341) ! CVDAExx  : REAL    : scale heights of MACC-derived aerosol climatology
+(  342) ! LAERADJDU: LOGICAL : T adjust MACC-derived DU climatology
+(  343) ! LAERADCLI: LOGICAL : T if radiation uses the MACC-derived aerosol climatology
+(  344) ! LApproxLwUpdate : LOGICAL : Update the longwave upwelling flux every
+(  345) !                             timestep/gridpoint using the stored rate
+(  346) !                             of change of the fluxes with respect to
+(  347) !                             the surface upwelling longwave flux
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:25      page 16
+
+(  348) ! LApproxSwUpdate : LOGICAL : Update the shortwave upwelling flux
+(  349) !                             every gridpoint to account for the local
+(  350) !                             value of surface albedo
+(  351) ! LMannersSwUpdate: LOGICAL : Update the shortwave flux every timestep
+(  352) !                             using Manners et al. (2009) correction
+(  353) !                             for solar zenith angle change
+(  354) ! LCentredTimeSZA : LOGICAL : Compute solar zenith angle in radiation
+(  355) !                             scheme half way between calls to
+(  356) !                             radiation scheme (rather than previous
+(  357) !                             behaviour, which is half way between
+(  358) !                             calls plus half a model timestep)
+(  359) ! LAverageSZA     : LOGICAL : Compute an averaged solar zenith angle
+(  360) !                             across the time interval required
+(  361) !                             (either a model timestep or a radiation
+(  362) !                             timestep). Should be used with 
+(  363) !                             LCentredTimeSZA=TRUE.
+(  364) ! LUsePre2017Rad  : LOGICAL : Use the pre-2017 radiation scheme, rather 
+(  365) !                             than the modular scheme contained in the
+(  366) !                             separate "radiation" library.  Note that
+(  367) !                             the radiation library may make use of the
+(  368) !                             pre-2017 RRTM-G gas optics.
+(  369) ! RCloud_Frac_Std : REAL    : Cloud water content horizontal fractional
+(  370) !                             standard deviation in a gridbox
+(  371) ! LInterpInCloudMean : LOGICAL : When interpolating model fields to
+(  372) !                             radiation grid, interpolate in-cloud
+(  373) !                             mean water contents?  Better
+(  374) !                             conservation achieved by interpolating
+(  375) !                             gridbox-means.
+(  376) ! CGHGCLIMFILE : STRING :     Location of greenhouse gas climatology file,
+(  377) !                             or empty if the default is to be used. If it
+(  378) !                             starts with "." or "/" then a relative path
+(  379) !                             is assumed, otherwise the default directory.
+(  380) ! CGHGTIMESERIESFILE:STRING : Location of greenhouse gas timeseries
+(  381) !                             file, or empty if it is to be worked out
+(  382) !                             from the NSCEN, YOECMIP%NGHGCMIP and
+(  383) !                             YOECMIP%NRCP variables. If it starts
+(  384) !                             with "." or "/" then a relative path is
+(  385) !                             assumed, otherwise the default
+(  386) !                             directory.
+(  387) ! CSOLARIRRADIANCEFILE:STRING:Location of Total Solar Irradiance file,
+(  388) !                             or empty if the default is to be
+(  389) !                             used. If it starts with "." or "/" then
+(  390) !                             a relative path is assumed, otherwise
+(  391) !                             the default directory.
+(  392) ! NLWEMISS      : INTEGER :   Number of emissivity spectral intervals, set 
+(  393) !                             according to the value of NEMISSSCHEME; traditionally
+(  394) !                             this has always been 2: outside the IR window and within
+(  395) ! NLWOUT        : INTEGER :   Number of spectral intervals to pass LW downwelling flux
+(  396) !                             to RADHEATN; traditionally this was 1, but this led
+(  397) !                             to errors with LAPPROXLWUPDATE=TRUE, which updated 
+(  398) !                             fluxes using a single broadband emissivity. Now we can
+(  399) !                             do approximate updates using full spectral emissivity.
+(  400) ! ------------------------------------------------------------------
+(  401) ! THE FOLLOWING ARE ONLY USED FOR THE ECRAD SCHEME (LUsePre2017Rad = .FALSE.)
+(  402) ! NLwScattering   : INTEGER : 0: No longwave scattering
+(  403) !                             1: Longwave scattering by clouds only
+(  404) !                             2: Longwave scattering by clouds and aerosols
+(  405) ! NSwSolver       : INTEGER :
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:25      page 17
+
+(  406) ! NLwSolver       : INTEGER : 0: McICA
+(  407) !                             1: SPARTACUS 1D
+(  408) !                             2: SPARTACUS 3D
+(  409) !                             3: TripleClouds
+(  410) ! NGasOpticsScheme : INTEGER :
+(  411) !                             0: RRTMG
+(  412) !                             1: ECCKD
+(  413) !                             2: RRTMGP
+(  414) !                             3: RRTMGP-NN
+(  415) ! NSwGasOptics    : INTEGER :
+(  416) ! NLwGasOptics    : INTEGER : 0: RRTMG
+(  417) !                             else: number of g-points of ecCKD gas optics scheme
+(  418) ! LFU_LW_ICE_OPTICS_BUG : LOGICAL : Continue to use bug in Fu LW ice
+(  419) !                             optics whereby single scattering albedo is
+(  420) !                             one minus what it should be
+(  421) ! NSOLARSPECTRUM : INTEGER :  0: Kurucz
+(  422) !                             1: WHI reference solar minimum spectrum
+(  423) !                             2: Mean of Coddington et al. (BAMS 2016) spectrum
+(  424) ! NDUMPBADINPUTS : INTEGER :  0: Warn only if fluxes out of physical bounds
+(  425) !                             n: Write netcdf file of bad inputs up to n times per task
+(  426) !                            -n: Abort if fluxes ever out of physical bounds
+(  427) ! NDUMPINPUTS    : INTEGER :  0: Do nothing
+(  428) !                             n: Write netcdf file of all inputs up to n times per task
+(  429) ! NCLOUDOVERLAP  : INTEGER :  Cloud overlap scheme
+(  430) !                             1: Maximum-random
+(  431) !                             2: Exponential-exponential (the actual behaviour of McRad)
+(  432) !                             3: Exponential-random (only option for Tripleclouds and SPARTACUS)
+(  433) ! RCLOUD_SEPARATION_SCALE_TOA, RCLOUD_SEPARATION_SCALE_SURF : REAL
+(  434) !                 Cloud horizontal length scale, in metres, used to
+(  435) !                 compute rate of horizontal exchange of radiation
+(  436) !                 between clouds and clear skies in SPARTACUS solver
+(  437) ! ------------------------------------------------------------------
+(  438) ! KMODTS : INTEGER   : (A Bozzo) switch for different radiative transfer schemes for UV 
+(  439) !                       = 0 Fouquart&Bonnel adapted by Morcrette and Arola
+(  440) !                       = 1 eddington (joseph et al., 1976)
+(  441) !                       = 2 pifm (zdunkowski et al., 1980)
+(  442) !                       = 3 discrete ordinates (liou, 1973)
+(  443) !     ------------------------------------------------------------------
+(  444) ! TRBKG : REAL tropospheric background OD@550nm for aerosol climatology.
+(  445) !                  default for Tegen climatology was 0.03
+(  446) ! STBKG : REAL stratospheric background OD@550nm for aerosol climatology.
+(  447) !     ------------------------------------------------------------------
+(  448) ! THE FOLLOWING ARE ONLY USED FOR THE ECRAD SCHEME (LUsePre2017Rad = .FALSE.)
+(  449) ! NLwScattering   : INTEGER : 0: No longwave scattering
+(  450) !                             1: Longwave scattering by clouds only
+(  451) !                             2: Longwave scattering by clouds and aerosols
+(  452) ! NSwSolver       : INTEGER :
+(  453) ! NLwSolver       : INTEGER : 0: McICA
+(  454) !                             1: SPARTACUS 1D
+(  455) !                             2: SPARTACUS 3D
+(  456) !                             3: TripleClouds
+(  457) ! ------------------------------------------------------------------
+(  458) ! KMODTS : INTEGER   : (A Bozzo) switch for different radiative transfer schemes for UV 
+(  459) !                       = 0 Fouquart&Bonnel adapted by Morcrette and Arola
+(  460) !                       = 1 eddington (joseph et al., 1976)
+(  461) !                       = 2 pifm (zdunkowski et al., 1980)
+(  462) !                       = 3 discrete ordinates (liou, 1973)
+(  463) !     ------------------------------------------------------------------
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:25      page 18
+
+(  464) ! TRBKG : REAL tropospheric background OD@550nm for aerosol climatology.
+(  465) !                  default for Tegen climatology was 0.03
+(  466) ! STBKG : REAL stratospheric background OD@550nm for aerosol climatology.
+(  467) !     ------------------------------------------------------------------
+(  468) ! LDUSEASON : LOGICAL enables a monthly-varying scale height for the 
+(  469) !                     dust aerosol climatology
+(  470) ! LAER3D : LOGICAL : to enable aerosol climatology in 3D
+(  471) ! RRATSEA : constant relating rvol to reff for cloud droplets over sea
+(  472) ! RRATLAND : constant relating rvol to reff for cloud droplets over land
+(  473) ! RRATDRI : constant relating rvol to reff for drizzle/rain droplets
+(  474) ! RCADECOR : if NDECOLAT=2, first coeff in the equation of the Decorrelation as a function of latitude (see radlswr.F90)
+(  475) ! RCBDECOR : if NDECOLAT=2 second coeff in the equation of Decorrelation as a function of latitude (see radlswr.F90)
+(  476) ! NRTCALL : INTEGER  Maximum possible number of calls to radiation transfert code
+(  477) !                    for array dimensions
+(  478) !                     general case : 1
+(  479) ! IRTCALLREF : INTEGER Reference call to radiation (=1)
+(  480) ! IRTCALLCLN : INTEGER Call number to radiation for clean-sky computations
+(  481) # 482 "./yoerad.F90"
+(  482) END MODULE YOERAD

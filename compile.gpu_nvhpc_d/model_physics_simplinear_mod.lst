@@ -1,0 +1,105 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:24      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./model_physics_simplinear_mod.F90
+
+(    1) MODULE MODEL_PHYSICS_SIMPLINEAR_MOD
+(    2)   USE YOEPHLI    , ONLY : TEPHLI
+(    3)   USE YOMCUMFS   , ONLY : TCUMFS
+(    4)   USE YOEGWDWMS  , ONLY : TEGWDWMS
+(    5)   USE YOECUMF2   , ONLY : TECUMF2
+(    6)   USE YOPHLC     , ONLY : TPHLC
+(    7)   USE YOPHNC     , ONLY : TPHNC
+(    8)   USE YOMNCL     , ONLY : TNCL
+(    9)   USE YOMSRFTLAD , ONLY : TSRFTLAD
+(   10)   USE YOMSPHYHIST, ONLY : SPHYS_HIST_TYPE
+(   11)   IMPLICIT NONE
+(   12) 
+(   13)   TYPE MODEL_PHYSICS_SIMPLINEAR_TYPE
+(   14) 
+(   15)   TYPE(TEPHLI)   :: YREPHLI   !! constants for lin-phys
+(   16)   TYPE(TCUMFS)   :: YRCUMFS   !! simplified convection scheme
+(   17)   TYPE(TEGWDWMS) :: YREGWDWMS !! simplified non-oro g-w scheme
+(   18)   TYPE(TECUMF2)  :: YRECUMF2  !! new linearized cumulus mass flux
+(   19)   TYPE(TPHLC)    :: YRPHLC    !! simplified phys switches
+(   20)   TYPE(TPHNC)    :: YRPHNC    !! switches for t-dt trajectory & phys
+(   21)   TYPE(TNCL)     :: YRNCL     !! simplified cloud characteristics
+(   22)   TYPE(TSRFTLAD) :: YRSRFTLAD !! lin phys skin temp
+(   23)   TYPE(SPHYS_HIST_TYPE), POINTER :: GPHIST(:) => NULL()  !! trajectory “memory”
+(   24)   !---------------------------------------------------------------------
+(   25)   
+(   26) CONTAINS
+(   27)   
+(   28)                                                        !! across timesteps
+(   29)   END TYPE MODEL_PHYSICS_SIMPLINEAR_TYPE
+(   30)   !======================================================================
+(   31) 
+(   32) END MODULE MODEL_PHYSICS_SIMPLINEAR_MOD
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:24      page 2
+
+(    1) # 1 "./model_physics_simplinear_mod.F90"
+(    1) MODULE MODEL_PHYSICS_SIMPLINEAR_MOD
+(    2)   USE YOEPHLI    , ONLY : TEPHLI
+(    3)   USE YOMCUMFS   , ONLY : TCUMFS
+(    4)   USE YOEGWDWMS  , ONLY : TEGWDWMS
+(    5)   USE YOECUMF2   , ONLY : TECUMF2
+(    6)   USE YOPHLC     , ONLY : TPHLC
+(    7)   USE YOPHNC     , ONLY : TPHNC
+(    8)   USE YOMNCL     , ONLY : TNCL
+(    9)   USE YOMSRFTLAD , ONLY : TSRFTLAD
+(   10)   USE YOMSPHYHIST, ONLY : SPHYS_HIST_TYPE
+(   11)   IMPLICIT NONE
+(   12) # 13 "./model_physics_simplinear_mod.F90"
+(   13)   TYPE MODEL_PHYSICS_SIMPLINEAR_TYPE
+(   14) # 15 "./model_physics_simplinear_mod.F90"
+(   15)   TYPE(TEPHLI)   :: YREPHLI   !! constants for lin-phys
+(   16)   TYPE(TCUMFS)   :: YRCUMFS   !! simplified convection scheme
+(   17)   TYPE(TEGWDWMS) :: YREGWDWMS !! simplified non-oro g-w scheme
+(   18)   TYPE(TECUMF2)  :: YRECUMF2  !! new linearized cumulus mass flux
+(   19)   TYPE(TPHLC)    :: YRPHLC    !! simplified phys switches
+(   20)   TYPE(TPHNC)    :: YRPHNC    !! switches for t-dt trajectory & phys
+(   21)   TYPE(TNCL)     :: YRNCL     !! simplified cloud characteristics
+(   22)   TYPE(TSRFTLAD) :: YRSRFTLAD !! lin phys skin temp
+(   23)   TYPE(SPHYS_HIST_TYPE), POINTER :: GPHIST(:) => NULL()  !! trajectory “memory”
+(   24)   !---------------------------------------------------------------------
+(   25)   
+(   26) CONTAINS
+(   27)   
+(   28)                                                        !! across timesteps
+(   29)   END TYPE MODEL_PHYSICS_SIMPLINEAR_TYPE
+(   30)   !======================================================================
+(   31) # 32 "./model_physics_simplinear_mod.F90"
+(   32) END MODULE MODEL_PHYSICS_SIMPLINEAR_MOD

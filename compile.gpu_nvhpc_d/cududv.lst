@@ -1,0 +1,1018 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:04      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./cududv.F90
+
+(    1) SUBROUTINE CUDUDV &
+(    2)  & (YDCST,   YDECUMF,  YDSPP_CONFIG,       YDPERTPAR,KIDIA,    KFDIA,    KLON,     KLEV, &
+(    3)  & KTOPM2,   KTYPE,    KCBOT,    KCTOP,    LDCUM,    PTSPHY,&
+(    4)  & PAPH,     PAP,      PUEN,     PVEN,     PMFU,     PMFD,&
+(    5)  & PMFUO,    PMFDO,    PUU,      PUD,      PVU,      PVD,  PGP2DSPP,&
+(    6)  & PTENU,    PTENV  )  
+(    7) 
+(    8) !**** *CUDUDV* - UPDATES U AND V TENDENCIES,
+(    9) !                DOES GLOBAL DIAGNOSTIC OF DISSIPATION
+(   10) 
+(   11) !**   INTERFACE.
+(   12) !     ----------
+(   13) 
+(   14) !          *CUDUDV* IS CALLED FROM *CUMASTR*
+(   15) 
+(   16) !     PARAMETER     DESCRIPTION                                   UNITS
+(   17) !     ---------     -----------                                   -----
+(   18) !     INPUT PARAMETERS (INTEGER):
+(   19) 
+(   20) !    *KIDIA*        START POINT
+(   21) !    *KFDIA*        END POINT
+(   22) !    *KLON*         NUMBER OF GRID POINTS PER PACKET
+(   23) !    *KLEV*         NUMBER OF LEVELS
+(   24) !    *KTYPE*        TYPE OF CONVECTION
+(   25) !                       1 = PENETRATIVE CONVECTION
+(   26) !                       2 = SHALLOW CONVECTION
+(   27) !                       3 = MIDLEVEL CONVECTION
+(   28) !    *KCBOT*        CLOUD BASE LEVEL
+(   29) !    *KCTOP*        CLOUD TOP LEVEL
+(   30) 
+(   31) !    INPUT PARAMETERS (LOGICAL):
+(   32) 
+(   33) !    *LDCUM*        FLAG: .TRUE. FOR CONVECTIVE POINTS 
+(   34) 
+(   35) !    INPUT PARAMETERS (REAL):
+(   36) 
+(   37) !    *PTSPHY*       TIME STEP FOR THE PHYSICS                      S
+(   38) !    *PAPH*         PROVISIONAL PRESSURE ON HALF LEVELS            PA
+(   39) !    *PAP *         PROVISIONAL PRESSURE ON FULL LEVELS            PA
+(   40) !    *PUEN*         PROVISIONAL ENVIRONMENT U-VELOCITY (T+1)       M/S
+(   41) !    *PVEN*         PROVISIONAL ENVIRONMENT V-VELOCITY (T+1)       M/S
+(   42) !    *PMFU*         MASSFLUX UPDRAFTS                             KG/(M2*S)
+(   43) !    *PMFD*         MASSFLUX DOWNDRAFTS                           KG/(M2*S)
+(   44) !    *PUU*          U-VELOCITY IN UPDRAFTS                         M/S
+(   45) !    *PUD*          U-VELOCITY IN DOWNDRAFTS                       M/S
+(   46) !    *PVU*          V-VELOCITY IN UPDRAFTS                         M/S
+(   47) !    *PVD*          V-VELOCITY IN DOWNDRAFTS                       M/S
+(   48) !    *PGP2DSPP*     Standard stochastic variable (mean=0, SD=1)
+(   49) 
+(   50) !    UPDATED PARAMETERS (REAL):
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:04      page 2
+
+(   51) 
+(   52) !    *PTENU*        TENDENCY OF U-COMP. OF WIND                    M/S2
+(   53) !    *PTENV*        TENDENCY OF V-COMP. OF WIND                    M/S2
+(   54) 
+(   55) !            METHOD
+(   56) !            -------
+(   57) !       EXPLICIT UPSTREAM AND IMPLICIT SOLUTION OF VERTICAL ADVECTION
+(   58) !       DEPENDING ON VALUE OF RMFSOLUV: 
+(   59) !       0=EXPLICIT 0-1 SEMI-IMPLICIT >=1 IMPLICIT 
+(   60) 
+(   61) !       FOR EXPLICIT SOLUTION: ONLY ONE SINGLE ITERATION
+(   62) !       FOR IMPLICIT SOLUTION: FIRST IMPLICIT SOLVER, THEN EXPLICIT SOLVER
+(   63) !                              TO CORRECT TENDENCIES BELOW CLOUD BASE
+(   64) 
+(   65) !            EXTERNALS
+(   66) !            ---------
+(   67) !            CUBIDIAG
+(   68) 
+(   69) !     AUTHOR.
+(   70) !     -------
+(   71) !      M.TIEDTKE         E.C.M.W.F.     7/86 MODIF. 12/89
+(   72) 
+(   73) !     MODIFICATIONS.
+(   74) !     --------------
+(   75) !      M.Hamrud      01-Oct-2003 CY28 Cleaning
+(   76) !      P.BECHTOLD        E.C.M.W.F.    11/02/05 IMPLICIT SOLVER
+(   77) !      M. Leutbecher&S.-J. Lock (Jan 2016) Introduced SPP scheme (LSPP)
+(   78) !      S.-J. Lock    Jul 2017    Extended SPP perturbations to include shallow convection
+(   79) !      L. Descamps 2020-02-25 Introduced perturbed parameter option for PEARP (LPERTPAR)
+(   80) !      M. Leutbecher & S. Lang Oct 2020    SPP abstraction and revision
+(   81) !     R. El Khatib 22-Jun-2022 A contribution to simplify phasing after the refactoring of YOMCLI/YOMCST/YOETHF.
+(   82) !     R. El Khatib 20-Jul-2024 Remove PM's Q&D patch after LD's merge fix.
+(   83) !----------------------------------------------------------------------
+(   84) 
+(   85) USE PARKIND1 , ONLY : JPIM     ,JPRB
+(   86) USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+(   87) 
+(   88) USE YOMCST   , ONLY : TCST
+(   89) USE YOECUMF  , ONLY : TECUMF
+(   90) USE SPP_MOD     , ONLY : TSPP_CONFIG
+(   91) USE YOMPERTPAR , ONLY : TPERTPAR
+(   92) USE SPP_GEN_MOD , ONLY : SPP_PERT
+(   93) 
+(   94) IMPLICIT NONE
+(   95) 
+(   96) TYPE(TCST)         ,INTENT(IN)     :: YDCST
+(   97) TYPE(TECUMF)       ,INTENT(IN)     :: YDECUMF
+(   98) TYPE(TSPP_CONFIG)  ,INTENT(IN)     :: YDSPP_CONFIG
+(   99) TYPE(TPERTPAR)     ,INTENT(IN)     :: YDPERTPAR
+(  100) INTEGER(KIND=JPIM) ,INTENT(IN)     :: KIDIA 
+(  101) INTEGER(KIND=JPIM) ,INTENT(IN)     :: KFDIA 
+(  102) INTEGER(KIND=JPIM) ,INTENT(IN)     :: KLON 
+(  103) INTEGER(KIND=JPIM) ,INTENT(IN)     :: KLEV 
+(  104) INTEGER(KIND=JPIM) ,INTENT(IN)     :: KTOPM2 
+(  105) INTEGER(KIND=JPIM) ,INTENT(IN)     :: KTYPE(KLON) 
+(  106) INTEGER(KIND=JPIM) ,INTENT(IN)     :: KCBOT(KLON) 
+(  107) INTEGER(KIND=JPIM) ,INTENT(IN)     :: KCTOP(KLON) 
+(  108) LOGICAL            ,INTENT(IN)     :: LDCUM(KLON) 
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:04      page 3
+
+(  109) REAL(KIND=JPRB)    ,INTENT(IN)     :: PTSPHY
+(  110) REAL(KIND=JPRB)    ,INTENT(IN)     :: PAPH(KLON,KLEV+1) 
+(  111) REAL(KIND=JPRB)    ,INTENT(IN)     :: PAP(KLON,KLEV) 
+(  112) REAL(KIND=JPRB)    ,INTENT(IN)     :: PUEN(KLON,KLEV) 
+(  113) REAL(KIND=JPRB)    ,INTENT(IN)     :: PVEN(KLON,KLEV) 
+(  114) REAL(KIND=JPRB)    ,INTENT(IN)     :: PMFU(KLON,KLEV) 
+(  115) REAL(KIND=JPRB)    ,INTENT(IN)     :: PMFD(KLON,KLEV) 
+(  116) REAL(KIND=JPRB)    ,INTENT(IN)     :: PMFUO(KLON,KLEV) 
+(  117) REAL(KIND=JPRB)    ,INTENT(IN)     :: PMFDO(KLON,KLEV) 
+(  118) REAL(KIND=JPRB)    ,INTENT(IN)     :: PUU(KLON,KLEV) 
+(  119) REAL(KIND=JPRB)    ,INTENT(IN)     :: PUD(KLON,KLEV) 
+(  120) REAL(KIND=JPRB)    ,INTENT(IN)     :: PVU(KLON,KLEV) 
+(  121) REAL(KIND=JPRB)    ,INTENT(IN)     :: PVD(KLON,KLEV) 
+(  122) REAL(KIND=JPRB)    ,INTENT(IN)     :: PGP2DSPP(KLON,YDSPP_CONFIG%SM%NRFTOTAL)
+(  123) REAL(KIND=JPRB)    ,INTENT(INOUT)  :: PTENU(KLON,KLEV) 
+(  124) REAL(KIND=JPRB)    ,INTENT(INOUT)  :: PTENV(KLON,KLEV) 
+(  125) REAL(KIND=JPRB) ::  ZMFUU(KLON,KLEV),    ZMFDU(KLON,KLEV),&
+(  126)  & ZMFUV(KLON,KLEV),    ZMFDV(KLON,KLEV), ZADVW(KLON)
+(  127) 
+(  128) INTEGER(KIND=JPIM) :: IK, IM, IKB, JK, JL
+(  129) INTEGER(KIND=JPIM) :: IPCUDU, IPCUDV, IPCUDUS, IPCUDVS
+(  130) INTEGER(KIND=JPIM) :: IPN1, IPN2
+(  131) TYPE(SPP_PERT)     :: PN1, PN2  ! SPP pertn. config. 
+(  132) 
+(  133) REAL(KIND=JPRB) :: ZZP, ZIMP, ZTSPHY, ZU, ZV
+(  134) REAL(KIND=JPRB) :: ZMDU, ZMDV, ZLIMN2
+(  135) REAL(KIND=JPRB) :: ZXU, ZXV, ZXU_MAG, ZXV_MAG, ZN2, ZFAC
+(  136) REAL(KIND=JPRB), DIMENSION(KLON)      :: ZRDU, ZRDV
+(  137) REAL(KIND=JPRB), DIMENSION(KLON,KLEV) :: ZDUDT, ZDVDT, ZDP
+(  138) REAL(KIND=JPRB), DIMENSION(KLON,KLEV) :: ZB,  ZR1,  ZR2
+(  139) LOGICAL,DIMENSION(KLON,KLEV) :: LLCUMBAS
+(  140) LOGICAL     :: LLPPAR_CUDUV
+(  141) LOGICAL   :: LLPERT_CUDUDV, LLPERT_CUDUDVS ! SPP perturbation on?
+(  142) REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+(  143) 
+(  144) #include "cubidiag.intfb.h"
+(  145) !----------------------------------------------------------------------
+(  146) 
+(  147) IF (LHOOK) CALL DR_HOOK('CUDUDV',0,ZHOOK_HANDLE)
+(  148) ASSOCIATE(RMFSOLUV=>YDECUMF%RMFSOLUV,RMFSOLRHS=>YDECUMF%RMFSOLRHS,RMFADVW=>YDECUMF%RMFADVW,&
+(  149)  & RG=>YDCST%RG, &
+(  150)  &RMFADVWDD=>YDECUMF%RMFADVWDD)
+(  151) ZIMP=1.0_JPRB-RMFSOLUV
+(  152) ZTSPHY=1.0_JPRB/PTSPHY
+(  153) 
+(  154) LLPPAR_CUDUV   = .FALSE.
+(  155) LLPERT_CUDUDV  = .FALSE.
+(  156) LLPERT_CUDUDVS = .FALSE.
+(  157) 
+(  158) DO JL=KIDIA,KFDIA
+(  159)   ZADVW(JL)=0.0_JPRB
+(  160)   IF(KTYPE(JL)==1) ZADVW(JL)=RMFADVW
+(  161) ENDDO
+(  162) 
+(  163) 
+(  164) DO JK=1,KLEV
+(  165)   DO JL=KIDIA,KFDIA
+(  166)     IF(LDCUM(JL)) THEN
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:04      page 4
+
+(  167)       ZDP(JL,JK)=RG/(PAPH(JL,JK+1)-PAPH(JL,JK))
+(  168)     ENDIF
+(  169)   ENDDO
+(  170) ENDDO
+(  171) 
+(  172) !----------------------------------------------------------------------
+(  173) 
+(  174) 
+(  175) !*    1.0          CALCULATE FLUXES AND UPDATE U AND V TENDENCIES
+(  176) !                  ----------------------------------------------
+(  177) 
+(  178)   DO JK=KTOPM2,KLEV
+(  179)     IK=JK-1
+(  180)     DO JL=KIDIA,KFDIA
+(  181)       IF(LDCUM(JL)) THEN
+(  182)         ZMFUU(JL,JK)=PMFU(JL,JK)*(PUU(JL,JK)-ZIMP*PUEN(JL,IK))
+(  183)         ZMFUV(JL,JK)=PMFU(JL,JK)*(PVU(JL,JK)-ZIMP*PVEN(JL,IK))
+(  184)         ZMFDU(JL,JK)=PMFD(JL,JK)*(PUD(JL,JK)-ZIMP*PUEN(JL,IK))
+(  185)         ZMFDV(JL,JK)=PMFD(JL,JK)*(PVD(JL,JK)-ZIMP*PVEN(JL,IK))
+(  186)       ENDIF
+(  187)     ENDDO
+(  188)   ENDDO
+(  189)   
+(  190) ! linear fluxes below cloud
+(  191)   IF(RMFSOLUV==0.0_JPRB) THEN
+(  192)     DO JK=KTOPM2,KLEV
+(  193)     !DIR$ IVDEP
+(  194)     !OCL NOVREC
+(  195)       DO JL=KIDIA,KFDIA
+(  196)         IF(LDCUM(JL).AND.JK > KCBOT(JL)) THEN
+(  197)           IKB=KCBOT(JL)
+(  198)           ZZP=((PAPH(JL,KLEV+1)-PAPH(JL,JK))/(PAPH(JL,KLEV+1)-PAPH(JL,IKB)))
+(  199)           IF(KTYPE(JL) == 3) THEN
+(  200)             ZZP=ZZP*ZZP
+(  201)           ENDIF
+(  202)           ZMFUU(JL,JK)=ZMFUU(JL,IKB)*ZZP
+(  203)           ZMFUV(JL,JK)=ZMFUV(JL,IKB)*ZZP
+(  204)           ZMFDU(JL,JK)=ZMFDU(JL,IKB)*ZZP
+(  205)           ZMFDV(JL,JK)=ZMFDV(JL,IKB)*ZZP
+(  206)         ENDIF
+(  207)       ENDDO
+(  208)     ENDDO
+(  209)   ENDIF
+(  210) 
+(  211) !*    1.2          COMPUTE TENDENCIES
+(  212) !                  ------------------
+(  213) 
+(  214)   DO JK=KTOPM2,KLEV
+(  215)   
+(  216)     IF(JK < KLEV) THEN
+(  217)       IK=JK+1
+(  218)       DO JL=KIDIA,KFDIA
+(  219)         IF(LDCUM(JL)) THEN
+(  220)           ZDUDT(JL,JK)=ZDP(JL,JK)*&
+(  221)            & (ZMFUU(JL,IK)-ZMFUU(JL,JK)+ZMFDU(JL,IK)-ZMFDU(JL,JK))  
+(  222)           ZDVDT(JL,JK)=ZDP(JL,JK)*&
+(  223)            & (ZMFUV(JL,IK)-ZMFUV(JL,JK)+ZMFDV(JL,IK)-ZMFDV(JL,JK))  
+(  224)         ENDIF
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:04      page 5
+
+(  225)       ENDDO
+(  226)   
+(  227)     ELSE
+(  228)       DO JL=KIDIA,KFDIA
+(  229)         IF(LDCUM(JL)) THEN
+(  230)           ZDUDT(JL,JK)=-ZDP(JL,JK)*(ZMFUU(JL,JK)+ZMFDU(JL,JK))
+(  231)           ZDVDT(JL,JK)=-ZDP(JL,JK)*(ZMFUV(JL,JK)+ZMFDV(JL,JK))
+(  232)         ENDIF
+(  233)       ENDDO
+(  234)     ENDIF
+(  235)   
+(  236)   ENDDO
+(  237) 
+(  238)   IF ( RMFSOLUV==0.0_JPRB ) THEN
+(  239) 
+(  240) !*    1.3          UPDATE TENDENCIES
+(  241) !                  -----------------
+(  242) 
+(  243)     DO JK=KTOPM2,KLEV
+(  244)       DO JL=KIDIA,KFDIA
+(  245)         IF(LDCUM(JL)) THEN
+(  246)           PTENU(JL,JK)=PTENU(JL,JK)+ZDUDT(JL,JK)
+(  247)           PTENV(JL,JK)=PTENV(JL,JK)+ZDVDT(JL,JK)
+(  248)         ENDIF
+(  249)       ENDDO
+(  250)     ENDDO
+(  251) 
+(  252)   ELSE
+(  253) !----------------------------------------------------------------------
+(  254)       
+(  255) !*      1.6          IMPLICIT SOLUTION
+(  256) !                    -----------------
+(  257)    
+(  258)      ! Fill bi-diagonal Matrix vectors A=k-1, B=k;
+(  259)      ! reuse ZMFUU=A and ZB=B; 
+(  260)      ! ZDUDT and ZDVDT correspond to the RHS ("constants") of the equation
+(  261)      ! The solution is in ZR1 and ZR2
+(  262)      
+(  263)       LLCUMBAS(:,:)=.FALSE.
+(  264)       ZB(:,:)=1.0_JPRB
+(  265)       ZMFUU(:,:)=0.0_JPRB
+(  266)      
+(  267)      ! Fill vectors A, B and RHS 
+(  268)      
+(  269)       DO JK=KTOPM2,KLEV
+(  270)          IK=JK+1
+(  271)          IM=JK-1
+(  272)          DO JL=KIDIA,KFDIA
+(  273)            LLCUMBAS(JL,JK)=LDCUM(JL).AND.JK>=KCTOP(JL)-1 
+(  274)            IF(LLCUMBAS(JL,JK)) THEN
+(  275)              ZZP=RMFSOLUV*ZDP(JL,JK)*PTSPHY
+(  276)              ZMFUU(JL,JK)=-ZZP*(PMFU(JL,JK)+PMFD(JL,JK))
+(  277)              IF(JK<KLEV) THEN
+(  278)                ZB(JL,JK)=1.0_JPRB+ZZP*(PMFU(JL,IK)+PMFD(JL,IK))
+(  279)              ELSE
+(  280)                ZB(JL,JK)=1.0_JPRB
+(  281)              ENDIF
+(  282)              ZZP=RG*(PMFUO(JL,JK)+RMFADVWDD*PMFDO(JL,JK))/(PAP(JL,JK)-PAP(JL,IM))*PTSPHY*ZADVW(JL)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:04      page 6
+
+(  283)              ZU=ZZP*(PUEN(JL,IM)-PUEN(JL,JK))
+(  284)              ZV=ZZP*(PVEN(JL,IM)-PVEN(JL,JK))
+(  285)              ZDUDT(JL,JK) = (ZDUDT(JL,JK)+PTENU(JL,JK)*RMFSOLRHS)*PTSPHY+PUEN(JL,JK)-ZU
+(  286)              ZDVDT(JL,JK) = (ZDVDT(JL,JK)+PTENV(JL,JK)*RMFSOLRHS)*PTSPHY+PVEN(JL,JK)-ZV
+(  287)            ENDIF
+(  288)          ENDDO
+(  289)       ENDDO
+(  290)      
+(  291)       CALL CUBIDIAG&
+(  292)          &( KIDIA, KFDIA, KLON, KLEV, &
+(  293)          &  KCTOP, LLCUMBAS, &
+(  294)          &  ZMFUU,    ZB,    ZDUDT,   ZR1 )
+(  295)      
+(  296)       CALL CUBIDIAG&
+(  297)          &( KIDIA, KFDIA, KLON, KLEV, &
+(  298)          &  KCTOP, LLCUMBAS, &
+(  299)          &  ZMFUU,    ZB,    ZDVDT,   ZR2 )
+(  300)      ! prepare RP perturbations (MF PEARP)
+(  301)       LLPPAR_CUDUV=YDPERTPAR%LPERTPAR.AND.YDPERTPAR%LPERT_CUDUV
+(  302)      ! prepare SPP perturbations
+(  303)       IF (YDSPP_CONFIG%LSPP) THEN
+(  304)         IPN1 = YDSPP_CONFIG%PPTR%CUDUDV
+(  305)         LLPERT_CUDUDV= IPN1 > 0
+(  306)         IF (LLPERT_CUDUDV) THEN
+(  307)           PN1=YDSPP_CONFIG%SM%PN(IPN1)
+(  308)           IPCUDU = PN1%MP
+(  309)           IF (PN1%NRF == 1) THEN
+(  310)             IPCUDV = IPCUDU
+(  311)           ELSE
+(  312)             IPCUDV = IPCUDU+1
+(  313)           ENDIF
+(  314)         ENDIF
+(  315)         IPN2 = YDSPP_CONFIG%PPTR%CUDUDVS
+(  316)         LLPERT_CUDUDVS= IPN2 > 0
+(  317)         IF (LLPERT_CUDUDVS) THEN
+(  318)           PN2=YDSPP_CONFIG%SM%PN(IPN2)
+(  319)           IPCUDUS = PN2%MP
+(  320)           IF (PN2%NRF == 1) THEN
+(  321)             IPCUDVS = IPCUDUS
+(  322)           ELSE
+(  323)             IPCUDVS = IPCUDUS+1
+(  324)           ENDIF
+(  325)         ENDIF
+(  326)       ELSE
+(  327)         LLPERT_CUDUDV=.FALSE.
+(  328)         LLPERT_CUDUDVS=.FALSE.
+(  329)       ENDIF
+(  330) 
+(  331)       IF (LLPERT_CUDUDV .OR. LLPERT_CUDUDVS .OR. LLPPAR_CUDUV) THEN
+(  332)           ZMDU   = 1.0_JPRB    ! mean      zonal momentum transport pdf
+(  333)           ZMDV   = 1.0_JPRB    ! mean meridional momentum transport pdf
+(  334)           ZLIMN2 = 9.0_JPRB*PN1%SDEV**2    ! limit for norm squared (3 stdev)
+(  335) 
+(  336)           DO JL=KIDIA,KFDIA
+(  337)           IF ((KTYPE(JL)==1 .AND. (LLPERT_CUDUDV .OR. LLPPAR_CUDUV)) .OR. &
+(  338)             & (KTYPE(JL)==2 .AND. (LLPERT_CUDUDVS .OR. LLPPAR_CUDUV))) THEN  !perturb deep/shallow convection
+(  339) 
+(  340)               IF (KTYPE(JL)==1) THEN
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:04      page 7
+
+(  341)                 IF (.NOT.LLPPAR_CUDUV) THEN
+(  342)                   ZXU=PGP2DSPP(JL, IPCUDU)
+(  343)                   ZXV=PGP2DSPP(JL, IPCUDV)
+(  344)                   ZXU_MAG = PN1%XMAG(1)
+(  345)                   ZXV_MAG = PN1%XMAG(2)
+(  346)                 ELSE
+(  347)                   ZXU=YDPERTPAR%CUDU_MOD
+(  348)                   ZXV=YDPERTPAR%CUDV_MOD
+(  349)                 ENDIF
+(  350)               ENDIF
+(  351) 
+(  352)               IF (KTYPE(JL)==2) THEN
+(  353)              IF (.NOT.LLPPAR_CUDUV) THEN
+(  354)                 ZXU=PGP2DSPP(JL, IPCUDUS)
+(  355)                 ZXV=PGP2DSPP(JL, IPCUDVS)
+(  356)                 ZXU_MAG = PN2%XMAG(1)
+(  357)                 ZXV_MAG = PN2%XMAG(2)
+(  358)              ELSE
+(  359)               ZXU=YDPERTPAR%CUDU_MOD
+(  360)               ZXV=YDPERTPAR%CUDV_MOD
+(  361)              ENDIF
+(  362)               ENDIF
+(  363) 
+(  364)               ZN2=ZXU**2+ZXV**2
+(  365)               IF (ZN2>ZLIMN2) THEN
+(  366)                 ZFAC=SQRT(ZLIMN2/ZN2)
+(  367)                 ZXU = ZFAC*ZXU
+(  368)                 ZXV = ZFAC*ZXV
+(  369)               ENDIF
+(  370)               IF(.NOT.LLPPAR_CUDUV) THEN
+(  371)                 ZRDU(JL)=ZMDU + ZXU_MAG*ZXU
+(  372)                 ZRDV(JL)=ZMDV + ZXV_MAG*ZXV
+(  373)               ELSE
+(  374)                 ZRDU(JL)=ZMDU + ZXU
+(  375)                 ZRDV(JL)=ZMDV + ZXV
+(  376)               ENDIF
+(  377)             ELSE  !other convection - unperturbed
+(  378)               ZRDU(JL)=ZMDU
+(  379)               ZRDV(JL)=ZMDV
+(  380)             ENDIF
+(  381)           ENDDO
+(  382)       ENDIF
+(  383) 
+(  384)      
+(  385)      ! Compute tendencies
+(  386)      
+(  387)       DO JK=KTOPM2,KLEV
+(  388)          DO JL=KIDIA,KFDIA
+(  389)            IF(LLCUMBAS(JL,JK)) THEN
+(  390)              IF ((LLPERT_CUDUDV).OR.(LLPPAR_CUDUV)) THEN  !Apply SPP perturbations or RP perturbation
+(  391)                PTENU(JL,JK)=PTENU(JL,JK)*(1.0_JPRB-RMFSOLRHS)+ZRDU(JL)*(ZR1(JL,JK)-PUEN(JL,JK))*ZTSPHY
+(  392)                PTENV(JL,JK)=PTENV(JL,JK)*(1.0_JPRB-RMFSOLRHS)+ZRDV(JL)*(ZR2(JL,JK)-PVEN(JL,JK))*ZTSPHY
+(  393)              ELSE
+(  394)                PTENU(JL,JK)=PTENU(JL,JK)*(1.0_JPRB-RMFSOLRHS)+(ZR1(JL,JK)-PUEN(JL,JK))*ZTSPHY
+(  395)                PTENV(JL,JK)=PTENV(JL,JK)*(1.0_JPRB-RMFSOLRHS)+(ZR2(JL,JK)-PVEN(JL,JK))*ZTSPHY
+(  396)              ENDIF
+(  397)            ENDIF
+(  398)          ENDDO
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:04      page 8
+
+(  399)       ENDDO
+(  400) 
+(  401) 
+(  402)    ENDIF
+(  403) !----------------------------------------------------------------------
+(  404) 
+(  405) END ASSOCIATE
+(  406) IF (LHOOK) CALL DR_HOOK('CUDUDV',1,ZHOOK_HANDLE)
+(  407) END SUBROUTINE CUDUDV
+(  408) 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:04      page 9
+
+(    1) # 1 "./cududv.F90"
+(    1) SUBROUTINE CUDUDV &
+(    2)  & (YDCST,   YDECUMF,  YDSPP_CONFIG,       YDPERTPAR,KIDIA,    KFDIA,    KLON,     KLEV, &
+(    3)  & KTOPM2,   KTYPE,    KCBOT,    KCTOP,    LDCUM,    PTSPHY,&
+(    4)  & PAPH,     PAP,      PUEN,     PVEN,     PMFU,     PMFD,&
+(    5)  & PMFUO,    PMFDO,    PUU,      PUD,      PVU,      PVD,  PGP2DSPP,&
+(    6)  & PTENU,    PTENV  )  
+(    7) # 8 "./cududv.F90"
+(    8) !**** *CUDUDV* - UPDATES U AND V TENDENCIES,
+(    9) !                DOES GLOBAL DIAGNOSTIC OF DISSIPATION
+(   10) # 11 "./cududv.F90"
+(   11) !**   INTERFACE.
+(   12) !     ----------
+(   13) # 14 "./cududv.F90"
+(   14) !          *CUDUDV* IS CALLED FROM *CUMASTR*
+(   15) # 16 "./cududv.F90"
+(   16) !     PARAMETER     DESCRIPTION                                   UNITS
+(   17) !     ---------     -----------                                   -----
+(   18) !     INPUT PARAMETERS (INTEGER):
+(   19) # 20 "./cududv.F90"
+(   20) !    *KIDIA*        START POINT
+(   21) !    *KFDIA*        END POINT
+(   22) !    *KLON*         NUMBER OF GRID POINTS PER PACKET
+(   23) !    *KLEV*         NUMBER OF LEVELS
+(   24) !    *KTYPE*        TYPE OF CONVECTION
+(   25) !                       1 = PENETRATIVE CONVECTION
+(   26) !                       2 = SHALLOW CONVECTION
+(   27) !                       3 = MIDLEVEL CONVECTION
+(   28) !    *KCBOT*        CLOUD BASE LEVEL
+(   29) !    *KCTOP*        CLOUD TOP LEVEL
+(   30) # 31 "./cududv.F90"
+(   31) !    INPUT PARAMETERS (LOGICAL):
+(   32) # 33 "./cududv.F90"
+(   33) !    *LDCUM*        FLAG: .TRUE. FOR CONVECTIVE POINTS 
+(   34) # 35 "./cududv.F90"
+(   35) !    INPUT PARAMETERS (REAL):
+(   36) # 37 "./cududv.F90"
+(   37) !    *PTSPHY*       TIME STEP FOR THE PHYSICS                      S
+(   38) !    *PAPH*         PROVISIONAL PRESSURE ON HALF LEVELS            PA
+(   39) !    *PAP *         PROVISIONAL PRESSURE ON FULL LEVELS            PA
+(   40) !    *PUEN*         PROVISIONAL ENVIRONMENT U-VELOCITY (T+1)       M/S
+(   41) !    *PVEN*         PROVISIONAL ENVIRONMENT V-VELOCITY (T+1)       M/S
+(   42) !    *PMFU*         MASSFLUX UPDRAFTS                             KG/(M2*S)
+(   43) !    *PMFD*         MASSFLUX DOWNDRAFTS                           KG/(M2*S)
+(   44) !    *PUU*          U-VELOCITY IN UPDRAFTS                         M/S
+(   45) !    *PUD*          U-VELOCITY IN DOWNDRAFTS                       M/S
+(   46) !    *PVU*          V-VELOCITY IN UPDRAFTS                         M/S
+(   47) !    *PVD*          V-VELOCITY IN DOWNDRAFTS                       M/S
+(   48) !    *PGP2DSPP*     Standard stochastic variable (mean=0, SD=1)
+(   49) # 50 "./cududv.F90"
+(   50) !    UPDATED PARAMETERS (REAL):
+(   51) # 52 "./cududv.F90"
+(   52) !    *PTENU*        TENDENCY OF U-COMP. OF WIND                    M/S2
+(   53) !    *PTENV*        TENDENCY OF V-COMP. OF WIND                    M/S2
+(   54) # 55 "./cududv.F90"
+(   55) !            METHOD
+(   56) !            -------
+(   57) !       EXPLICIT UPSTREAM AND IMPLICIT SOLUTION OF VERTICAL ADVECTION
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:04      page 10
+
+(   58) !       DEPENDING ON VALUE OF RMFSOLUV: 
+(   59) !       0=EXPLICIT 0-1 SEMI-IMPLICIT >=1 IMPLICIT 
+(   60) # 61 "./cududv.F90"
+(   61) !       FOR EXPLICIT SOLUTION: ONLY ONE SINGLE ITERATION
+(   62) !       FOR IMPLICIT SOLUTION: FIRST IMPLICIT SOLVER, THEN EXPLICIT SOLVER
+(   63) !                              TO CORRECT TENDENCIES BELOW CLOUD BASE
+(   64) # 65 "./cududv.F90"
+(   65) !            EXTERNALS
+(   66) !            ---------
+(   67) !            CUBIDIAG
+(   68) # 69 "./cududv.F90"
+(   69) !     AUTHOR.
+(   70) !     -------
+(   71) !      M.TIEDTKE         E.C.M.W.F.     7/86 MODIF. 12/89
+(   72) # 73 "./cududv.F90"
+(   73) !     MODIFICATIONS.
+(   74) !     --------------
+(   75) !      M.Hamrud      01-Oct-2003 CY28 Cleaning
+(   76) !      P.BECHTOLD        E.C.M.W.F.    11/02/05 IMPLICIT SOLVER
+(   77) !      M. Leutbecher&S.-J. Lock (Jan 2016) Introduced SPP scheme (LSPP)
+(   78) !      S.-J. Lock    Jul 2017    Extended SPP perturbations to include shallow convection
+(   79) !      L. Descamps 2020-02-25 Introduced perturbed parameter option for PEARP (LPERTPAR)
+(   80) !      M. Leutbecher & S. Lang Oct 2020    SPP abstraction and revision
+(   81) !     R. El Khatib 22-Jun-2022 A contribution to simplify phasing after the refactoring of YOMCLI/YOMCST/YOETHF.
+(   82) !     R. El Khatib 20-Jul-2024 Remove PM's Q&D patch after LD's merge fix.
+(   83) !----------------------------------------------------------------------
+(   84) # 85 "./cududv.F90"
+(   85) USE PARKIND1 , ONLY : JPIM     ,JPRB
+(   86) USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+(   87) # 88 "./cududv.F90"
+(   88) USE YOMCST   , ONLY : TCST
+(   89) USE YOECUMF  , ONLY : TECUMF
+(   90) USE SPP_MOD     , ONLY : TSPP_CONFIG
+(   91) USE YOMPERTPAR , ONLY : TPERTPAR
+(   92) USE SPP_GEN_MOD , ONLY : SPP_PERT
+(   93) # 94 "./cududv.F90"
+(   94) IMPLICIT NONE
+(   95) # 96 "./cududv.F90"
+(   96) TYPE(TCST)         ,INTENT(IN)     :: YDCST
+(   97) TYPE(TECUMF)       ,INTENT(IN)     :: YDECUMF
+(   98) TYPE(TSPP_CONFIG)  ,INTENT(IN)     :: YDSPP_CONFIG
+(   99) TYPE(TPERTPAR)     ,INTENT(IN)     :: YDPERTPAR
+(  100) INTEGER(KIND=JPIM) ,INTENT(IN)     :: KIDIA 
+(  101) INTEGER(KIND=JPIM) ,INTENT(IN)     :: KFDIA 
+(  102) INTEGER(KIND=JPIM) ,INTENT(IN)     :: KLON 
+(  103) INTEGER(KIND=JPIM) ,INTENT(IN)     :: KLEV 
+(  104) INTEGER(KIND=JPIM) ,INTENT(IN)     :: KTOPM2 
+(  105) INTEGER(KIND=JPIM) ,INTENT(IN)     :: KTYPE(KLON) 
+(  106) INTEGER(KIND=JPIM) ,INTENT(IN)     :: KCBOT(KLON) 
+(  107) INTEGER(KIND=JPIM) ,INTENT(IN)     :: KCTOP(KLON) 
+(  108) LOGICAL            ,INTENT(IN)     :: LDCUM(KLON) 
+(  109) REAL(KIND=JPRB)    ,INTENT(IN)     :: PTSPHY
+(  110) REAL(KIND=JPRB)    ,INTENT(IN)     :: PAPH(KLON,KLEV+1) 
+(  111) REAL(KIND=JPRB)    ,INTENT(IN)     :: PAP(KLON,KLEV) 
+(  112) REAL(KIND=JPRB)    ,INTENT(IN)     :: PUEN(KLON,KLEV) 
+(  113) REAL(KIND=JPRB)    ,INTENT(IN)     :: PVEN(KLON,KLEV) 
+(  114) REAL(KIND=JPRB)    ,INTENT(IN)     :: PMFU(KLON,KLEV) 
+(  115) REAL(KIND=JPRB)    ,INTENT(IN)     :: PMFD(KLON,KLEV) 
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:04      page 11
+
+(  116) REAL(KIND=JPRB)    ,INTENT(IN)     :: PMFUO(KLON,KLEV) 
+(  117) REAL(KIND=JPRB)    ,INTENT(IN)     :: PMFDO(KLON,KLEV) 
+(  118) REAL(KIND=JPRB)    ,INTENT(IN)     :: PUU(KLON,KLEV) 
+(  119) REAL(KIND=JPRB)    ,INTENT(IN)     :: PUD(KLON,KLEV) 
+(  120) REAL(KIND=JPRB)    ,INTENT(IN)     :: PVU(KLON,KLEV) 
+(  121) REAL(KIND=JPRB)    ,INTENT(IN)     :: PVD(KLON,KLEV) 
+(  122) REAL(KIND=JPRB)    ,INTENT(IN)     :: PGP2DSPP(KLON,YDSPP_CONFIG%SM%NRFTOTAL)
+(  123) REAL(KIND=JPRB)    ,INTENT(INOUT)  :: PTENU(KLON,KLEV) 
+(  124) REAL(KIND=JPRB)    ,INTENT(INOUT)  :: PTENV(KLON,KLEV) 
+(  125) REAL(KIND=JPRB) ::  ZMFUU(KLON,KLEV),    ZMFDU(KLON,KLEV),&
+(  126)  & ZMFUV(KLON,KLEV),    ZMFDV(KLON,KLEV), ZADVW(KLON)
+(  127) # 128 "./cududv.F90"
+(  128) INTEGER(KIND=JPIM) :: IK, IM, IKB, JK, JL
+(  129) INTEGER(KIND=JPIM) :: IPCUDU, IPCUDV, IPCUDUS, IPCUDVS
+(  130) INTEGER(KIND=JPIM) :: IPN1, IPN2
+(  131) TYPE(SPP_PERT)     :: PN1, PN2  ! SPP pertn. config. 
+(  132) # 133 "./cududv.F90"
+(  133) REAL(KIND=JPRB) :: ZZP, ZIMP, ZTSPHY, ZU, ZV
+(  134) REAL(KIND=JPRB) :: ZMDU, ZMDV, ZLIMN2
+(  135) REAL(KIND=JPRB) :: ZXU, ZXV, ZXU_MAG, ZXV_MAG, ZN2, ZFAC
+(  136) REAL(KIND=JPRB), DIMENSION(KLON)      :: ZRDU, ZRDV
+(  137) REAL(KIND=JPRB), DIMENSION(KLON,KLEV) :: ZDUDT, ZDVDT, ZDP
+(  138) REAL(KIND=JPRB), DIMENSION(KLON,KLEV) :: ZB,  ZR1,  ZR2
+(  139) LOGICAL,DIMENSION(KLON,KLEV) :: LLCUMBAS
+(  140) LOGICAL     :: LLPPAR_CUDUV
+(  141) LOGICAL   :: LLPERT_CUDUDV, LLPERT_CUDUDVS ! SPP perturbation on?
+(  142) REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+(  143) # 144 "./cududv.F90"
+(  144) # 1 "./cubidiag.intfb.h"
+(    1) INTERFACE
+(    2) SUBROUTINE CUBIDIAG &
+(    3) & ( KIDIA, KFDIA, KLON, KLEV,&
+(    4) & KCTOP, LD_LCUMASK,&
+(    5) & PA,    PB,   PR,   PU )
+(    6) USE PARKIND1  ,ONLY : JPIM     ,JPRB
+(    7) USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
+(    8) IMPLICIT NONE
+(    9) INTEGER(KIND=JPIM),INTENT(IN)    :: KIDIA
+(   10) INTEGER(KIND=JPIM),INTENT(IN)    :: KFDIA
+(   11) INTEGER(KIND=JPIM),INTENT(IN)    :: KLON
+(   12) INTEGER(KIND=JPIM),INTENT(IN)    :: KLEV
+(   13) INTEGER(KIND=JPIM),INTENT(IN)    :: KCTOP(KLON)
+(   14) LOGICAL           ,INTENT(IN)    :: LD_LCUMASK(KLON,KLEV)
+(   15) REAL(KIND=JPRB)   ,INTENT(IN)    :: PA(KLON,KLEV)
+(   16) REAL(KIND=JPRB)   ,INTENT(IN)    :: PB(KLON,KLEV)
+(   17) REAL(KIND=JPRB)   ,INTENT(IN)    :: PR(KLON,KLEV)
+(   18) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PU(KLON,KLEV)
+(   19) END SUBROUTINE CUBIDIAG
+(   20) # 21 "./cubidiag.intfb.h"
+(   21) END INTERFACE
+(   22) # 145 "./cududv.F90"
+(  145) # 145 "./cududv.F90"
+(  145) !----------------------------------------------------------------------
+(  146) # 147 "./cududv.F90"
+(  147) IF (LHOOK) CALL DR_HOOK('CUDUDV',0,ZHOOK_HANDLE)
+(  148) ASSOCIATE(RMFSOLUV=>YDECUMF%RMFSOLUV,RMFSOLRHS=>YDECUMF%RMFSOLRHS,RMFADVW=>YDECUMF%RMFADVW,&
+(  149)  & RG=>YDCST%RG, &
+(  150)  &RMFADVWDD=>YDECUMF%RMFADVWDD)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:04      page 12
+
+(  151) ZIMP=1.0_JPRB-RMFSOLUV
+(  152) ZTSPHY=1.0_JPRB/PTSPHY
+(  153) # 154 "./cududv.F90"
+(  154) LLPPAR_CUDUV   = .FALSE.
+(  155) LLPERT_CUDUDV  = .FALSE.
+(  156) LLPERT_CUDUDVS = .FALSE.
+(  157) # 158 "./cududv.F90"
+(  158) DO JL=KIDIA,KFDIA
+(  159)   ZADVW(JL)=0.0_JPRB
+(  160)   IF(KTYPE(JL)==1) ZADVW(JL)=RMFADVW
+(  161) ENDDO
+(  162) # 164 "./cududv.F90"
+(  164) DO JK=1,KLEV
+(  165)   DO JL=KIDIA,KFDIA
+(  166)     IF(LDCUM(JL)) THEN
+(  167)       ZDP(JL,JK)=RG/(PAPH(JL,JK+1)-PAPH(JL,JK))
+(  168)     ENDIF
+(  169)   ENDDO
+(  170) ENDDO
+(  171) # 172 "./cududv.F90"
+(  172) !----------------------------------------------------------------------
+(  173) # 175 "./cududv.F90"
+(  175) !*    1.0          CALCULATE FLUXES AND UPDATE U AND V TENDENCIES
+(  176) !                  ----------------------------------------------
+(  177) # 178 "./cududv.F90"
+(  178)   DO JK=KTOPM2,KLEV
+(  179)     IK=JK-1
+(  180)     DO JL=KIDIA,KFDIA
+(  181)       IF(LDCUM(JL)) THEN
+(  182)         ZMFUU(JL,JK)=PMFU(JL,JK)*(PUU(JL,JK)-ZIMP*PUEN(JL,IK))
+(  183)         ZMFUV(JL,JK)=PMFU(JL,JK)*(PVU(JL,JK)-ZIMP*PVEN(JL,IK))
+(  184)         ZMFDU(JL,JK)=PMFD(JL,JK)*(PUD(JL,JK)-ZIMP*PUEN(JL,IK))
+(  185)         ZMFDV(JL,JK)=PMFD(JL,JK)*(PVD(JL,JK)-ZIMP*PVEN(JL,IK))
+(  186)       ENDIF
+(  187)     ENDDO
+(  188)   ENDDO
+(  189)   
+(  190) ! linear fluxes below cloud
+(  191)   IF(RMFSOLUV==0.0_JPRB) THEN
+(  192)     DO JK=KTOPM2,KLEV
+(  193)     !DIR$ IVDEP
+(  194)     !OCL NOVREC
+(  195)       DO JL=KIDIA,KFDIA
+(  196)         IF(LDCUM(JL).AND.JK > KCBOT(JL)) THEN
+(  197)           IKB=KCBOT(JL)
+(  198)           ZZP=((PAPH(JL,KLEV+1)-PAPH(JL,JK))/(PAPH(JL,KLEV+1)-PAPH(JL,IKB)))
+(  199)           IF(KTYPE(JL) == 3) THEN
+(  200)             ZZP=ZZP*ZZP
+(  201)           ENDIF
+(  202)           ZMFUU(JL,JK)=ZMFUU(JL,IKB)*ZZP
+(  203)           ZMFUV(JL,JK)=ZMFUV(JL,IKB)*ZZP
+(  204)           ZMFDU(JL,JK)=ZMFDU(JL,IKB)*ZZP
+(  205)           ZMFDV(JL,JK)=ZMFDV(JL,IKB)*ZZP
+(  206)         ENDIF
+(  207)       ENDDO
+(  208)     ENDDO
+(  209)   ENDIF
+(  210) # 211 "./cududv.F90"
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:04      page 13
+
+(  211) !*    1.2          COMPUTE TENDENCIES
+(  212) !                  ------------------
+(  213) # 214 "./cududv.F90"
+(  214)   DO JK=KTOPM2,KLEV
+(  215)   
+(  216)     IF(JK < KLEV) THEN
+(  217)       IK=JK+1
+(  218)       DO JL=KIDIA,KFDIA
+(  219)         IF(LDCUM(JL)) THEN
+(  220)           ZDUDT(JL,JK)=ZDP(JL,JK)*&
+(  221)            & (ZMFUU(JL,IK)-ZMFUU(JL,JK)+ZMFDU(JL,IK)-ZMFDU(JL,JK))  
+(  222)           ZDVDT(JL,JK)=ZDP(JL,JK)*&
+(  223)            & (ZMFUV(JL,IK)-ZMFUV(JL,JK)+ZMFDV(JL,IK)-ZMFDV(JL,JK))  
+(  224)         ENDIF
+(  225)       ENDDO
+(  226)   
+(  227)     ELSE
+(  228)       DO JL=KIDIA,KFDIA
+(  229)         IF(LDCUM(JL)) THEN
+(  230)           ZDUDT(JL,JK)=-ZDP(JL,JK)*(ZMFUU(JL,JK)+ZMFDU(JL,JK))
+(  231)           ZDVDT(JL,JK)=-ZDP(JL,JK)*(ZMFUV(JL,JK)+ZMFDV(JL,JK))
+(  232)         ENDIF
+(  233)       ENDDO
+(  234)     ENDIF
+(  235)   
+(  236)   ENDDO
+(  237) # 238 "./cududv.F90"
+(  238)   IF ( RMFSOLUV==0.0_JPRB ) THEN
+(  239) # 240 "./cududv.F90"
+(  240) !*    1.3          UPDATE TENDENCIES
+(  241) !                  -----------------
+(  242) # 243 "./cududv.F90"
+(  243)     DO JK=KTOPM2,KLEV
+(  244)       DO JL=KIDIA,KFDIA
+(  245)         IF(LDCUM(JL)) THEN
+(  246)           PTENU(JL,JK)=PTENU(JL,JK)+ZDUDT(JL,JK)
+(  247)           PTENV(JL,JK)=PTENV(JL,JK)+ZDVDT(JL,JK)
+(  248)         ENDIF
+(  249)       ENDDO
+(  250)     ENDDO
+(  251) # 252 "./cududv.F90"
+(  252)   ELSE
+(  253) !----------------------------------------------------------------------
+(  254)       
+(  255) !*      1.6          IMPLICIT SOLUTION
+(  256) !                    -----------------
+(  257)    
+(  258)      ! Fill bi-diagonal Matrix vectors A=k-1, B=k;
+(  259)      ! reuse ZMFUU=A and ZB=B; 
+(  260)      ! ZDUDT and ZDVDT correspond to the RHS ("constants") of the equation
+(  261)      ! The solution is in ZR1 and ZR2
+(  262)      
+(  263)       LLCUMBAS(:,:)=.FALSE.
+(  264)       ZB(:,:)=1.0_JPRB
+(  265)       ZMFUU(:,:)=0.0_JPRB
+(  266)      
+(  267)      ! Fill vectors A, B and RHS 
+(  268)      
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:04      page 14
+
+(  269)       DO JK=KTOPM2,KLEV
+(  270)          IK=JK+1
+(  271)          IM=JK-1
+(  272)          DO JL=KIDIA,KFDIA
+(  273)            LLCUMBAS(JL,JK)=LDCUM(JL).AND.JK>=KCTOP(JL)-1 
+(  274)            IF(LLCUMBAS(JL,JK)) THEN
+(  275)              ZZP=RMFSOLUV*ZDP(JL,JK)*PTSPHY
+(  276)              ZMFUU(JL,JK)=-ZZP*(PMFU(JL,JK)+PMFD(JL,JK))
+(  277)              IF(JK<KLEV) THEN
+(  278)                ZB(JL,JK)=1.0_JPRB+ZZP*(PMFU(JL,IK)+PMFD(JL,IK))
+(  279)              ELSE
+(  280)                ZB(JL,JK)=1.0_JPRB
+(  281)              ENDIF
+(  282)              ZZP=RG*(PMFUO(JL,JK)+RMFADVWDD*PMFDO(JL,JK))/(PAP(JL,JK)-PAP(JL,IM))*PTSPHY*ZADVW(JL)
+(  283)              ZU=ZZP*(PUEN(JL,IM)-PUEN(JL,JK))
+(  284)              ZV=ZZP*(PVEN(JL,IM)-PVEN(JL,JK))
+(  285)              ZDUDT(JL,JK) = (ZDUDT(JL,JK)+PTENU(JL,JK)*RMFSOLRHS)*PTSPHY+PUEN(JL,JK)-ZU
+(  286)              ZDVDT(JL,JK) = (ZDVDT(JL,JK)+PTENV(JL,JK)*RMFSOLRHS)*PTSPHY+PVEN(JL,JK)-ZV
+(  287)            ENDIF
+(  288)          ENDDO
+(  289)       ENDDO
+(  290)      
+(  291)       CALL CUBIDIAG&
+(  292)          &( KIDIA, KFDIA, KLON, KLEV, &
+(  293)          &  KCTOP, LLCUMBAS, &
+(  294)          &  ZMFUU,    ZB,    ZDUDT,   ZR1 )
+(  295)      
+(  296)       CALL CUBIDIAG&
+(  297)          &( KIDIA, KFDIA, KLON, KLEV, &
+(  298)          &  KCTOP, LLCUMBAS, &
+(  299)          &  ZMFUU,    ZB,    ZDVDT,   ZR2 )
+(  300)      ! prepare RP perturbations (MF PEARP)
+(  301)       LLPPAR_CUDUV=YDPERTPAR%LPERTPAR.AND.YDPERTPAR%LPERT_CUDUV
+(  302)      ! prepare SPP perturbations
+(  303)       IF (YDSPP_CONFIG%LSPP) THEN
+(  304)         IPN1 = YDSPP_CONFIG%PPTR%CUDUDV
+(  305)         LLPERT_CUDUDV= IPN1 > 0
+(  306)         IF (LLPERT_CUDUDV) THEN
+(  307)           PN1=YDSPP_CONFIG%SM%PN(IPN1)
+(  308)           IPCUDU = PN1%MP
+(  309)           IF (PN1%NRF == 1) THEN
+(  310)             IPCUDV = IPCUDU
+(  311)           ELSE
+(  312)             IPCUDV = IPCUDU+1
+(  313)           ENDIF
+(  314)         ENDIF
+(  315)         IPN2 = YDSPP_CONFIG%PPTR%CUDUDVS
+(  316)         LLPERT_CUDUDVS= IPN2 > 0
+(  317)         IF (LLPERT_CUDUDVS) THEN
+(  318)           PN2=YDSPP_CONFIG%SM%PN(IPN2)
+(  319)           IPCUDUS = PN2%MP
+(  320)           IF (PN2%NRF == 1) THEN
+(  321)             IPCUDVS = IPCUDUS
+(  322)           ELSE
+(  323)             IPCUDVS = IPCUDUS+1
+(  324)           ENDIF
+(  325)         ENDIF
+(  326)       ELSE
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:04      page 15
+
+(  327)         LLPERT_CUDUDV=.FALSE.
+(  328)         LLPERT_CUDUDVS=.FALSE.
+(  329)       ENDIF
+(  330) # 331 "./cududv.F90"
+(  331)       IF (LLPERT_CUDUDV .OR. LLPERT_CUDUDVS .OR. LLPPAR_CUDUV) THEN
+(  332)           ZMDU   = 1.0_JPRB    ! mean      zonal momentum transport pdf
+(  333)           ZMDV   = 1.0_JPRB    ! mean meridional momentum transport pdf
+(  334)           ZLIMN2 = 9.0_JPRB*PN1%SDEV**2    ! limit for norm squared (3 stdev)
+(  335) # 336 "./cududv.F90"
+(  336)           DO JL=KIDIA,KFDIA
+(  337)           IF ((KTYPE(JL)==1 .AND. (LLPERT_CUDUDV .OR. LLPPAR_CUDUV)) .OR. &
+(  338)             & (KTYPE(JL)==2 .AND. (LLPERT_CUDUDVS .OR. LLPPAR_CUDUV))) THEN  !perturb deep/shallow convection
+(  339) # 340 "./cududv.F90"
+(  340)               IF (KTYPE(JL)==1) THEN
+(  341)                 IF (.NOT.LLPPAR_CUDUV) THEN
+(  342)                   ZXU=PGP2DSPP(JL, IPCUDU)
+(  343)                   ZXV=PGP2DSPP(JL, IPCUDV)
+(  344)                   ZXU_MAG = PN1%XMAG(1)
+(  345)                   ZXV_MAG = PN1%XMAG(2)
+(  346)                 ELSE
+(  347)                   ZXU=YDPERTPAR%CUDU_MOD
+(  348)                   ZXV=YDPERTPAR%CUDV_MOD
+(  349)                 ENDIF
+(  350)               ENDIF
+(  351) # 352 "./cududv.F90"
+(  352)               IF (KTYPE(JL)==2) THEN
+(  353)              IF (.NOT.LLPPAR_CUDUV) THEN
+(  354)                 ZXU=PGP2DSPP(JL, IPCUDUS)
+(  355)                 ZXV=PGP2DSPP(JL, IPCUDVS)
+(  356)                 ZXU_MAG = PN2%XMAG(1)
+(  357)                 ZXV_MAG = PN2%XMAG(2)
+(  358)              ELSE
+(  359)               ZXU=YDPERTPAR%CUDU_MOD
+(  360)               ZXV=YDPERTPAR%CUDV_MOD
+(  361)              ENDIF
+(  362)               ENDIF
+(  363) # 364 "./cududv.F90"
+(  364)               ZN2=ZXU**2+ZXV**2
+(  365)               IF (ZN2>ZLIMN2) THEN
+(  366)                 ZFAC=SQRT(ZLIMN2/ZN2)
+(  367)                 ZXU = ZFAC*ZXU
+(  368)                 ZXV = ZFAC*ZXV
+(  369)               ENDIF
+(  370)               IF(.NOT.LLPPAR_CUDUV) THEN
+(  371)                 ZRDU(JL)=ZMDU + ZXU_MAG*ZXU
+(  372)                 ZRDV(JL)=ZMDV + ZXV_MAG*ZXV
+(  373)               ELSE
+(  374)                 ZRDU(JL)=ZMDU + ZXU
+(  375)                 ZRDV(JL)=ZMDV + ZXV
+(  376)               ENDIF
+(  377)             ELSE  !other convection - unperturbed
+(  378)               ZRDU(JL)=ZMDU
+(  379)               ZRDV(JL)=ZMDV
+(  380)             ENDIF
+(  381)           ENDDO
+(  382)       ENDIF
+(  383) # 384 "./cududv.F90"
+(  384)      
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:04      page 16
+
+(  385)      ! Compute tendencies
+(  386)      
+(  387)       DO JK=KTOPM2,KLEV
+(  388)          DO JL=KIDIA,KFDIA
+(  389)            IF(LLCUMBAS(JL,JK)) THEN
+(  390)              IF ((LLPERT_CUDUDV).OR.(LLPPAR_CUDUV)) THEN  !Apply SPP perturbations or RP perturbation
+(  391)                PTENU(JL,JK)=PTENU(JL,JK)*(1.0_JPRB-RMFSOLRHS)+ZRDU(JL)*(ZR1(JL,JK)-PUEN(JL,JK))*ZTSPHY
+(  392)                PTENV(JL,JK)=PTENV(JL,JK)*(1.0_JPRB-RMFSOLRHS)+ZRDV(JL)*(ZR2(JL,JK)-PVEN(JL,JK))*ZTSPHY
+(  393)              ELSE
+(  394)                PTENU(JL,JK)=PTENU(JL,JK)*(1.0_JPRB-RMFSOLRHS)+(ZR1(JL,JK)-PUEN(JL,JK))*ZTSPHY
+(  395)                PTENV(JL,JK)=PTENV(JL,JK)*(1.0_JPRB-RMFSOLRHS)+(ZR2(JL,JK)-PVEN(JL,JK))*ZTSPHY
+(  396)              ENDIF
+(  397)            ENDIF
+(  398)          ENDDO
+(  399)       ENDDO
+(  400) # 402 "./cududv.F90"
+(  402)    ENDIF
+(  403) !----------------------------------------------------------------------
+(  404) # 405 "./cududv.F90"
+(  405) END ASSOCIATE
+(  406) IF (LHOOK) CALL DR_HOOK('CUDUDV',1,ZHOOK_HANDLE)
+(  407) END SUBROUTINE CUDUDV

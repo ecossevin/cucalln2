@@ -1,0 +1,495 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:59      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./xrd_unix_env.F90
+
+(    1) MODULE XRD_UNIX_ENV
+(    2) 
+(    3) !**** *XRD_UNIX_ENV*  - 
+(    4) 
+(    5) !     Author. 
+(    6) !     ------- 
+(    7) !      Philippe Marguinaud *METEO FRANCE*
+(    8) !      Original : 11-09-2012
+(    9) 
+(   10) USE PARKIND1, ONLY : JPIM, JPRB, JPLM
+(   11) IMPLICIT NONE
+(   12) 
+(   13) CONTAINS
+(   14) 
+(   15) SUBROUTINE XRD_GETENV( KEY, VAL )
+(   16)   IMPLICIT NONE
+(   17)   CHARACTER(LEN=*), INTENT(IN) :: KEY
+(   18)   CHARACTER(LEN=*), INTENT(OUT) :: VAL
+(   19) 
+(   20)   CALL GET_ENVIRONMENT_VARIABLE( KEY, VAL )
+(   21) END SUBROUTINE XRD_GETENV
+(   22) 
+(   23) 
+(   24) FUNCTION XRD_IARGC()
+(   25)   IMPLICIT NONE
+(   26)   INTEGER(KIND=JPIM) :: XRD_IARGC
+(   27)   XRD_IARGC = COMMAND_ARGUMENT_COUNT()
+(   28) END FUNCTION XRD_IARGC
+(   29) 
+(   30) SUBROUTINE XRD_GETARG( KEY, VAL )
+(   31)   IMPLICIT NONE
+(   32)   INTEGER(KIND=JPIM), INTENT(IN) :: KEY
+(   33)   CHARACTER(LEN=*), INTENT(OUT) :: VAL
+(   34)   CALL GETARG( INT(KEY,SELECTED_INT_KIND(9)), VAL )
+(   35) END SUBROUTINE XRD_GETARG
+(   36) 
+(   37) SUBROUTINE XRD_EXIT( STATUS )
+(   38)   IMPLICIT NONE
+(   39)   INTEGER(KIND=JPIM), INTENT(IN) :: STATUS
+(   40)   CALL EXIT( INT(STATUS,SELECTED_INT_KIND(9)) )
+(   41) END SUBROUTINE XRD_EXIT
+(   42) 
+(   43) SUBROUTINE XRD_MKDIR( PATH )
+(   44)   IMPLICIT NONE
+(   45)   CHARACTER(LEN=*), INTENT(IN) :: PATH
+(   46)   CALL SYSTEM( "mkdir -p "//TRIM(PATH))
+(   47) END SUBROUTINE XRD_MKDIR
+(   48) 
+(   49) CHARACTER*256 FUNCTION XRD_DIRNAME( PATH )
+(   50)   IMPLICIT NONE
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:59      page 2
+
+(   51)   CHARACTER(LEN=*), INTENT(IN) :: PATH
+(   52) 
+(   53)   INTEGER(KIND=JPIM) :: I
+(   54)   XRD_DIRNAME = ""
+(   55)   I = LEN( TRIM( PATH ) ) - 1
+(   56)   DO
+(   57)     IF( I .LE. 0 ) RETURN
+(   58)     IF( PATH(I:I) .EQ. '/' ) EXIT
+(   59)     I = I - 1
+(   60)   ENDDO
+(   61)   XRD_DIRNAME = PATH(1:I)
+(   62) END FUNCTION XRD_DIRNAME
+(   63) 
+(   64) FUNCTION XRD_BASENAME( PATH )
+(   65)   IMPLICIT NONE
+(   66)   CHARACTER*256 :: XRD_BASENAME
+(   67)   CHARACTER(LEN=*), INTENT(IN) :: PATH
+(   68) 
+(   69)   INTEGER(KIND=JPIM) :: I
+(   70)   XRD_BASENAME = ""
+(   71)   I = LEN( TRIM( PATH ) ) - 1
+(   72)   DO
+(   73)     IF( I .LE. 0 ) THEN
+(   74)       I = 0
+(   75)       EXIT
+(   76)     ENDIF
+(   77)     IF( PATH(I:I) .EQ. '/' ) EXIT
+(   78)     I = I - 1
+(   79)   ENDDO
+(   80)   XRD_BASENAME = PATH(I+1:)
+(   81) END FUNCTION XRD_BASENAME
+(   82) 
+(   83) ELEMENTAL SUBROUTINE XRD_LOWER_CASE(OUS,INS)
+(   84) IMPLICIT NONE
+(   85) ! CONVERT A WORD TO LOWER CASE
+(   86) CHARACTER (LEN=*) , INTENT(OUT) :: OUS
+(   87) CHARACTER (LEN=*) , INTENT(IN) :: INS
+(   88) INTEGER :: I,IC,NLEN
+(   89) NLEN = LEN(INS)
+(   90) OUS = ''
+(   91) DO I=1,NLEN
+(   92)    IC = ICHAR(INS(I:I))
+(   93)    IF (IC >= 65 .AND. IC < 90) THEN
+(   94)      OUS(I:I) = CHAR(IC+32)
+(   95)    ELSE
+(   96)      OUS(I:I) = INS(I:I)
+(   97)    ENDIF
+(   98) END DO
+(   99) END SUBROUTINE XRD_LOWER_CASE
+(  100) 
+(  101) ELEMENTAL SUBROUTINE XRD_UPPER_CASE(OUS,INS)
+(  102) IMPLICIT NONE
+(  103) ! CONVERT A WORD TO UPPER CASE
+(  104) CHARACTER (LEN=*) , INTENT(OUT) :: OUS
+(  105) CHARACTER (LEN=*) , INTENT(IN) :: INS
+(  106) INTEGER :: I,IC,NLEN
+(  107) NLEN = LEN(INS)
+(  108) OUS = ''
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:59      page 3
+
+(  109) DO I=1,NLEN
+(  110)    IC = ICHAR(INS(I:I))
+(  111)    IF (IC >= 97 .AND. IC < 122) THEN
+(  112)      OUS(I:I) = CHAR(IC-32)
+(  113)    ELSE
+(  114)      OUS(I:I) = INS(I:I)
+(  115)    ENDIF
+(  116) END DO
+(  117) END SUBROUTINE XRD_UPPER_CASE
+(  118) 
+(  119) FUNCTION XRD_ISALPHA(C)
+(  120) IMPLICIT NONE
+(  121) LOGICAL(KIND=JPLM) :: XRD_ISALPHA
+(  122) CHARACTER, INTENT(IN) :: C
+(  123) 
+(  124) XRD_ISALPHA = ((C.GE.'A').AND.(C.LE.'Z'))&
+(  125)             .OR.((C.GE.'a').AND.(C.LE.'z'))
+(  126) 
+(  127) END FUNCTION XRD_ISALPHA
+(  128) 
+(  129) FUNCTION XRD_ISDIGIT(C)
+(  130) IMPLICIT NONE
+(  131) LOGICAL(KIND=JPLM) :: XRD_ISDIGIT
+(  132) CHARACTER, INTENT(IN) :: C
+(  133) 
+(  134) XRD_ISDIGIT = (C.GE.'0').AND.(C.LE.'9')
+(  135) 
+(  136) END FUNCTION XRD_ISDIGIT
+(  137) 
+(  138) SUBROUTINE XRD_DATE_AND_TIME( VL )
+(  139) IMPLICIT NONE
+(  140) INTEGER(KIND=JPIM), INTENT(OUT) :: VL(8)
+(  141) !
+(  142) INTEGER :: VLX(8)
+(  143) 
+(  144)   CALL DATE_AND_TIME( VALUES = VLX )
+(  145) 
+(  146)   VL = VLX
+(  147) END SUBROUTINE XRD_DATE_AND_TIME
+(  148) 
+(  149) SUBROUTINE XRD_CPU_TIME( T )
+(  150)   IMPLICIT NONE
+(  151)   REAL,INTENT(OUT) :: T
+(  152)   CALL CPU_TIME( T )
+(  153) END SUBROUTINE XRD_CPU_TIME
+(  154) 
+(  155) SUBROUTINE XRD_COUNTLINES( NLINES, F, ERR )
+(  156) IMPLICIT NONE
+(  157) INTEGER(KIND=JPIM), INTENT(OUT) :: NLINES
+(  158) CHARACTER*(*), INTENT(IN) :: F
+(  159) INTEGER(KIND=JPIM), INTENT(OUT) :: ERR
+(  160) CHARACTER*32 :: STR
+(  161) 
+(  162) 
+(  163) ERR = 0
+(  164) 
+(  165) NLINES = 0
+(  166) OPEN( 77, FILE = F, ERR = 888 )
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:59      page 4
+
+(  167) 
+(  168) DO
+(  169)   READ( 77, *, ERR = 888, END = 777 ) STR
+(  170)   NLINES = NLINES + 1
+(  171) ENDDO
+(  172) 
+(  173) 777 CONTINUE
+(  174) 
+(  175) CLOSE( 77 )
+(  176) 
+(  177) RETURN
+(  178) 888 CONTINUE
+(  179)   ERR = 1
+(  180) END SUBROUTINE XRD_COUNTLINES
+(  181) 
+(  182) FUNCTION XRD_COUNTWORDS( S )
+(  183)   IMPLICIT NONE
+(  184)   INTEGER(KIND=JPIM) :: XRD_COUNTWORDS
+(  185)   CHARACTER(LEN=*), INTENT(IN) :: S
+(  186)   INTEGER(KIND=JPIM) :: N, I, L
+(  187)   LOGICAL(KIND=JPLM) :: IN
+(  188)   N = 0_JPIM
+(  189)   IN = .FALSE.
+(  190)   L = LEN( TRIM( S ) )
+(  191)   DO I = 1, L
+(  192)     IF( S(I:I) .EQ. ' ' ) THEN
+(  193)       IN = .FALSE.
+(  194)     ELSE IF( .NOT. IN ) THEN
+(  195)       N = N + 1
+(  196)       IN = .TRUE.
+(  197)     ENDIF
+(  198)   ENDDO
+(  199)   XRD_COUNTWORDS = N
+(  200) END FUNCTION XRD_COUNTWORDS
+(  201) 
+(  202) END MODULE XRD_UNIX_ENV
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:59      page 5
+
+(    1) # 1 "./xrd_unix_env.F90"
+(    1) MODULE XRD_UNIX_ENV
+(    2) # 3 "./xrd_unix_env.F90"
+(    3) !**** *XRD_UNIX_ENV*  - 
+(    4) # 5 "./xrd_unix_env.F90"
+(    5) !     Author. 
+(    6) !     ------- 
+(    7) !      Philippe Marguinaud *METEO FRANCE*
+(    8) !      Original : 11-09-2012
+(    9) # 10 "./xrd_unix_env.F90"
+(   10) USE PARKIND1, ONLY : JPIM, JPRB, JPLM
+(   11) IMPLICIT NONE
+(   12) # 13 "./xrd_unix_env.F90"
+(   13) CONTAINS
+(   14) # 15 "./xrd_unix_env.F90"
+(   15) SUBROUTINE XRD_GETENV( KEY, VAL )
+(   16)   IMPLICIT NONE
+(   17)   CHARACTER(LEN=*), INTENT(IN) :: KEY
+(   18)   CHARACTER(LEN=*), INTENT(OUT) :: VAL
+(   19) # 20 "./xrd_unix_env.F90"
+(   20)   CALL GET_ENVIRONMENT_VARIABLE( KEY, VAL )
+(   21) END SUBROUTINE XRD_GETENV
+(   22) # 24 "./xrd_unix_env.F90"
+(   24) FUNCTION XRD_IARGC()
+(   25)   IMPLICIT NONE
+(   26)   INTEGER(KIND=JPIM) :: XRD_IARGC
+(   27)   XRD_IARGC = COMMAND_ARGUMENT_COUNT()
+(   28) END FUNCTION XRD_IARGC
+(   29) # 30 "./xrd_unix_env.F90"
+(   30) SUBROUTINE XRD_GETARG( KEY, VAL )
+(   31)   IMPLICIT NONE
+(   32)   INTEGER(KIND=JPIM), INTENT(IN) :: KEY
+(   33)   CHARACTER(LEN=*), INTENT(OUT) :: VAL
+(   34)   CALL GETARG( INT(KEY,SELECTED_INT_KIND(9)), VAL )
+(   35) END SUBROUTINE XRD_GETARG
+(   36) # 37 "./xrd_unix_env.F90"
+(   37) SUBROUTINE XRD_EXIT( STATUS )
+(   38)   IMPLICIT NONE
+(   39)   INTEGER(KIND=JPIM), INTENT(IN) :: STATUS
+(   40)   CALL EXIT( INT(STATUS,SELECTED_INT_KIND(9)) )
+(   41) END SUBROUTINE XRD_EXIT
+(   42) # 43 "./xrd_unix_env.F90"
+(   43) SUBROUTINE XRD_MKDIR( PATH )
+(   44)   IMPLICIT NONE
+(   45)   CHARACTER(LEN=*), INTENT(IN) :: PATH
+(   46)   CALL SYSTEM( "mkdir -p "//TRIM(PATH))
+(   47) END SUBROUTINE XRD_MKDIR
+(   48) # 49 "./xrd_unix_env.F90"
+(   49) CHARACTER*256 FUNCTION XRD_DIRNAME( PATH )
+(   50)   IMPLICIT NONE
+(   51)   CHARACTER(LEN=*), INTENT(IN) :: PATH
+(   52) # 53 "./xrd_unix_env.F90"
+(   53)   INTEGER(KIND=JPIM) :: I
+(   54)   XRD_DIRNAME = ""
+(   55)   I = LEN( TRIM( PATH ) ) - 1
+(   56)   DO
+(   57)     IF( I .LE. 0 ) RETURN
+(   58)     IF( PATH(I:I) .EQ. '/' ) EXIT
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:59      page 6
+
+(   59)     I = I - 1
+(   60)   ENDDO
+(   61)   XRD_DIRNAME = PATH(1:I)
+(   62) END FUNCTION XRD_DIRNAME
+(   63) # 64 "./xrd_unix_env.F90"
+(   64) FUNCTION XRD_BASENAME( PATH )
+(   65)   IMPLICIT NONE
+(   66)   CHARACTER*256 :: XRD_BASENAME
+(   67)   CHARACTER(LEN=*), INTENT(IN) :: PATH
+(   68) # 69 "./xrd_unix_env.F90"
+(   69)   INTEGER(KIND=JPIM) :: I
+(   70)   XRD_BASENAME = ""
+(   71)   I = LEN( TRIM( PATH ) ) - 1
+(   72)   DO
+(   73)     IF( I .LE. 0 ) THEN
+(   74)       I = 0
+(   75)       EXIT
+(   76)     ENDIF
+(   77)     IF( PATH(I:I) .EQ. '/' ) EXIT
+(   78)     I = I - 1
+(   79)   ENDDO
+(   80)   XRD_BASENAME = PATH(I+1:)
+(   81) END FUNCTION XRD_BASENAME
+(   82) # 83 "./xrd_unix_env.F90"
+(   83) ELEMENTAL SUBROUTINE XRD_LOWER_CASE(OUS,INS)
+(   84) IMPLICIT NONE
+(   85) ! CONVERT A WORD TO LOWER CASE
+(   86) CHARACTER (LEN=*) , INTENT(OUT) :: OUS
+(   87) CHARACTER (LEN=*) , INTENT(IN) :: INS
+(   88) INTEGER :: I,IC,NLEN
+(   89) NLEN = LEN(INS)
+(   90) OUS = ''
+(   91) DO I=1,NLEN
+(   92)    IC = ICHAR(INS(I:I))
+(   93)    IF (IC >= 65 .AND. IC < 90) THEN
+(   94)      OUS(I:I) = CHAR(IC+32)
+(   95)    ELSE
+(   96)      OUS(I:I) = INS(I:I)
+(   97)    ENDIF
+(   98) END DO
+(   99) END SUBROUTINE XRD_LOWER_CASE
+(  100) # 101 "./xrd_unix_env.F90"
+(  101) ELEMENTAL SUBROUTINE XRD_UPPER_CASE(OUS,INS)
+(  102) IMPLICIT NONE
+(  103) ! CONVERT A WORD TO UPPER CASE
+(  104) CHARACTER (LEN=*) , INTENT(OUT) :: OUS
+(  105) CHARACTER (LEN=*) , INTENT(IN) :: INS
+(  106) INTEGER :: I,IC,NLEN
+(  107) NLEN = LEN(INS)
+(  108) OUS = ''
+(  109) DO I=1,NLEN
+(  110)    IC = ICHAR(INS(I:I))
+(  111)    IF (IC >= 97 .AND. IC < 122) THEN
+(  112)      OUS(I:I) = CHAR(IC-32)
+(  113)    ELSE
+(  114)      OUS(I:I) = INS(I:I)
+(  115)    ENDIF
+(  116) END DO
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:59      page 7
+
+(  117) END SUBROUTINE XRD_UPPER_CASE
+(  118) # 119 "./xrd_unix_env.F90"
+(  119) FUNCTION XRD_ISALPHA(C)
+(  120) IMPLICIT NONE
+(  121) LOGICAL(KIND=JPLM) :: XRD_ISALPHA
+(  122) CHARACTER, INTENT(IN) :: C
+(  123) # 124 "./xrd_unix_env.F90"
+(  124) XRD_ISALPHA = ((C.GE.'A').AND.(C.LE.'Z'))&
+(  125)             .OR.((C.GE.'a').AND.(C.LE.'z'))
+(  126) # 127 "./xrd_unix_env.F90"
+(  127) END FUNCTION XRD_ISALPHA
+(  128) # 129 "./xrd_unix_env.F90"
+(  129) FUNCTION XRD_ISDIGIT(C)
+(  130) IMPLICIT NONE
+(  131) LOGICAL(KIND=JPLM) :: XRD_ISDIGIT
+(  132) CHARACTER, INTENT(IN) :: C
+(  133) # 134 "./xrd_unix_env.F90"
+(  134) XRD_ISDIGIT = (C.GE.'0').AND.(C.LE.'9')
+(  135) # 136 "./xrd_unix_env.F90"
+(  136) END FUNCTION XRD_ISDIGIT
+(  137) # 138 "./xrd_unix_env.F90"
+(  138) SUBROUTINE XRD_DATE_AND_TIME( VL )
+(  139) IMPLICIT NONE
+(  140) INTEGER(KIND=JPIM), INTENT(OUT) :: VL(8)
+(  141) !
+(  142) INTEGER :: VLX(8)
+(  143) # 144 "./xrd_unix_env.F90"
+(  144)   CALL DATE_AND_TIME( VALUES = VLX )
+(  145) # 146 "./xrd_unix_env.F90"
+(  146)   VL = VLX
+(  147) END SUBROUTINE XRD_DATE_AND_TIME
+(  148) # 149 "./xrd_unix_env.F90"
+(  149) SUBROUTINE XRD_CPU_TIME( T )
+(  150)   IMPLICIT NONE
+(  151)   REAL,INTENT(OUT) :: T
+(  152)   CALL CPU_TIME( T )
+(  153) END SUBROUTINE XRD_CPU_TIME
+(  154) # 155 "./xrd_unix_env.F90"
+(  155) SUBROUTINE XRD_COUNTLINES( NLINES, F, ERR )
+(  156) IMPLICIT NONE
+(  157) INTEGER(KIND=JPIM), INTENT(OUT) :: NLINES
+(  158) CHARACTER*(*), INTENT(IN) :: F
+(  159) INTEGER(KIND=JPIM), INTENT(OUT) :: ERR
+(  160) CHARACTER*32 :: STR
+(  161) # 163 "./xrd_unix_env.F90"
+(  163) ERR = 0
+(  164) # 165 "./xrd_unix_env.F90"
+(  165) NLINES = 0
+(  166) OPEN( 77, FILE = F, ERR = 888 )
+(  167) # 168 "./xrd_unix_env.F90"
+(  168) DO
+(  169)   READ( 77, *, ERR = 888, END = 777 ) STR
+(  170)   NLINES = NLINES + 1
+(  171) ENDDO
+(  172) # 173 "./xrd_unix_env.F90"
+(  173) 777 CONTINUE
+(  174) # 175 "./xrd_unix_env.F90"
+(  175) CLOSE( 77 )
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:59      page 8
+
+(  176) # 177 "./xrd_unix_env.F90"
+(  177) RETURN
+(  178) 888 CONTINUE
+(  179)   ERR = 1
+(  180) END SUBROUTINE XRD_COUNTLINES
+(  181) # 182 "./xrd_unix_env.F90"
+(  182) FUNCTION XRD_COUNTWORDS( S )
+(  183)   IMPLICIT NONE
+(  184)   INTEGER(KIND=JPIM) :: XRD_COUNTWORDS
+(  185)   CHARACTER(LEN=*), INTENT(IN) :: S
+(  186)   INTEGER(KIND=JPIM) :: N, I, L
+(  187)   LOGICAL(KIND=JPLM) :: IN
+(  188)   N = 0_JPIM
+(  189)   IN = .FALSE.
+(  190)   L = LEN( TRIM( S ) )
+(  191)   DO I = 1, L
+(  192)     IF( S(I:I) .EQ. ' ' ) THEN
+(  193)       IN = .FALSE.
+(  194)     ELSE IF( .NOT. IN ) THEN
+(  195)       N = N + 1
+(  196)       IN = .TRUE.
+(  197)     ENDIF
+(  198)   ENDDO
+(  199)   XRD_COUNTWORDS = N
+(  200) END FUNCTION XRD_COUNTWORDS
+(  201) # 202 "./xrd_unix_env.F90"
+(  202) END MODULE XRD_UNIX_ENV

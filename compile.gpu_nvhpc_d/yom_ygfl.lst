@@ -1,0 +1,1136 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:26      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./yom_ygfl.F90
+
+(    1) MODULE YOM_YGFL
+(    2) 
+(    3) USE PARKIND1 , ONLY : JPIM, JPRB
+(    4) USE YOE_AERODIAG, ONLY : NPAERAOT, NPAERLISI_VAR, NPAERLISI_WVL, NPAERLISI, &
+(    5)   & TYPE_AERO_WVL_DIAG, NPAERO_WVL_DIAG
+(    6) 
+(    7) USE PAR_GFL
+(    8) 
+(    9) IMPLICIT NONE
+(   10) SAVE
+(   11) 
+(   12) !-------------------------------------------------------------------------
+(   13) ! Contains the descriptors of GFL arrays
+(   14) !-------------------------------------------------------------------------
+(   15) 
+(   16) TYPE TYPE_GFL_COMP ! Individual field descriptor
+(   17) 
+(   18) SEQUENCE ! daand: necessary to avoid memory corruption with gfortran 4.3.3
+(   19) 
+(   20) CHARACTER(LEN=16)  :: CNAME     = ''        ! ARPEGE field name 
+(   21) INTEGER(KIND=JPIM) :: IGRBCODE  = -999      ! GRIB code
+(   22) LOGICAL            :: LADV      = .FALSE.   ! Field advected or not
+(   23) LOGICAL            :: LADV5     = .FALSE.   ! Field advected without wind increments
+(   24) LOGICAL            :: LTDIABLIN = .FALSE.   ! Diabatic tendency is interpolated by lin. int.
+(   25) LOGICAL            :: LHORTURB  = .FALSE.   ! Horizontal part affected by 3D turbulence
+(   26) INTEGER(KIND=JPIM) :: NREQIN    = 0         ! 1 if field requiered in input, 0 if not, -1 if initialised
+(   27)                                             ! with a reference value REFVALI
+(   28) LOGICAL            :: LREQOUT   = .FALSE.   ! T if field requiered in output
+(   29) LOGICAL            :: LGPINGP   = .TRUE.    ! GP field input as GP
+(   30) LOGICAL            :: LMGRID    = .FALSE.   ! GP field to run on a different resolution grid
+(   31) LOGICAL            :: LGP       = .FALSE.   ! Field exists and of grid-point type
+(   32) LOGICAL            :: LSP       = .FALSE.   ! Field exists and of spectral type
+(   33) LOGICAL            :: LCDERS    = .FALSE.   ! Derivatives required (spectral only)
+(   34) LOGICAL            :: LACTIVE   = .FALSE.   ! Field in use
+(   35) LOGICAL            :: LTHERMACT = .FALSE.   ! Field thermodynamically active
+(   36) REAL(KIND=JPRB)    :: R         = 0.0_JPRB
+(   37) REAL(KIND=JPRB)    :: RCP       = 0.0_JPRB
+(   38) LOGICAL            :: LT9       = .FALSE.   ! Field in t-dt GFL
+(   39) LOGICAL            :: LT1       = .FALSE.   ! Field in t+dt GFL
+(   40) LOGICAL            :: LT5       = .FALSE.   ! Field in trajectory GFL
+(   41) LOGICAL            :: LPHY      = .FALSE.   ! Field in physics GFL
+(   42) LOGICAL            :: LPT       = .FALSE.   ! Field in PC phy. tend. GFL (GFLPT)
+(   43) LOGICAL            :: LTRAJIO   = .FALSE.   ! Field written to and from trajectory structure
+(   44) LOGICAL            :: LDIAG     = .FALSE.   ! Field is "diagnostic" at t; e.g. cloud fraction 
+(   45) LOGICAL            :: LPC       = .FALSE.   ! Field in predictor/corrector time stepping (GFLPC)
+(   46) REAL(KIND=JPRB)    :: REFVALI   = 0.0_JPRB  ! Reference value for init, used in case NREQIN==-1
+(   47) ! LAM specific attributes (Arome/Aladin)
+(   48) LOGICAL            :: LADJUST0  = .FALSE.   ! True if field is thermodynamically adjusted at t
+(   49)                                             ! (immediatly after inverse spectral transforms)
+(   50) LOGICAL            :: LADJUST1  = .FALSE.   ! True if field is thermodynamically adjusted at t+dt
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:26      page 2
+
+(   51)                                             ! (after SL interpolations and NL residuals)
+(   52) INTEGER(KIND=JPIM) :: NCOUPLING = 0         ! 1 if field is coupled by Davies relaxation, 0 if not,
+(   53)                                             ! -1 if coupled with reference value for coupling REFVALC
+(   54) REAL(KIND=JPRB)    :: REFVALC   = 0.0_JPRB  ! Reference value for coupling, used in case NCOUPLING==-1
+(   55) LOGICAL            :: LBIPER    = .FALSE.   ! True if field must be biperiodised inside the transforms
+(   56) ! End LAM specific attributes (Arome/Aladin)
+(   57) CHARACTER(LEN=12)  :: CSLINT    = ''        ! S.L interpolaion "type"
+(   58) INTEGER(KIND=JPIM) :: MGFL      = -99999999 ! GFL rank
+(   59) INTEGER(KIND=JPIM) :: MP        = -99999999 ! Basic field "pointer"
+(   60) INTEGER(KIND=JPIM) :: MPL       = -99999999 ! zonal derivative "pointer"
+(   61) INTEGER(KIND=JPIM) :: MPM       = -99999999 ! Meridional derivative "pointer"
+(   62) INTEGER(KIND=JPIM) :: MP9       = -99999999 ! Basic field "pointer" t-dt
+(   63) INTEGER(KIND=JPIM) :: MP9_PH    = -99999999 ! Basic field "pointer" for Physics
+(   64) INTEGER(KIND=JPIM) :: MP1       = -99999999 ! Basic field "pointer" t+dt
+(   65) INTEGER(KIND=JPIM) :: MP5       = -99999999 ! Basic field "pointer" trajectory
+(   66) INTEGER(KIND=JPIM) :: MP5L      = -99999999 ! zonal derivative "pointer" trajectory
+(   67) INTEGER(KIND=JPIM) :: MP5M      = -99999999 ! Meridional derivative "pointer" trajectory
+(   68) INTEGER(KIND=JPIM) :: MPSLP     = -99999999 ! Basic field "pointer" physics
+(   69) INTEGER(KIND=JPIM) :: MPSP      = -99999999 ! Basic field "pointer" spectral space
+(   70) INTEGER(KIND=JPIM) :: MP_SPL    = -99999999 ! Basic field "pointer" spline interpolation
+(   71) INTEGER(KIND=JPIM) :: MP_SL1    = -99999999 ! Basic field "pointer" in SLBUF1
+(   72) INTEGER(KIND=JPIM) :: MP_SLX    = -99999999 ! Basic field "pointer" in SLBUF1 for CPG_PT
+(   73) INTEGER(KIND=JPIM) :: MPPT      = -99999999 ! Physics tendency "pointer"
+(   74) INTEGER(KIND=JPIM) :: MPPC      = -99999999 ! Predictor/corrector auxiliary array "pointer"
+(   75) INTEGER(KIND=JPIM) :: MPPC_PH   = -99999999 ! Predictor/corrector auxiliary array "pointer" for physics
+(   76) 
+(   77) 
+(   78) ! daand: INTFLEX attributes
+(   79) LOGICAL            :: LWATER                ! TRUE for water species
+(   80) LOGICAL            :: LPRECIP               ! TRUE for precipitating water species
+(   81) REAL(KIND=JPRB)    :: RLZER                 ! Latent heat change at 0K
+(   82) 
+(   83) ! gems nl ext
+(   84) ! general
+(   85) INTEGER(KIND=JPIM) :: NCOUPLO4              ! Coupled to CTM by OASIS4 interface (obsolete)
+(   86) ! chemistry-only
+(   87) LOGICAL            :: LASSIM                ! use as Control Variable (either monitored or assimilated)
+(   88) INTEGER(KIND=JPIM) :: IGRIBDV               ! GRIB code of deposition velocity
+(   89) INTEGER(KIND=JPIM) :: IGRIBTC               ! GRIB code of Total Column
+(   90) INTEGER(KIND=JPIM) :: IGRBFLXO              ! GRIB code of Surface Flux (output)
+(   91) INTEGER(KIND=JPIM) :: IGRBWDFLX             ! GRIB code of wet deposition flux (output)
+(   92) INTEGER(KIND=JPIM) :: IGRBDDFLX             ! GRIB code of dry deposition flux (output)
+(   93) LOGICAL            :: LDIFF                 ! Diffusion  on
+(   94) LOGICAL            :: LCONV                 ! Convection on
+(   95) REAL(KIND=JPRB)    :: RMOLMASS              ! Molar Mass
+(   96) REAL(KIND=JPRB)    :: REFOLD                ! Efolding decay time
+(   97) REAL(KIND=JPRB)    :: HENRYA                ! Henry constant a
+(   98) REAL(KIND=JPRB)    :: HENRYB                ! Henry constant b
+(   99) ! end gems nl ext
+(  100) 
+(  101) LOGICAL            :: LNEGFIX               ! Cut off negative values in sugridug an
+(  102) LOGICAL            :: LCOMAD                ! COMAD interpolation for GFL component
+(  103) REAL(KIND=JPRB)    :: WENO_ALPHA            ! Alpha param (known as p) controlling WENO interpolation
+(  104) LOGICAL            :: LMASSFIX              ! Correct mass error of sl advection in gpmodel (if LTRCMFIX)
+(  105) REAL(KIND=JPRB)    :: BETAMFBC              ! beta parameters for BC mass fixer (if LMASSFIX)
+(  106) INTEGER(KIND=JPIM) :: IFID = -1             ! FIELD identifier (all, not just COMPO)
+(  107) TYPE(TYPE_GFL_COMP),POINTER :: PREVIOUS=>NULL()     ! Pointer to previously def. field
+(  108) 
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:26      page 3
+
+(  109) END TYPE TYPE_GFL_COMP
+(  110) 
+(  111) TYPE TYPE_GFL_NAML ! Individual field descriptor for namelist input
+(  112) 
+(  113) SEQUENCE ! daand: necessary to avoid memory corruption with gfortran 4.3.3
+(  114) 
+(  115) CHARACTER(LEN=16)  :: CNAME     ! ARPEGE field name 
+(  116) INTEGER(KIND=JPIM) :: IGRBCODE  ! GRIB code
+(  117) INTEGER(KIND=JPIM) :: NREQIN    ! 1 if field required in input, 0 if not, -1 if initialised
+(  118)                                 ! with a reference value REFVALI
+(  119) REAL(KIND=JPRB) :: REFVALI      ! Reference value for initialisation, used in case NREQIN==-1
+(  120) LOGICAL :: LREQOUT   = .FALSE.  ! T if field requiered in output
+(  121) LOGICAL :: LGPINGP   = .FALSE.  ! GP field input as GP
+(  122) LOGICAL :: LMGRID    = .FALSE.  ! GP field to run on a different resolution grid
+(  123) LOGICAL :: LGP       = .FALSE.  ! Field exists and of grid-point type
+(  124) LOGICAL :: LSP       = .FALSE.  ! Field exists and of spectral type
+(  125) LOGICAL :: LCDERS    = .FALSE.  ! Derivatives required (spectral only)
+(  126) LOGICAL :: LT9       = .FALSE.  ! Field in t-dt GFL
+(  127) LOGICAL :: LT1       = .FALSE.  ! Field in t+dt GFL
+(  128) LOGICAL :: LT5       = .FALSE.  ! Field in trajectory GFL
+(  129) LOGICAL :: LPHY      = .FALSE.  ! Field with physics tendencies GFL
+(  130) LOGICAL :: LPT       = .FALSE.  ! Field in PC physics tendency GFLPT
+(  131) LOGICAL :: LTRAJIO   = .FALSE.  ! Field written to and from trajectory structure
+(  132) LOGICAL :: LDIAG     = .FALSE.  ! Field is "diagnostic" at t; e.g. cloud fraction 
+(  133) LOGICAL :: LPC       = .FALSE.  ! Field in predictor/corrector time stepping GFLPC
+(  134) LOGICAL :: LADV      = .FALSE.  ! Field advected or not
+(  135) LOGICAL :: LADV5     = .FALSE.  ! Field advected without wind increments
+(  136) LOGICAL :: LINTLIN   = .FALSE.  ! Linear interpolation for field
+(  137) LOGICAL :: LTDIABLIN = .FALSE.  ! Diabatic tendency is interpolated by linear int.
+(  138) LOGICAL :: LHORTURB  = .FALSE.  ! Horizontal part affected by 3D turbulence
+(  139) LOGICAL :: LQM       = .FALSE.  ! quasi-monotonous interpolation for field
+(  140) LOGICAL :: LQMH      = .FALSE.  ! quasi-monotonous interpolation in horizontal for field
+(  141) LOGICAL :: LQM3D     = .FALSE.  ! quasi-monotone interpolation applied directly in 3 dimensions
+(  142) LOGICAL :: LQML3D    = .FALSE.  ! quasi-monotone cubi-linear hybrid interpolation
+(  143) LOGICAL :: LVWENO    = .FALSE.  ! vertical quintic interpolation of WENO family
+(  144) REAL(KIND=JPRB) :: WENO_ALPHA = 0.0_JPRB   ! alpha parameter defining the WENO interpolation
+(  145) LOGICAL :: LSLHD     = .FALSE.  ! Semi-lagrangian horizontal diffusion used for field
+(  146) LOGICAL :: LCOMAD    = .FALSE.  ! COMAD weights used for SL interpolation of field
+(  147) LOGICAL :: LHV       = .FALSE.  ! Hermite vertical interpolation used for field (only ozone sofar)
+(  148) LOGICAL :: LVSPLIP   = .FALSE.  ! vertical spline interpolation used for field (only ozone sofar)
+(  149) INTEGER(KIND=JPIM) :: NCOUPLING ! 1 if field is coupled by Davies relaxation, 0 if not,
+(  150)                                 ! -1 if coupled with reference value for coupling REFVALC
+(  151) REAL(KIND=JPRB) :: REFVALC      ! Reference value for coupling, used in case 
+(  152)                                 ! NCOUPLING==-1
+(  153) ! gems nl ext
+(  154) ! general
+(  155) INTEGER(KIND=JPIM)  :: NCOUPLO4              ! Coupled to CTM by OASIS4 intefrace =1 input,=2 in&output,=-1 none (obsolete)
+(  156) ! chemistry-only
+(  157) LOGICAL             :: LASSIM  = .FALSE.     ! use as Control Variable (either monitored or assimilated)
+(  158) INTEGER(KIND=JPIM)  :: IGRIBDV               ! GRIB code of deposition velocity 
+(  159) INTEGER(KIND=JPIM)  :: IGRIBTC               ! GRIB code of Total Column
+(  160) INTEGER(KIND=JPIM)  :: IGRBFLXO              ! GRIB code of Surface Flux (output)
+(  161) INTEGER(KIND=JPIM)  :: IGRBWDFLX             ! GRIB code of wet deposition flux (output)
+(  162) INTEGER(KIND=JPIM)  :: IGRBDDFLX             ! GRIB code of dry deposition flux (output)
+(  163) LOGICAL             :: LDIFF   = .FALSE.     ! Diffusion  on
+(  164) LOGICAL             :: LCONV   = .FALSE.     ! Convection on
+(  165) LOGICAL             :: LNEGFIX = .FALSE.     ! Cut off negative values in sugridug and callpar
+(  166) LOGICAL             :: LMASSFIX= .FALSE.     ! Correct mass error of sl advection in gpmodel (if LTRCMFIX)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:26      page 4
+
+(  167) REAL(KIND=JPRB)     :: BETAMFBC              ! beta parameters for BC mass fixer (if LMASSFIX)
+(  168) REAL(KIND=JPRB)     :: RMOLMASS              ! Molar Mass 
+(  169) REAL(KIND=JPRB)     :: REFOLD                ! Efolding  decay time 
+(  170) REAL(KIND=JPRB)     :: HENRYA                ! Henry constant a 
+(  171) REAL(KIND=JPRB)     :: HENRYB                ! Henry constant b 
+(  172) ! end gems nl ext
+(  173) 
+(  174) END TYPE TYPE_GFL_NAML
+(  175) 
+(  176) !-------------------------------------------------------------------------
+(  177) ! Derived types for describing the GFL structure.
+(  178) !-------------------------------------------------------------------------
+(  179) ! Modifications:
+(  180) ! 03/07/09 C. Fischer - add Arome/Aladin attributes
+(  181) ! 03/10/01 C. Moussy  - add Arome/Aladin attributes coupling
+(  182) ! 03/10/31 M. Tudor   - add physics tendencies for predictor-corrector
+(  183) ! 05/10/10 J. Haseler - switch for I/O to trajectory structure
+(  184) ! 2004-Nov F. Vana    - update of CSLINT attribute
+(  185) ! 20-Feb-2005 Vivoda  - 3TL Eul PC scheme (GFLPC)
+(  186) ! 07/06/27 E. Holm    - TL/AD advection without wind increments LADV5
+(  187) ! 12/04/08 J. Flemming - GFL attribute extention for GEMS 
+(  188) ! 22-Feb-11 F. Vana   - LTDIABLIN and LHORTURB
+(  189) ! spring 2011 ECMWF   - LINTLIN
+(  190) ! Nov. 2013           - LCOMAD
+(  191) ! 2013-11, D. Degrauwe - INTFLEX attributes
+(  192) ! 06-Feb-2015 F. Vana & M. Kharoutdinov - super-parametrization fields.
+(  193) ! 02-Feb-2017 S.-J. Lock - LSPPTGFL, switch for SPPT perturbations to chemistry/aerosol tendencies
+(  194) ! 2017-11-11 M Ahlgrimm - add cloud heterogeneity FSD
+(  195) ! 14-Feb-2019 P Bechtold- add turbulence diagnostics EDR Parameter
+(  196) ! 20-Feb-2019 F. Vana  - WENO quintic interpolation
+(  197) ! 11-Sep-2020 F. Vana  - SLAVEPP in TL/AD
+(  198) 
+(  199) TYPE TYPE_GFLD
+(  200) 
+(  201) SEQUENCE ! daand: necessary to avoid memory corruption with gfortran 4.3.3
+(  202) 
+(  203) ! Overall descriptor,dimensioning etc.
+(  204) INTEGER(KIND=JPIM) :: NUMFLDS     = 0  ! Number of GFL fields
+(  205) INTEGER(KIND=JPIM) :: NDERS       = 0  ! Number of horizontal derivatives fields
+(  206) INTEGER(KIND=JPIM) :: NUMSPFLDS   = 0  ! Number of spectrally represented GFL fields
+(  207) INTEGER(KIND=JPIM) :: NUMGPFLDS   = 0  ! Number of grid-point GFL fields
+(  208) INTEGER(KIND=JPIM) :: NUMFLDS9    = 0  ! Number of GFL fields in (t-dt) part
+(  209) INTEGER(KIND=JPIM) :: NUMFLDS1    = 0  ! Number of GFL fields in (t+dt) array
+(  210) INTEGER(KIND=JPIM) :: NUMSPFLDS1  = 0  ! Number of spectrally represented GFL fields (t+dt)
+(  211) INTEGER(KIND=JPIM) :: NUMFLDS5    = 0  ! Number of GFL fields (trajectory)
+(  212) INTEGER(KIND=JPIM) :: NUMFLDSPHY  = 0  ! Number of GFL fields (phys.)
+(  213) INTEGER(KIND=JPIM) :: NUMFLDS_SPL = 0  ! Number of GFL fields (S.L. spline interpolation)
+(  214) INTEGER(KIND=JPIM) :: NUMFLDS_SL1 = 0  ! Number of GFL fields in S.L. buffer 1
+(  215) INTEGER(KIND=JPIM) :: NUMFLDSPC   = 0  ! Number of GFL fields (predictor/corrector)
+(  216) INTEGER(KIND=JPIM) :: NDIM        = 0  ! Dimension of main array holding GFL fields(GFL)
+(  217) INTEGER(KIND=JPIM) :: NUMFLDSPT   = 0  ! Number of GFL fields (phy. tend.)
+(  218) INTEGER(KIND=JPIM) :: NDIM0       = 0  ! Dimension of t0 part of GFL
+(  219) INTEGER(KIND=JPIM) :: NDIM9       = 0  ! Dimension of t-dt part of GFL
+(  220) INTEGER(KIND=JPIM) :: NDIM1       = 0  ! Dimension of t+dt array (GFLT1)
+(  221) INTEGER(KIND=JPIM) :: NDIM5       = 0  ! Dimension of traj. GFL array (GFL5)
+(  222) INTEGER(KIND=JPIM) :: NDIMSLP     = 0  ! Diminsion of S.L. phys. GFL/GFL5 array (GFLSLP)
+(  223) INTEGER(KIND=JPIM) :: NDIM_SPL    = 0  ! Dim. of arrays holding GFL fields (S.L.spline int.)
+(  224) INTEGER(KIND=JPIM) :: NDIMPT      = 0  ! Dimension of phy. tend. GFL array (GFLPT)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:26      page 5
+
+(  225) INTEGER(KIND=JPIM) :: NDIMPC      = 0  ! Dimension of iterative scheme auxiliary array (GFLPC)
+(  226) 
+(  227) INTEGER(KIND=JPIM) :: NGFL_EXT
+(  228) INTEGER(KIND=JPIM) :: NGFL_FORC
+(  229) INTEGER(KIND=JPIM) :: NGFL_EZDIAG
+(  230) INTEGER(KIND=JPIM) :: NGHG
+(  231) INTEGER(KIND=JPIM) :: NGHG_ASSIM
+(  232) INTEGER(KIND=JPIM) :: NAERO
+(  233) INTEGER(KIND=JPIM) :: NACTAERO
+(  234) INTEGER(KIND=JPIM) :: NDDHAERO
+(  235) INTEGER(KIND=JPIM) :: NERA40
+(  236) INTEGER(KIND=JPIM) :: NNOGW
+(  237) INTEGER(KIND=JPIM) :: NEDRP
+(  238) INTEGER(KIND=JPIM) :: NAEROUT
+(  239) INTEGER(KIND=JPIM) :: NAEROCLIM
+(  240) INTEGER(KIND=JPIM) :: NUVP
+(  241) INTEGER(KIND=JPIM) :: NSLDIA
+(  242) INTEGER(KIND=JPIM) :: NSLDIAGP
+(  243) INTEGER(KIND=JPIM) :: NFSD
+(  244) 
+(  245) LOGICAL :: LAERCHEM    = .FALSE.   ! Couple sulphur cycle between chemistry and aerosol
+(  246) LOGICAL :: LTRCMFIX    = .FALSE.   ! Activates tracer mass fixer
+(  247) LOGICAL :: LTRCMFIX_PS = .FALSE.   ! Adjust pressure to conserve dry mass in mass fixer calculations
+(  248) LOGICAL :: LTRCMFQM    = .FALSE.   ! Ensure global conservation is fully restored after limiter is used
+(  249)                                    ! For NWP tracers limiter effect is negligible and option not essential 
+(  250) LOGICAL :: LAERAOT     = .FALSE.
+(  251) LOGICAL :: LAERLISI    = .FALSE.
+(  252) LOGICAL :: LAEROUT     = .FALSE.
+(  253) LOGICAL :: LAEROCLIM   = .FALSE.
+(  254) LOGICAL :: LUVPOUT     = .FALSE.
+(  255) LOGICAL :: LSPPTGFL    = .FALSE.   ! Activates SPPT perturbations to CHEM tendencies (C-IFS ensemble)
+(  256) 
+(  257) INTEGER(KIND=JPIM) :: NGEMS   ! The total number of "GEMS" fields.
+(  258) INTEGER(KIND=JPIM) :: NCHEM
+(  259) INTEGER(KIND=JPIM) :: NCHEM_ASSIM
+(  260) INTEGER(KIND=JPIM) :: NCHEM_FLXO 
+(  261) INTEGER(KIND=JPIM) :: NCHEM_WDFLX 
+(  262) INTEGER(KIND=JPIM) :: NCHEM_DDFLX 
+(  263) INTEGER(KIND=JPIM) :: NCHEM_DV
+(  264) INTEGER(KIND=JPIM) :: NCHEM_TC
+(  265) INTEGER(KIND=JPIM) :: NCHEM_SCV
+(  266) INTEGER(KIND=JPIM) :: NEMIS2D ! Number of 2D emission fields for composition
+(  267) INTEGER(KIND=JPIM) :: NEMIS2DAUX ! Number of 2D emission auxiliary fields for composition
+(  268) INTEGER(KIND=JPIM) :: NEMIS3D ! Number of 3D emission fields for composition
+(  269) INTEGER(KIND=JPIM) :: NLIMA  ! Total number of LIMA fields
+(  270) INTEGER(KIND=JPIM) :: NAERO_WVL_DIAG
+(  271) INTEGER(KIND=JPIM) :: NAERO_WVL_DIAG_TYPES
+(  272) INTEGER(KIND=JPIM) :: NCHEMSULF1
+(  273) INTEGER(KIND=JPIM) :: NCHEMHNO3
+(  274) 
+(  275) !     ------------------------------------------------------------------
+(  276) !      Mass fixers
+(  277) !     ------------------------------------------------------------------
+(  278) INTEGER(KIND=JPIM) :: NNEGAFIX     ! Num of fields to apply -ve fixer
+(  279) INTEGER(KIND=JPIM) :: NOPTNEGFIX   ! 1: simple negative fixer (reset to 0)
+(  280)                                    ! 2: reset to local minimum
+(  281) 
+(  282) LOGICAL :: LQM3DCONS    = .FALSE.  ! Bermejo & Staniforth quasi-monotone limiter with improved
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:26      page 6
+
+(  283)                                    ! conservation option. When true, applied to all GFL s.t. LQM3D=true
+(  284) LOGICAL :: LADVNEGFIX   = .FALSE.  ! Activates negative fixer for advection
+(  285) LOGICAL :: LTRCMFBC     = .FALSE.  ! Activate Bermejo & Conde mass fixer if true
+(  286) LOGICAL :: LTRCMFPR     = .FALSE.  ! Activate Priestley mass fixer if true
+(  287) LOGICAL :: LTRCMFMG     = .FALSE.  ! Activate Mac Gregor's mass fixer if true
+(  288) LOGICAL :: LTRCMFP      = .FALSE.  ! Activate proportional mass fixer  
+(  289) LOGICAL :: LTRCMFA_DIF  = .FALSE.  ! Activate additive mass fixer based on t - t+1 diff 
+(  290) LOGICAL :: LTRCMFA_LAP  = .FALSE.  ! Activate additive mass fixer based on horizontal laplace 
+(  291) LOGICAL :: LTRCMFA_VER  = .FALSE.  ! Activate additive mass fixer based on vertical laplace
+(  292) 
+(  293) LOGICAL :: LEXTRADF     = .FALSE.  ! Extra diagnostics 
+(  294) 
+(  295) 
+(  296) INTEGER(KIND=JPIM) :: NFLDSFIX     ! Number of fields to be fixed
+(  297) INTEGER(KIND=JPIM) :: NOPTMFBC     ! Bermejo & Conde fixer version
+(  298) INTEGER(KIND=JPIM) :: NOPTMFPR     ! Priestley fixer version
+(  299) INTEGER(KIND=JPIM) :: NOPTVFE      ! Use Vertical FE in calculation of column mass total
+(  300) INTEGER(KIND=JPIM) :: NMFDIAGLEV   ! Determines global diagnostic output level for fixer:
+(  301)                                    ! 0 - nothing, 1 - norms printed, 2 - norms + monotonicity
+(  302) INTEGER(KIND=JPIM) :: NMFIXFLDS(JPNAMED_GFL+JPGHG+JPCHEM+JPAERO) 
+(  303)                                    ! Index of fields to be corrected by mass fixers
+(  304) INTEGER(KIND=JPIM) :: NNEGFLDS(JPNAMED_GFL+JPGHG+JPCHEM+JPAERO)  
+(  305)                                    ! Index of fields to be corrected by SL -ve fixer
+(  306) REAL(KIND=JPRB)    :: ZMFIXEPS     ! Threshold for mass fixing scheme
+(  307) INTEGER(KIND=JPIM) :: NFMG         ! Number of fields for mgrid simulations
+(  308) INTEGER(KIND=JPIM) :: NMGFLDS(JPNAMED_GFL+JPGHG+JPCHEM+JPAERO)
+(  309)                                    ! Index of fields for mgrid simulations
+(  310) 
+(  311) 
+(  312) TYPE(TYPE_GFL_COMP) :: YCOMP(JPGFL)    ! General descriptor of all components
+(  313) 
+(  314) TYPE(TYPE_GFL_COMP),POINTER  :: YLASTCOMP   => NULL() ! General descriptor of last component
+(  315) 
+(  316) TYPE(TYPE_GFL_COMP),POINTER  :: YQ          => NULL() ! Specific humidity
+(  317) TYPE(TYPE_GFL_COMP),POINTER  :: YI          => NULL() ! Ice water
+(  318) TYPE(TYPE_GFL_COMP),POINTER  :: YL          => NULL() ! Liquid water
+(  319) TYPE(TYPE_GFL_COMP),POINTER  :: YLCONV      => NULL() ! Liquid water (CONV. PART)
+(  320) TYPE(TYPE_GFL_COMP),POINTER  :: YICONV      => NULL() ! Ice    water (CONV. PART)
+(  321) TYPE(TYPE_GFL_COMP),POINTER  :: YRCONV      => NULL() ! Rain         (CONV. PART)
+(  322) TYPE(TYPE_GFL_COMP),POINTER  :: YSCONV      => NULL() ! Snow         (CONV. PART)
+(  323) TYPE(TYPE_GFL_COMP),POINTER  :: YIRAD       => NULL() ! Radiative cloud Ice water
+(  324) TYPE(TYPE_GFL_COMP),POINTER  :: YLRAD       => NULL() ! Radiative cloud Liquid water
+(  325) TYPE(TYPE_GFL_COMP),POINTER  :: YS          => NULL() ! Snow
+(  326) TYPE(TYPE_GFL_COMP),POINTER  :: YR          => NULL() ! Rain
+(  327) TYPE(TYPE_GFL_COMP),POINTER  :: YG          => NULL() ! Graupel
+(  328) TYPE(TYPE_GFL_COMP),POINTER  :: YH          => NULL() ! Hail
+(  329) TYPE(TYPE_GFL_COMP),POINTER  :: YTKE        => NULL() ! Turbulent Kinetic Energy
+(  330) TYPE(TYPE_GFL_COMP),POINTER  :: YTTE        => NULL() ! Turbulent Total Energy
+(  331) TYPE(TYPE_GFL_COMP),POINTER  :: YEFB1       => NULL() ! First variable EFB scheme
+(  332) TYPE(TYPE_GFL_COMP),POINTER  :: YEFB2       => NULL() ! Second variable EFB scheme
+(  333) TYPE(TYPE_GFL_COMP),POINTER  :: YEFB3       => NULL() ! Third variable EFB scheme
+(  334) TYPE(TYPE_GFL_COMP),POINTER  :: YA          => NULL() ! Cloud fraction
+(  335) TYPE(TYPE_GFL_COMP),POINTER  :: YO3         => NULL() ! Ozone
+(  336) TYPE(TYPE_GFL_COMP),POINTER  :: YSRC        => NULL() ! Second-order flux for AROME s'rc'/2Sigma_s2 multiplied by Lambda_3
+(  337) TYPE(TYPE_GFL_COMP),POINTER  :: YLMF        => NULL() ! QL from mass flux
+(  338) TYPE(TYPE_GFL_COMP),POINTER  :: YIMF        => NULL() ! QI from mass flux
+(  339) TYPE(TYPE_GFL_COMP),POINTER  :: YAMF        => NULL() ! CF from mass flux
+(  340) TYPE(TYPE_GFL_COMP),POINTER  :: YMXL        => NULL() ! Prognostic mixing length
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:26      page 7
+
+(  341) TYPE(TYPE_GFL_COMP),POINTER  :: YSHTUR      => NULL() ! Shear source term for turbulence.
+(  342) TYPE(TYPE_GFL_COMP),POINTER  :: YFQTUR      => NULL() ! Flux form source term for turbulence -moisture.
+(  343) TYPE(TYPE_GFL_COMP),POINTER  :: YFSTUR      => NULL() ! Flux form source term for turbulence -enthalpy.
+(  344) TYPE(TYPE_GFL_COMP),POINTER  :: YCPF        => NULL() ! Convective precipitation flux
+(  345) TYPE(TYPE_GFL_COMP),POINTER  :: YSPF        => NULL() ! Stratiform precipitation flux
+(  346) TYPE(TYPE_GFL_COMP),POINTER  :: YCVGQ       => NULL() ! Moisture Convergence for french physics
+(  347) TYPE(TYPE_GFL_COMP),POINTER  :: YQVA        => NULL() ! total humidity variation
+(  348) TYPE(TYPE_GFL_COMP),POINTER  :: YGHG(:)     => NULL() ! Greenhouse Gases
+(  349) TYPE(TYPE_GFL_COMP),POINTER  :: YCHEM(:)    => NULL() ! Chemistry
+(  350) TYPE(TYPE_GFL_COMP),POINTER  :: YAERO(:)    => NULL() ! Aerosols
+(  351) TYPE(TYPE_GFL_COMP),POINTER  :: YLRCH4      => NULL() ! CH4 loss rate (instantaneous field)
+(  352) TYPE(TYPE_GFL_COMP),POINTER  :: YEMIS3D(:)  => NULL() ! 3D emissions for atmospheric composition
+(  353) TYPE(TYPE_GFL_COMP),POINTER  :: YFORC(:)    => NULL() ! large scale forcing
+(  354) TYPE(TYPE_GFL_COMP),POINTER  :: YEZDIAG(:)  => NULL() ! easy diagnostics
+(  355) TYPE(TYPE_GFL_COMP),POINTER  :: YERA40(:)   => NULL() ! ERA40 diagnostic fields
+(  356) TYPE(TYPE_GFL_COMP),POINTER  :: YNOGW(:)    => NULL() ! NORO GWD SCHEME
+(  357) TYPE(TYPE_GFL_COMP),POINTER  :: YEDRP(:)    => NULL() ! turbulence diagnostics EDR Parameter
+(  358) TYPE(TYPE_GFL_COMP),POINTER  :: YSLDIA(:)   => NULL() ! SL dynamics diagnostics
+(  359) TYPE(TYPE_GFL_COMP),POINTER  :: YAERAOT(:)  => NULL() ! Aerosol optical thicknesses
+(  360) TYPE(TYPE_GFL_COMP),POINTER  :: YAERLISI(:) => NULL() ! Aerosol lidar simulator
+(  361) TYPE(TYPE_GFL_COMP),POINTER  :: YAEROUT(:)  => NULL() ! Aerosol outputs
+(  362) TYPE(TYPE_GFL_COMP),POINTER  :: YAEROCLIM(:) => NULL() ! Aerosol climatology
+(  363) TYPE(TYPE_GFL_COMP),POINTER  :: YUVP(:)     => NULL() ! UV-processor output
+(  364) TYPE(TYPE_GFL_COMP),POINTER  :: YPHYS(:)    => NULL() ! PHYS output
+(  365) TYPE(TYPE_GFL_COMP),POINTER  :: YPHYCTY     => NULL() ! PHYS input for MassCTY
+(  366) 
+(  367) TYPE(TYPE_GFL_COMP),POINTER  :: YRSPEC      => NULL() ! Specific gas constant
+(  368) 
+(  369) 
+(  370) TYPE(TYPE_GFL_COMP),POINTER  :: YSDSAT      => NULL() ! Standard Deviation of the
+(  371)                                                       ! SATuration Depression (Sigma_s) 
+(  372) TYPE(TYPE_GFL_COMP),POINTER  :: YCVV        => NULL() ! Convective Vertical Velocity
+(  373) TYPE(TYPE_GFL_COMP),POINTER  :: YRKTH       => NULL() ! Rasch-Kristjansson H tendency
+(  374) TYPE(TYPE_GFL_COMP),POINTER  :: YRKTQV      => NULL() ! Rasch-Kristjansson Qv tendency
+(  375) TYPE(TYPE_GFL_COMP),POINTER  :: YRKTQC      => NULL() ! Rasch-Kristjansson Qc tendency
+(  376) 
+(  377) ! Prognostic convection variables: add 6 named components
+(  378) TYPE(TYPE_GFL_COMP),POINTER  :: YUOM        => NULL() ! Updraught vert velocity
+(  379) TYPE(TYPE_GFL_COMP),POINTER  :: YUAL        => NULL() ! Updraught mesh fraction
+(  380) TYPE(TYPE_GFL_COMP),POINTER  :: YDOM        => NULL() ! Downdraught vert velocity
+(  381) TYPE(TYPE_GFL_COMP),POINTER  :: YDAL        => NULL() ! Downdraught mesh fraction
+(  382) TYPE(TYPE_GFL_COMP),POINTER  :: YUEN        => NULL() ! Updraught entrainment
+(  383) TYPE(TYPE_GFL_COMP),POINTER  :: YUNEBH      => NULL() ! pseudo-historic convective
+(  384) 
+(  385) TYPE(TYPE_GFL_COMP),POINTER  :: YLIMA(:)    => NULL() ! LIMA prognostic fields
+(  386) 
+(  387) ! cloud heterogeneity FSD
+(  388) TYPE(TYPE_GFL_COMP),POINTER  :: YFSD        => NULL() ! PHYS output
+(  389) 
+(  390) ! Extra fields
+(  391) 
+(  392) TYPE(TYPE_GFL_COMP),POINTER  :: YEXT(:)     => NULL() ! Extra fields
+(  393) 
+(  394) TYPE(TYPE_GFL_NAML)  :: YQ_NL                 ! Specific humidity
+(  395) TYPE(TYPE_GFL_NAML)  :: YI_NL                 ! Ice water
+(  396) TYPE(TYPE_GFL_NAML)  :: YL_NL                 ! Liquid water
+(  397) TYPE(TYPE_GFL_NAML)  :: YLCONV_NL             ! Liquid water (CONV. PART)
+(  398) TYPE(TYPE_GFL_NAML)  :: YICONV_NL             ! Ice    water (CONV. PART)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:26      page 8
+
+(  399) TYPE(TYPE_GFL_NAML)  :: YRCONV_NL             ! Rain         (CONV. PART)
+(  400) TYPE(TYPE_GFL_NAML)  :: YSCONV_NL             ! Snow         (CONV. PART)
+(  401) TYPE(TYPE_GFL_NAML)  :: YIRAD_NL              ! Radiative cloud Ice water
+(  402) TYPE(TYPE_GFL_NAML)  :: YLRAD_NL              ! Radiative cloud Liquid water
+(  403) TYPE(TYPE_GFL_NAML)  :: YS_NL                 ! Snow
+(  404) TYPE(TYPE_GFL_NAML)  :: YR_NL                 ! Rain
+(  405) TYPE(TYPE_GFL_NAML)  :: YG_NL                 ! Graupels
+(  406) TYPE(TYPE_GFL_NAML)  :: YH_NL                 ! Hail
+(  407) TYPE(TYPE_GFL_NAML)  :: YTKE_NL               ! Turbulent Kinetic Energy
+(  408) TYPE(TYPE_GFL_NAML)  :: YTTE_NL               ! Turbulent Total Energy
+(  409) TYPE(TYPE_GFL_NAML)  :: YEFB1_NL              ! First variable EFB scheme
+(  410) TYPE(TYPE_GFL_NAML)  :: YEFB2_NL              ! Second variable EFB scheme
+(  411) TYPE(TYPE_GFL_NAML)  :: YEFB3_NL              ! Third variable EFB scheme
+(  412) TYPE(TYPE_GFL_NAML)  :: YA_NL                 ! Cloud fraction
+(  413) TYPE(TYPE_GFL_NAML)  :: YO3_NL                ! Ozone
+(  414) TYPE(TYPE_GFL_NAML)  :: YSRC_NL               ! Second-order flux for AROME
+(  415)                                               ! s'rc'/2Sigma_s2
+(  416)                                               ! multiplied by Lambda_3
+(  417) TYPE(TYPE_GFL_NAML)  :: YAMF_NL               ! Cloud fraction from mass flux
+(  418) TYPE(TYPE_GFL_NAML)  :: YLMF_NL               ! Cloud from mass flux
+(  419) TYPE(TYPE_GFL_NAML)  :: YIMF_NL               ! ice from mass flux
+(  420) TYPE(TYPE_GFL_NAML)  :: YMXL_NL               ! Prognostic mixing length
+(  421) TYPE(TYPE_GFL_NAML)  :: YSHTUR_NL             ! Shear source term for turbulence.
+(  422) TYPE(TYPE_GFL_NAML)  :: YFQTUR_NL             ! Flux form source term for turbulence -moisture.
+(  423) TYPE(TYPE_GFL_NAML)  :: YFSTUR_NL             ! Flux form source term for turbulence -enthalpy.
+(  424) TYPE(TYPE_GFL_NAML)  :: YCPF_NL               ! Convective precipitation flux
+(  425) TYPE(TYPE_GFL_NAML)  :: YSPF_NL               ! Stratiform precipitation flux
+(  426) TYPE(TYPE_GFL_NAML)  :: YCVGQ_NL              ! Moisture Convergence for french physics
+(  427) TYPE(TYPE_GFL_NAML)  :: YQVA_NL               ! Total humidity variation
+(  428) 
+(  429) TYPE(TYPE_GFL_NAML)  :: YGHG_NL(JPGHG)        ! Greenhouse Gases
+(  430) TYPE(TYPE_GFL_NAML)  :: YCHEM_NL(JPCHEM)      ! Chemical species
+(  431) TYPE(TYPE_GFL_NAML)  :: YAERO_NL(JPAERO)      ! Aerosol fields
+(  432) TYPE(TYPE_GFL_NAML)  :: YERA40_NL(JPERA40)    ! ERA40 diagnostic fields
+(  433) TYPE(TYPE_GFL_NAML)  :: YNOGW_NL(JPNOGW)      ! NORO GWD SCHEME
+(  434) TYPE(TYPE_GFL_NAML)  :: YEDRP_NL(JPEDRP)      ! EDR Parameter turbulence diagnostics
+(  435) TYPE(TYPE_GFL_NAML)  :: YSLDIA_NL(JPSLDIA)    ! SL dynamics diagnostics
+(  436) TYPE(TYPE_GFL_NAML)  :: YLRCH4_NL             ! CH4 loss rate
+(  437) TYPE(TYPE_GFL_NAML)  :: YAERAOT_NL(NPAERAOT)  ! Aerosol optical thicknesses
+(  438) TYPE(TYPE_GFL_NAML)  :: YAERLISI_NL(NPAERLISI_WVL,NPAERLISI_VAR) ! Aerosol lidar simulator
+(  439) TYPE(TYPE_GFL_NAML)  :: YAEROUT_NL(JPAEROUT)  ! Aerosol outputs
+(  440) TYPE(TYPE_GFL_NAML)  :: YAEROCLIM_NL(JPAEROCLIM)  ! Aerosol climatology
+(  441) TYPE(TYPE_GFL_NAML)  :: YUVP_NL(JPUVP)        ! UV-processor outputs
+(  442) TYPE(TYPE_GFL_NAML)  :: YRKTH_NL              ! Rasch-Kristjansson H tendency
+(  443) TYPE(TYPE_GFL_NAML)  :: YRKTQV_NL             ! Rasch-Kristjansson Qv tendency
+(  444) TYPE(TYPE_GFL_NAML)  :: YRKTQC_NL             ! Rasch-Kristjansson Qc tendency
+(  445) TYPE(TYPE_GFL_NAML)  :: YPHYCTY_NL            ! PHYS input for MassCTY
+(  446) TYPE(TYPE_GFL_NAML)  :: YFSD_NL               ! cloud heterogeneity
+(  447) TYPE(TYPE_GFL_NAML)  :: YRSPEC_NL             ! Specific humidity
+(  448) 
+(  449) ! Extra fields
+(  450) TYPE(TYPE_GFL_NAML)  :: YSDSAT_NL             ! Standard Deviation of the
+(  451)                                               ! SATuration Depression (Sigma_s) 
+(  452) TYPE(TYPE_GFL_NAML)  :: YCVV_NL               ! Convective Vertical Velocity
+(  453) TYPE(TYPE_GFL_NAML)  :: YFORC_NL(JPFORC)      ! Forcing precursor
+(  454) TYPE(TYPE_GFL_NAML)  :: YEZDIAG_NL(JPEZDIAG)  ! Easy diagnostics
+(  455) TYPE(TYPE_GFL_NAML)  :: YEXT_NL(JPGFL-JPNAMED_GFL-JPGHG-JPFORC-JPEZDIAG-JPAERO-JPERA40-&
+(  456)  &                              JPNOGW-JPSLDIA-JPCH4S-JPAEROUT-JPAEROCLIM-NPAERAOT-NPAERLISI-&
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:26      page 9
+
+(  457)  &                              JPUVP-JPCHEM-JPLIMA-JPPHYCTY-JPFSD-JPEDRP) ! Extra fields
+(  458) 
+(  459) ! Prognostic convection variables: 6 more namelist components
+(  460) TYPE(TYPE_GFL_NAML)  :: YUOM_NL               ! Updraught vert velocity
+(  461) TYPE(TYPE_GFL_NAML)  :: YUAL_NL               ! Updraught mesh fraction
+(  462) TYPE(TYPE_GFL_NAML)  :: YDOM_NL               ! Downdraught vert velocity
+(  463) TYPE(TYPE_GFL_NAML)  :: YDAL_NL               ! Downdraught mesh fraction
+(  464) TYPE(TYPE_GFL_NAML)  :: YUEN_NL               ! Updraught entrainment
+(  465) TYPE(TYPE_GFL_NAML)  :: YUNEBH_NL             ! Pseudi Hist Conv cloud fraction
+(  466) 
+(  467) TYPE(TYPE_AERO_WVL_DIAG) :: YAERO_WVL_DIAG_NL(NPAERO_WVL_DIAG) ! Per-wavelength aerosol optical diagnostics
+(  468) TYPE(TYPE_GFL_NAML)  :: YLIMA_NL(JPLIMA)      ! LIMA prognostic fields
+(  469) 
+(  470) END TYPE TYPE_GFLD
+(  471) 
+(  472) ! GFL general descriptor
+(  473) TYPE(TYPE_GFLD), POINTER :: YGFL => NULL()
+(  474) 
+(  475) END MODULE YOM_YGFL
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:26      page 10
+
+(    1) # 1 "./yom_ygfl.F90"
+(    1) MODULE YOM_YGFL
+(    2) # 3 "./yom_ygfl.F90"
+(    3) USE PARKIND1 , ONLY : JPIM, JPRB
+(    4) USE YOE_AERODIAG, ONLY : NPAERAOT, NPAERLISI_VAR, NPAERLISI_WVL, NPAERLISI, &
+(    5)   & TYPE_AERO_WVL_DIAG, NPAERO_WVL_DIAG
+(    6) # 7 "./yom_ygfl.F90"
+(    7) USE PAR_GFL
+(    8) # 9 "./yom_ygfl.F90"
+(    9) IMPLICIT NONE
+(   10) SAVE
+(   11) # 12 "./yom_ygfl.F90"
+(   12) !-------------------------------------------------------------------------
+(   13) ! Contains the descriptors of GFL arrays
+(   14) !-------------------------------------------------------------------------
+(   15) # 16 "./yom_ygfl.F90"
+(   16) TYPE TYPE_GFL_COMP ! Individual field descriptor
+(   17) # 18 "./yom_ygfl.F90"
+(   18) SEQUENCE ! daand: necessary to avoid memory corruption with gfortran 4.3.3
+(   19) # 20 "./yom_ygfl.F90"
+(   20) CHARACTER(LEN=16)  :: CNAME     = ''        ! ARPEGE field name 
+(   21) INTEGER(KIND=JPIM) :: IGRBCODE  = -999      ! GRIB code
+(   22) LOGICAL            :: LADV      = .FALSE.   ! Field advected or not
+(   23) LOGICAL            :: LADV5     = .FALSE.   ! Field advected without wind increments
+(   24) LOGICAL            :: LTDIABLIN = .FALSE.   ! Diabatic tendency is interpolated by lin. int.
+(   25) LOGICAL            :: LHORTURB  = .FALSE.   ! Horizontal part affected by 3D turbulence
+(   26) INTEGER(KIND=JPIM) :: NREQIN    = 0         ! 1 if field requiered in input, 0 if not, -1 if initialised
+(   27)                                             ! with a reference value REFVALI
+(   28) LOGICAL            :: LREQOUT   = .FALSE.   ! T if field requiered in output
+(   29) LOGICAL            :: LGPINGP   = .TRUE.    ! GP field input as GP
+(   30) LOGICAL            :: LMGRID    = .FALSE.   ! GP field to run on a different resolution grid
+(   31) LOGICAL            :: LGP       = .FALSE.   ! Field exists and of grid-point type
+(   32) LOGICAL            :: LSP       = .FALSE.   ! Field exists and of spectral type
+(   33) LOGICAL            :: LCDERS    = .FALSE.   ! Derivatives required (spectral only)
+(   34) LOGICAL            :: LACTIVE   = .FALSE.   ! Field in use
+(   35) LOGICAL            :: LTHERMACT = .FALSE.   ! Field thermodynamically active
+(   36) REAL(KIND=JPRB)    :: R         = 0.0_JPRB
+(   37) REAL(KIND=JPRB)    :: RCP       = 0.0_JPRB
+(   38) LOGICAL            :: LT9       = .FALSE.   ! Field in t-dt GFL
+(   39) LOGICAL            :: LT1       = .FALSE.   ! Field in t+dt GFL
+(   40) LOGICAL            :: LT5       = .FALSE.   ! Field in trajectory GFL
+(   41) LOGICAL            :: LPHY      = .FALSE.   ! Field in physics GFL
+(   42) LOGICAL            :: LPT       = .FALSE.   ! Field in PC phy. tend. GFL (GFLPT)
+(   43) LOGICAL            :: LTRAJIO   = .FALSE.   ! Field written to and from trajectory structure
+(   44) LOGICAL            :: LDIAG     = .FALSE.   ! Field is "diagnostic" at t; e.g. cloud fraction 
+(   45) LOGICAL            :: LPC       = .FALSE.   ! Field in predictor/corrector time stepping (GFLPC)
+(   46) REAL(KIND=JPRB)    :: REFVALI   = 0.0_JPRB  ! Reference value for init, used in case NREQIN==-1
+(   47) ! LAM specific attributes (Arome/Aladin)
+(   48) LOGICAL            :: LADJUST0  = .FALSE.   ! True if field is thermodynamically adjusted at t
+(   49)                                             ! (immediatly after inverse spectral transforms)
+(   50) LOGICAL            :: LADJUST1  = .FALSE.   ! True if field is thermodynamically adjusted at t+dt
+(   51)                                             ! (after SL interpolations and NL residuals)
+(   52) INTEGER(KIND=JPIM) :: NCOUPLING = 0         ! 1 if field is coupled by Davies relaxation, 0 if not,
+(   53)                                             ! -1 if coupled with reference value for coupling REFVALC
+(   54) REAL(KIND=JPRB)    :: REFVALC   = 0.0_JPRB  ! Reference value for coupling, used in case NCOUPLING==-1
+(   55) LOGICAL            :: LBIPER    = .FALSE.   ! True if field must be biperiodised inside the transforms
+(   56) ! End LAM specific attributes (Arome/Aladin)
+(   57) CHARACTER(LEN=12)  :: CSLINT    = ''        ! S.L interpolaion "type"
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:26      page 11
+
+(   58) INTEGER(KIND=JPIM) :: MGFL      = -99999999 ! GFL rank
+(   59) INTEGER(KIND=JPIM) :: MP        = -99999999 ! Basic field "pointer"
+(   60) INTEGER(KIND=JPIM) :: MPL       = -99999999 ! zonal derivative "pointer"
+(   61) INTEGER(KIND=JPIM) :: MPM       = -99999999 ! Meridional derivative "pointer"
+(   62) INTEGER(KIND=JPIM) :: MP9       = -99999999 ! Basic field "pointer" t-dt
+(   63) INTEGER(KIND=JPIM) :: MP9_PH    = -99999999 ! Basic field "pointer" for Physics
+(   64) INTEGER(KIND=JPIM) :: MP1       = -99999999 ! Basic field "pointer" t+dt
+(   65) INTEGER(KIND=JPIM) :: MP5       = -99999999 ! Basic field "pointer" trajectory
+(   66) INTEGER(KIND=JPIM) :: MP5L      = -99999999 ! zonal derivative "pointer" trajectory
+(   67) INTEGER(KIND=JPIM) :: MP5M      = -99999999 ! Meridional derivative "pointer" trajectory
+(   68) INTEGER(KIND=JPIM) :: MPSLP     = -99999999 ! Basic field "pointer" physics
+(   69) INTEGER(KIND=JPIM) :: MPSP      = -99999999 ! Basic field "pointer" spectral space
+(   70) INTEGER(KIND=JPIM) :: MP_SPL    = -99999999 ! Basic field "pointer" spline interpolation
+(   71) INTEGER(KIND=JPIM) :: MP_SL1    = -99999999 ! Basic field "pointer" in SLBUF1
+(   72) INTEGER(KIND=JPIM) :: MP_SLX    = -99999999 ! Basic field "pointer" in SLBUF1 for CPG_PT
+(   73) INTEGER(KIND=JPIM) :: MPPT      = -99999999 ! Physics tendency "pointer"
+(   74) INTEGER(KIND=JPIM) :: MPPC      = -99999999 ! Predictor/corrector auxiliary array "pointer"
+(   75) INTEGER(KIND=JPIM) :: MPPC_PH   = -99999999 ! Predictor/corrector auxiliary array "pointer" for physics
+(   76) # 78 "./yom_ygfl.F90"
+(   78) ! daand: INTFLEX attributes
+(   79) LOGICAL            :: LWATER                ! TRUE for water species
+(   80) LOGICAL            :: LPRECIP               ! TRUE for precipitating water species
+(   81) REAL(KIND=JPRB)    :: RLZER                 ! Latent heat change at 0K
+(   82) # 83 "./yom_ygfl.F90"
+(   83) ! gems nl ext
+(   84) ! general
+(   85) INTEGER(KIND=JPIM) :: NCOUPLO4              ! Coupled to CTM by OASIS4 interface (obsolete)
+(   86) ! chemistry-only
+(   87) LOGICAL            :: LASSIM                ! use as Control Variable (either monitored or assimilated)
+(   88) INTEGER(KIND=JPIM) :: IGRIBDV               ! GRIB code of deposition velocity
+(   89) INTEGER(KIND=JPIM) :: IGRIBTC               ! GRIB code of Total Column
+(   90) INTEGER(KIND=JPIM) :: IGRBFLXO              ! GRIB code of Surface Flux (output)
+(   91) INTEGER(KIND=JPIM) :: IGRBWDFLX             ! GRIB code of wet deposition flux (output)
+(   92) INTEGER(KIND=JPIM) :: IGRBDDFLX             ! GRIB code of dry deposition flux (output)
+(   93) LOGICAL            :: LDIFF                 ! Diffusion  on
+(   94) LOGICAL            :: LCONV                 ! Convection on
+(   95) REAL(KIND=JPRB)    :: RMOLMASS              ! Molar Mass
+(   96) REAL(KIND=JPRB)    :: REFOLD                ! Efolding decay time
+(   97) REAL(KIND=JPRB)    :: HENRYA                ! Henry constant a
+(   98) REAL(KIND=JPRB)    :: HENRYB                ! Henry constant b
+(   99) ! end gems nl ext
+(  100) # 101 "./yom_ygfl.F90"
+(  101) LOGICAL            :: LNEGFIX               ! Cut off negative values in sugridug an
+(  102) LOGICAL            :: LCOMAD                ! COMAD interpolation for GFL component
+(  103) REAL(KIND=JPRB)    :: WENO_ALPHA            ! Alpha param (known as p) controlling WENO interpolation
+(  104) LOGICAL            :: LMASSFIX              ! Correct mass error of sl advection in gpmodel (if LTRCMFIX)
+(  105) REAL(KIND=JPRB)    :: BETAMFBC              ! beta parameters for BC mass fixer (if LMASSFIX)
+(  106) INTEGER(KIND=JPIM) :: IFID = -1             ! FIELD identifier (all, not just COMPO)
+(  107) TYPE(TYPE_GFL_COMP),POINTER :: PREVIOUS=>NULL()     ! Pointer to previously def. field
+(  108) # 109 "./yom_ygfl.F90"
+(  109) END TYPE TYPE_GFL_COMP
+(  110) # 111 "./yom_ygfl.F90"
+(  111) TYPE TYPE_GFL_NAML ! Individual field descriptor for namelist input
+(  112) # 113 "./yom_ygfl.F90"
+(  113) SEQUENCE ! daand: necessary to avoid memory corruption with gfortran 4.3.3
+(  114) # 115 "./yom_ygfl.F90"
+(  115) CHARACTER(LEN=16)  :: CNAME     ! ARPEGE field name 
+(  116) INTEGER(KIND=JPIM) :: IGRBCODE  ! GRIB code
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:26      page 12
+
+(  117) INTEGER(KIND=JPIM) :: NREQIN    ! 1 if field required in input, 0 if not, -1 if initialised
+(  118)                                 ! with a reference value REFVALI
+(  119) REAL(KIND=JPRB) :: REFVALI      ! Reference value for initialisation, used in case NREQIN==-1
+(  120) LOGICAL :: LREQOUT   = .FALSE.  ! T if field requiered in output
+(  121) LOGICAL :: LGPINGP   = .FALSE.  ! GP field input as GP
+(  122) LOGICAL :: LMGRID    = .FALSE.  ! GP field to run on a different resolution grid
+(  123) LOGICAL :: LGP       = .FALSE.  ! Field exists and of grid-point type
+(  124) LOGICAL :: LSP       = .FALSE.  ! Field exists and of spectral type
+(  125) LOGICAL :: LCDERS    = .FALSE.  ! Derivatives required (spectral only)
+(  126) LOGICAL :: LT9       = .FALSE.  ! Field in t-dt GFL
+(  127) LOGICAL :: LT1       = .FALSE.  ! Field in t+dt GFL
+(  128) LOGICAL :: LT5       = .FALSE.  ! Field in trajectory GFL
+(  129) LOGICAL :: LPHY      = .FALSE.  ! Field with physics tendencies GFL
+(  130) LOGICAL :: LPT       = .FALSE.  ! Field in PC physics tendency GFLPT
+(  131) LOGICAL :: LTRAJIO   = .FALSE.  ! Field written to and from trajectory structure
+(  132) LOGICAL :: LDIAG     = .FALSE.  ! Field is "diagnostic" at t; e.g. cloud fraction 
+(  133) LOGICAL :: LPC       = .FALSE.  ! Field in predictor/corrector time stepping GFLPC
+(  134) LOGICAL :: LADV      = .FALSE.  ! Field advected or not
+(  135) LOGICAL :: LADV5     = .FALSE.  ! Field advected without wind increments
+(  136) LOGICAL :: LINTLIN   = .FALSE.  ! Linear interpolation for field
+(  137) LOGICAL :: LTDIABLIN = .FALSE.  ! Diabatic tendency is interpolated by linear int.
+(  138) LOGICAL :: LHORTURB  = .FALSE.  ! Horizontal part affected by 3D turbulence
+(  139) LOGICAL :: LQM       = .FALSE.  ! quasi-monotonous interpolation for field
+(  140) LOGICAL :: LQMH      = .FALSE.  ! quasi-monotonous interpolation in horizontal for field
+(  141) LOGICAL :: LQM3D     = .FALSE.  ! quasi-monotone interpolation applied directly in 3 dimensions
+(  142) LOGICAL :: LQML3D    = .FALSE.  ! quasi-monotone cubi-linear hybrid interpolation
+(  143) LOGICAL :: LVWENO    = .FALSE.  ! vertical quintic interpolation of WENO family
+(  144) REAL(KIND=JPRB) :: WENO_ALPHA = 0.0_JPRB   ! alpha parameter defining the WENO interpolation
+(  145) LOGICAL :: LSLHD     = .FALSE.  ! Semi-lagrangian horizontal diffusion used for field
+(  146) LOGICAL :: LCOMAD    = .FALSE.  ! COMAD weights used for SL interpolation of field
+(  147) LOGICAL :: LHV       = .FALSE.  ! Hermite vertical interpolation used for field (only ozone sofar)
+(  148) LOGICAL :: LVSPLIP   = .FALSE.  ! vertical spline interpolation used for field (only ozone sofar)
+(  149) INTEGER(KIND=JPIM) :: NCOUPLING ! 1 if field is coupled by Davies relaxation, 0 if not,
+(  150)                                 ! -1 if coupled with reference value for coupling REFVALC
+(  151) REAL(KIND=JPRB) :: REFVALC      ! Reference value for coupling, used in case 
+(  152)                                 ! NCOUPLING==-1
+(  153) ! gems nl ext
+(  154) ! general
+(  155) INTEGER(KIND=JPIM)  :: NCOUPLO4              ! Coupled to CTM by OASIS4 intefrace =1 input,=2 in&output,=-1 none (obsolete)
+(  156) ! chemistry-only
+(  157) LOGICAL             :: LASSIM  = .FALSE.     ! use as Control Variable (either monitored or assimilated)
+(  158) INTEGER(KIND=JPIM)  :: IGRIBDV               ! GRIB code of deposition velocity 
+(  159) INTEGER(KIND=JPIM)  :: IGRIBTC               ! GRIB code of Total Column
+(  160) INTEGER(KIND=JPIM)  :: IGRBFLXO              ! GRIB code of Surface Flux (output)
+(  161) INTEGER(KIND=JPIM)  :: IGRBWDFLX             ! GRIB code of wet deposition flux (output)
+(  162) INTEGER(KIND=JPIM)  :: IGRBDDFLX             ! GRIB code of dry deposition flux (output)
+(  163) LOGICAL             :: LDIFF   = .FALSE.     ! Diffusion  on
+(  164) LOGICAL             :: LCONV   = .FALSE.     ! Convection on
+(  165) LOGICAL             :: LNEGFIX = .FALSE.     ! Cut off negative values in sugridug and callpar
+(  166) LOGICAL             :: LMASSFIX= .FALSE.     ! Correct mass error of sl advection in gpmodel (if LTRCMFIX)
+(  167) REAL(KIND=JPRB)     :: BETAMFBC              ! beta parameters for BC mass fixer (if LMASSFIX)
+(  168) REAL(KIND=JPRB)     :: RMOLMASS              ! Molar Mass 
+(  169) REAL(KIND=JPRB)     :: REFOLD                ! Efolding  decay time 
+(  170) REAL(KIND=JPRB)     :: HENRYA                ! Henry constant a 
+(  171) REAL(KIND=JPRB)     :: HENRYB                ! Henry constant b 
+(  172) ! end gems nl ext
+(  173) # 174 "./yom_ygfl.F90"
+(  174) END TYPE TYPE_GFL_NAML
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:26      page 13
+
+(  175) # 176 "./yom_ygfl.F90"
+(  176) !-------------------------------------------------------------------------
+(  177) ! Derived types for describing the GFL structure.
+(  178) !-------------------------------------------------------------------------
+(  179) ! Modifications:
+(  180) ! 03/07/09 C. Fischer - add Arome/Aladin attributes
+(  181) ! 03/10/01 C. Moussy  - add Arome/Aladin attributes coupling
+(  182) ! 03/10/31 M. Tudor   - add physics tendencies for predictor-corrector
+(  183) ! 05/10/10 J. Haseler - switch for I/O to trajectory structure
+(  184) ! 2004-Nov F. Vana    - update of CSLINT attribute
+(  185) ! 20-Feb-2005 Vivoda  - 3TL Eul PC scheme (GFLPC)
+(  186) ! 07/06/27 E. Holm    - TL/AD advection without wind increments LADV5
+(  187) ! 12/04/08 J. Flemming - GFL attribute extention for GEMS 
+(  188) ! 22-Feb-11 F. Vana   - LTDIABLIN and LHORTURB
+(  189) ! spring 2011 ECMWF   - LINTLIN
+(  190) ! Nov. 2013           - LCOMAD
+(  191) ! 2013-11, D. Degrauwe - INTFLEX attributes
+(  192) ! 06-Feb-2015 F. Vana & M. Kharoutdinov - super-parametrization fields.
+(  193) ! 02-Feb-2017 S.-J. Lock - LSPPTGFL, switch for SPPT perturbations to chemistry/aerosol tendencies
+(  194) ! 2017-11-11 M Ahlgrimm - add cloud heterogeneity FSD
+(  195) ! 14-Feb-2019 P Bechtold- add turbulence diagnostics EDR Parameter
+(  196) ! 20-Feb-2019 F. Vana  - WENO quintic interpolation
+(  197) ! 11-Sep-2020 F. Vana  - SLAVEPP in TL/AD
+(  198) # 199 "./yom_ygfl.F90"
+(  199) TYPE TYPE_GFLD
+(  200) # 201 "./yom_ygfl.F90"
+(  201) SEQUENCE ! daand: necessary to avoid memory corruption with gfortran 4.3.3
+(  202) # 203 "./yom_ygfl.F90"
+(  203) ! Overall descriptor,dimensioning etc.
+(  204) INTEGER(KIND=JPIM) :: NUMFLDS     = 0  ! Number of GFL fields
+(  205) INTEGER(KIND=JPIM) :: NDERS       = 0  ! Number of horizontal derivatives fields
+(  206) INTEGER(KIND=JPIM) :: NUMSPFLDS   = 0  ! Number of spectrally represented GFL fields
+(  207) INTEGER(KIND=JPIM) :: NUMGPFLDS   = 0  ! Number of grid-point GFL fields
+(  208) INTEGER(KIND=JPIM) :: NUMFLDS9    = 0  ! Number of GFL fields in (t-dt) part
+(  209) INTEGER(KIND=JPIM) :: NUMFLDS1    = 0  ! Number of GFL fields in (t+dt) array
+(  210) INTEGER(KIND=JPIM) :: NUMSPFLDS1  = 0  ! Number of spectrally represented GFL fields (t+dt)
+(  211) INTEGER(KIND=JPIM) :: NUMFLDS5    = 0  ! Number of GFL fields (trajectory)
+(  212) INTEGER(KIND=JPIM) :: NUMFLDSPHY  = 0  ! Number of GFL fields (phys.)
+(  213) INTEGER(KIND=JPIM) :: NUMFLDS_SPL = 0  ! Number of GFL fields (S.L. spline interpolation)
+(  214) INTEGER(KIND=JPIM) :: NUMFLDS_SL1 = 0  ! Number of GFL fields in S.L. buffer 1
+(  215) INTEGER(KIND=JPIM) :: NUMFLDSPC   = 0  ! Number of GFL fields (predictor/corrector)
+(  216) INTEGER(KIND=JPIM) :: NDIM        = 0  ! Dimension of main array holding GFL fields(GFL)
+(  217) INTEGER(KIND=JPIM) :: NUMFLDSPT   = 0  ! Number of GFL fields (phy. tend.)
+(  218) INTEGER(KIND=JPIM) :: NDIM0       = 0  ! Dimension of t0 part of GFL
+(  219) INTEGER(KIND=JPIM) :: NDIM9       = 0  ! Dimension of t-dt part of GFL
+(  220) INTEGER(KIND=JPIM) :: NDIM1       = 0  ! Dimension of t+dt array (GFLT1)
+(  221) INTEGER(KIND=JPIM) :: NDIM5       = 0  ! Dimension of traj. GFL array (GFL5)
+(  222) INTEGER(KIND=JPIM) :: NDIMSLP     = 0  ! Diminsion of S.L. phys. GFL/GFL5 array (GFLSLP)
+(  223) INTEGER(KIND=JPIM) :: NDIM_SPL    = 0  ! Dim. of arrays holding GFL fields (S.L.spline int.)
+(  224) INTEGER(KIND=JPIM) :: NDIMPT      = 0  ! Dimension of phy. tend. GFL array (GFLPT)
+(  225) INTEGER(KIND=JPIM) :: NDIMPC      = 0  ! Dimension of iterative scheme auxiliary array (GFLPC)
+(  226) # 227 "./yom_ygfl.F90"
+(  227) INTEGER(KIND=JPIM) :: NGFL_EXT
+(  228) INTEGER(KIND=JPIM) :: NGFL_FORC
+(  229) INTEGER(KIND=JPIM) :: NGFL_EZDIAG
+(  230) INTEGER(KIND=JPIM) :: NGHG
+(  231) INTEGER(KIND=JPIM) :: NGHG_ASSIM
+(  232) INTEGER(KIND=JPIM) :: NAERO
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:26      page 14
+
+(  233) INTEGER(KIND=JPIM) :: NACTAERO
+(  234) INTEGER(KIND=JPIM) :: NDDHAERO
+(  235) INTEGER(KIND=JPIM) :: NERA40
+(  236) INTEGER(KIND=JPIM) :: NNOGW
+(  237) INTEGER(KIND=JPIM) :: NEDRP
+(  238) INTEGER(KIND=JPIM) :: NAEROUT
+(  239) INTEGER(KIND=JPIM) :: NAEROCLIM
+(  240) INTEGER(KIND=JPIM) :: NUVP
+(  241) INTEGER(KIND=JPIM) :: NSLDIA
+(  242) INTEGER(KIND=JPIM) :: NSLDIAGP
+(  243) INTEGER(KIND=JPIM) :: NFSD
+(  244) # 245 "./yom_ygfl.F90"
+(  245) LOGICAL :: LAERCHEM    = .FALSE.   ! Couple sulphur cycle between chemistry and aerosol
+(  246) LOGICAL :: LTRCMFIX    = .FALSE.   ! Activates tracer mass fixer
+(  247) LOGICAL :: LTRCMFIX_PS = .FALSE.   ! Adjust pressure to conserve dry mass in mass fixer calculations
+(  248) LOGICAL :: LTRCMFQM    = .FALSE.   ! Ensure global conservation is fully restored after limiter is used
+(  249)                                    ! For NWP tracers limiter effect is negligible and option not essential 
+(  250) LOGICAL :: LAERAOT     = .FALSE.
+(  251) LOGICAL :: LAERLISI    = .FALSE.
+(  252) LOGICAL :: LAEROUT     = .FALSE.
+(  253) LOGICAL :: LAEROCLIM   = .FALSE.
+(  254) LOGICAL :: LUVPOUT     = .FALSE.
+(  255) LOGICAL :: LSPPTGFL    = .FALSE.   ! Activates SPPT perturbations to CHEM tendencies (C-IFS ensemble)
+(  256) # 257 "./yom_ygfl.F90"
+(  257) INTEGER(KIND=JPIM) :: NGEMS   ! The total number of "GEMS" fields.
+(  258) INTEGER(KIND=JPIM) :: NCHEM
+(  259) INTEGER(KIND=JPIM) :: NCHEM_ASSIM
+(  260) INTEGER(KIND=JPIM) :: NCHEM_FLXO 
+(  261) INTEGER(KIND=JPIM) :: NCHEM_WDFLX 
+(  262) INTEGER(KIND=JPIM) :: NCHEM_DDFLX 
+(  263) INTEGER(KIND=JPIM) :: NCHEM_DV
+(  264) INTEGER(KIND=JPIM) :: NCHEM_TC
+(  265) INTEGER(KIND=JPIM) :: NCHEM_SCV
+(  266) INTEGER(KIND=JPIM) :: NEMIS2D ! Number of 2D emission fields for composition
+(  267) INTEGER(KIND=JPIM) :: NEMIS2DAUX ! Number of 2D emission auxiliary fields for composition
+(  268) INTEGER(KIND=JPIM) :: NEMIS3D ! Number of 3D emission fields for composition
+(  269) INTEGER(KIND=JPIM) :: NLIMA  ! Total number of LIMA fields
+(  270) INTEGER(KIND=JPIM) :: NAERO_WVL_DIAG
+(  271) INTEGER(KIND=JPIM) :: NAERO_WVL_DIAG_TYPES
+(  272) INTEGER(KIND=JPIM) :: NCHEMSULF1
+(  273) INTEGER(KIND=JPIM) :: NCHEMHNO3
+(  274) # 275 "./yom_ygfl.F90"
+(  275) !     ------------------------------------------------------------------
+(  276) !      Mass fixers
+(  277) !     ------------------------------------------------------------------
+(  278) INTEGER(KIND=JPIM) :: NNEGAFIX     ! Num of fields to apply -ve fixer
+(  279) INTEGER(KIND=JPIM) :: NOPTNEGFIX   ! 1: simple negative fixer (reset to 0)
+(  280)                                    ! 2: reset to local minimum
+(  281) # 282 "./yom_ygfl.F90"
+(  282) LOGICAL :: LQM3DCONS    = .FALSE.  ! Bermejo & Staniforth quasi-monotone limiter with improved
+(  283)                                    ! conservation option. When true, applied to all GFL s.t. LQM3D=true
+(  284) LOGICAL :: LADVNEGFIX   = .FALSE.  ! Activates negative fixer for advection
+(  285) LOGICAL :: LTRCMFBC     = .FALSE.  ! Activate Bermejo & Conde mass fixer if true
+(  286) LOGICAL :: LTRCMFPR     = .FALSE.  ! Activate Priestley mass fixer if true
+(  287) LOGICAL :: LTRCMFMG     = .FALSE.  ! Activate Mac Gregor's mass fixer if true
+(  288) LOGICAL :: LTRCMFP      = .FALSE.  ! Activate proportional mass fixer  
+(  289) LOGICAL :: LTRCMFA_DIF  = .FALSE.  ! Activate additive mass fixer based on t - t+1 diff 
+(  290) LOGICAL :: LTRCMFA_LAP  = .FALSE.  ! Activate additive mass fixer based on horizontal laplace 
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:26      page 15
+
+(  291) LOGICAL :: LTRCMFA_VER  = .FALSE.  ! Activate additive mass fixer based on vertical laplace
+(  292) # 293 "./yom_ygfl.F90"
+(  293) LOGICAL :: LEXTRADF     = .FALSE.  ! Extra diagnostics 
+(  294) # 296 "./yom_ygfl.F90"
+(  296) INTEGER(KIND=JPIM) :: NFLDSFIX     ! Number of fields to be fixed
+(  297) INTEGER(KIND=JPIM) :: NOPTMFBC     ! Bermejo & Conde fixer version
+(  298) INTEGER(KIND=JPIM) :: NOPTMFPR     ! Priestley fixer version
+(  299) INTEGER(KIND=JPIM) :: NOPTVFE      ! Use Vertical FE in calculation of column mass total
+(  300) INTEGER(KIND=JPIM) :: NMFDIAGLEV   ! Determines global diagnostic output level for fixer:
+(  301)                                    ! 0 - nothing, 1 - norms printed, 2 - norms + monotonicity
+(  302) INTEGER(KIND=JPIM) :: NMFIXFLDS(JPNAMED_GFL+JPGHG+JPCHEM+JPAERO) 
+(  303)                                    ! Index of fields to be corrected by mass fixers
+(  304) INTEGER(KIND=JPIM) :: NNEGFLDS(JPNAMED_GFL+JPGHG+JPCHEM+JPAERO)  
+(  305)                                    ! Index of fields to be corrected by SL -ve fixer
+(  306) REAL(KIND=JPRB)    :: ZMFIXEPS     ! Threshold for mass fixing scheme
+(  307) INTEGER(KIND=JPIM) :: NFMG         ! Number of fields for mgrid simulations
+(  308) INTEGER(KIND=JPIM) :: NMGFLDS(JPNAMED_GFL+JPGHG+JPCHEM+JPAERO)
+(  309)                                    ! Index of fields for mgrid simulations
+(  310) # 312 "./yom_ygfl.F90"
+(  312) TYPE(TYPE_GFL_COMP) :: YCOMP(JPGFL)    ! General descriptor of all components
+(  313) # 314 "./yom_ygfl.F90"
+(  314) TYPE(TYPE_GFL_COMP),POINTER  :: YLASTCOMP   => NULL() ! General descriptor of last component
+(  315) # 316 "./yom_ygfl.F90"
+(  316) TYPE(TYPE_GFL_COMP),POINTER  :: YQ          => NULL() ! Specific humidity
+(  317) TYPE(TYPE_GFL_COMP),POINTER  :: YI          => NULL() ! Ice water
+(  318) TYPE(TYPE_GFL_COMP),POINTER  :: YL          => NULL() ! Liquid water
+(  319) TYPE(TYPE_GFL_COMP),POINTER  :: YLCONV      => NULL() ! Liquid water (CONV. PART)
+(  320) TYPE(TYPE_GFL_COMP),POINTER  :: YICONV      => NULL() ! Ice    water (CONV. PART)
+(  321) TYPE(TYPE_GFL_COMP),POINTER  :: YRCONV      => NULL() ! Rain         (CONV. PART)
+(  322) TYPE(TYPE_GFL_COMP),POINTER  :: YSCONV      => NULL() ! Snow         (CONV. PART)
+(  323) TYPE(TYPE_GFL_COMP),POINTER  :: YIRAD       => NULL() ! Radiative cloud Ice water
+(  324) TYPE(TYPE_GFL_COMP),POINTER  :: YLRAD       => NULL() ! Radiative cloud Liquid water
+(  325) TYPE(TYPE_GFL_COMP),POINTER  :: YS          => NULL() ! Snow
+(  326) TYPE(TYPE_GFL_COMP),POINTER  :: YR          => NULL() ! Rain
+(  327) TYPE(TYPE_GFL_COMP),POINTER  :: YG          => NULL() ! Graupel
+(  328) TYPE(TYPE_GFL_COMP),POINTER  :: YH          => NULL() ! Hail
+(  329) TYPE(TYPE_GFL_COMP),POINTER  :: YTKE        => NULL() ! Turbulent Kinetic Energy
+(  330) TYPE(TYPE_GFL_COMP),POINTER  :: YTTE        => NULL() ! Turbulent Total Energy
+(  331) TYPE(TYPE_GFL_COMP),POINTER  :: YEFB1       => NULL() ! First variable EFB scheme
+(  332) TYPE(TYPE_GFL_COMP),POINTER  :: YEFB2       => NULL() ! Second variable EFB scheme
+(  333) TYPE(TYPE_GFL_COMP),POINTER  :: YEFB3       => NULL() ! Third variable EFB scheme
+(  334) TYPE(TYPE_GFL_COMP),POINTER  :: YA          => NULL() ! Cloud fraction
+(  335) TYPE(TYPE_GFL_COMP),POINTER  :: YO3         => NULL() ! Ozone
+(  336) TYPE(TYPE_GFL_COMP),POINTER  :: YSRC        => NULL() ! Second-order flux for AROME s'rc'/2Sigma_s2 multiplied by Lambda_3
+(  337) TYPE(TYPE_GFL_COMP),POINTER  :: YLMF        => NULL() ! QL from mass flux
+(  338) TYPE(TYPE_GFL_COMP),POINTER  :: YIMF        => NULL() ! QI from mass flux
+(  339) TYPE(TYPE_GFL_COMP),POINTER  :: YAMF        => NULL() ! CF from mass flux
+(  340) TYPE(TYPE_GFL_COMP),POINTER  :: YMXL        => NULL() ! Prognostic mixing length
+(  341) TYPE(TYPE_GFL_COMP),POINTER  :: YSHTUR      => NULL() ! Shear source term for turbulence.
+(  342) TYPE(TYPE_GFL_COMP),POINTER  :: YFQTUR      => NULL() ! Flux form source term for turbulence -moisture.
+(  343) TYPE(TYPE_GFL_COMP),POINTER  :: YFSTUR      => NULL() ! Flux form source term for turbulence -enthalpy.
+(  344) TYPE(TYPE_GFL_COMP),POINTER  :: YCPF        => NULL() ! Convective precipitation flux
+(  345) TYPE(TYPE_GFL_COMP),POINTER  :: YSPF        => NULL() ! Stratiform precipitation flux
+(  346) TYPE(TYPE_GFL_COMP),POINTER  :: YCVGQ       => NULL() ! Moisture Convergence for french physics
+(  347) TYPE(TYPE_GFL_COMP),POINTER  :: YQVA        => NULL() ! total humidity variation
+(  348) TYPE(TYPE_GFL_COMP),POINTER  :: YGHG(:)     => NULL() ! Greenhouse Gases
+(  349) TYPE(TYPE_GFL_COMP),POINTER  :: YCHEM(:)    => NULL() ! Chemistry
+(  350) TYPE(TYPE_GFL_COMP),POINTER  :: YAERO(:)    => NULL() ! Aerosols
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:26      page 16
+
+(  351) TYPE(TYPE_GFL_COMP),POINTER  :: YLRCH4      => NULL() ! CH4 loss rate (instantaneous field)
+(  352) TYPE(TYPE_GFL_COMP),POINTER  :: YEMIS3D(:)  => NULL() ! 3D emissions for atmospheric composition
+(  353) TYPE(TYPE_GFL_COMP),POINTER  :: YFORC(:)    => NULL() ! large scale forcing
+(  354) TYPE(TYPE_GFL_COMP),POINTER  :: YEZDIAG(:)  => NULL() ! easy diagnostics
+(  355) TYPE(TYPE_GFL_COMP),POINTER  :: YERA40(:)   => NULL() ! ERA40 diagnostic fields
+(  356) TYPE(TYPE_GFL_COMP),POINTER  :: YNOGW(:)    => NULL() ! NORO GWD SCHEME
+(  357) TYPE(TYPE_GFL_COMP),POINTER  :: YEDRP(:)    => NULL() ! turbulence diagnostics EDR Parameter
+(  358) TYPE(TYPE_GFL_COMP),POINTER  :: YSLDIA(:)   => NULL() ! SL dynamics diagnostics
+(  359) TYPE(TYPE_GFL_COMP),POINTER  :: YAERAOT(:)  => NULL() ! Aerosol optical thicknesses
+(  360) TYPE(TYPE_GFL_COMP),POINTER  :: YAERLISI(:) => NULL() ! Aerosol lidar simulator
+(  361) TYPE(TYPE_GFL_COMP),POINTER  :: YAEROUT(:)  => NULL() ! Aerosol outputs
+(  362) TYPE(TYPE_GFL_COMP),POINTER  :: YAEROCLIM(:) => NULL() ! Aerosol climatology
+(  363) TYPE(TYPE_GFL_COMP),POINTER  :: YUVP(:)     => NULL() ! UV-processor output
+(  364) TYPE(TYPE_GFL_COMP),POINTER  :: YPHYS(:)    => NULL() ! PHYS output
+(  365) TYPE(TYPE_GFL_COMP),POINTER  :: YPHYCTY     => NULL() ! PHYS input for MassCTY
+(  366) # 367 "./yom_ygfl.F90"
+(  367) TYPE(TYPE_GFL_COMP),POINTER  :: YRSPEC      => NULL() ! Specific gas constant
+(  368) # 370 "./yom_ygfl.F90"
+(  370) TYPE(TYPE_GFL_COMP),POINTER  :: YSDSAT      => NULL() ! Standard Deviation of the
+(  371)                                                       ! SATuration Depression (Sigma_s) 
+(  372) TYPE(TYPE_GFL_COMP),POINTER  :: YCVV        => NULL() ! Convective Vertical Velocity
+(  373) TYPE(TYPE_GFL_COMP),POINTER  :: YRKTH       => NULL() ! Rasch-Kristjansson H tendency
+(  374) TYPE(TYPE_GFL_COMP),POINTER  :: YRKTQV      => NULL() ! Rasch-Kristjansson Qv tendency
+(  375) TYPE(TYPE_GFL_COMP),POINTER  :: YRKTQC      => NULL() ! Rasch-Kristjansson Qc tendency
+(  376) # 377 "./yom_ygfl.F90"
+(  377) ! Prognostic convection variables: add 6 named components
+(  378) TYPE(TYPE_GFL_COMP),POINTER  :: YUOM        => NULL() ! Updraught vert velocity
+(  379) TYPE(TYPE_GFL_COMP),POINTER  :: YUAL        => NULL() ! Updraught mesh fraction
+(  380) TYPE(TYPE_GFL_COMP),POINTER  :: YDOM        => NULL() ! Downdraught vert velocity
+(  381) TYPE(TYPE_GFL_COMP),POINTER  :: YDAL        => NULL() ! Downdraught mesh fraction
+(  382) TYPE(TYPE_GFL_COMP),POINTER  :: YUEN        => NULL() ! Updraught entrainment
+(  383) TYPE(TYPE_GFL_COMP),POINTER  :: YUNEBH      => NULL() ! pseudo-historic convective
+(  384) # 385 "./yom_ygfl.F90"
+(  385) TYPE(TYPE_GFL_COMP),POINTER  :: YLIMA(:)    => NULL() ! LIMA prognostic fields
+(  386) # 387 "./yom_ygfl.F90"
+(  387) ! cloud heterogeneity FSD
+(  388) TYPE(TYPE_GFL_COMP),POINTER  :: YFSD        => NULL() ! PHYS output
+(  389) # 390 "./yom_ygfl.F90"
+(  390) ! Extra fields
+(  391) # 392 "./yom_ygfl.F90"
+(  392) TYPE(TYPE_GFL_COMP),POINTER  :: YEXT(:)     => NULL() ! Extra fields
+(  393) # 394 "./yom_ygfl.F90"
+(  394) TYPE(TYPE_GFL_NAML)  :: YQ_NL                 ! Specific humidity
+(  395) TYPE(TYPE_GFL_NAML)  :: YI_NL                 ! Ice water
+(  396) TYPE(TYPE_GFL_NAML)  :: YL_NL                 ! Liquid water
+(  397) TYPE(TYPE_GFL_NAML)  :: YLCONV_NL             ! Liquid water (CONV. PART)
+(  398) TYPE(TYPE_GFL_NAML)  :: YICONV_NL             ! Ice    water (CONV. PART)
+(  399) TYPE(TYPE_GFL_NAML)  :: YRCONV_NL             ! Rain         (CONV. PART)
+(  400) TYPE(TYPE_GFL_NAML)  :: YSCONV_NL             ! Snow         (CONV. PART)
+(  401) TYPE(TYPE_GFL_NAML)  :: YIRAD_NL              ! Radiative cloud Ice water
+(  402) TYPE(TYPE_GFL_NAML)  :: YLRAD_NL              ! Radiative cloud Liquid water
+(  403) TYPE(TYPE_GFL_NAML)  :: YS_NL                 ! Snow
+(  404) TYPE(TYPE_GFL_NAML)  :: YR_NL                 ! Rain
+(  405) TYPE(TYPE_GFL_NAML)  :: YG_NL                 ! Graupels
+(  406) TYPE(TYPE_GFL_NAML)  :: YH_NL                 ! Hail
+(  407) TYPE(TYPE_GFL_NAML)  :: YTKE_NL               ! Turbulent Kinetic Energy
+(  408) TYPE(TYPE_GFL_NAML)  :: YTTE_NL               ! Turbulent Total Energy
+(  409) TYPE(TYPE_GFL_NAML)  :: YEFB1_NL              ! First variable EFB scheme
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:26      page 17
+
+(  410) TYPE(TYPE_GFL_NAML)  :: YEFB2_NL              ! Second variable EFB scheme
+(  411) TYPE(TYPE_GFL_NAML)  :: YEFB3_NL              ! Third variable EFB scheme
+(  412) TYPE(TYPE_GFL_NAML)  :: YA_NL                 ! Cloud fraction
+(  413) TYPE(TYPE_GFL_NAML)  :: YO3_NL                ! Ozone
+(  414) TYPE(TYPE_GFL_NAML)  :: YSRC_NL               ! Second-order flux for AROME
+(  415)                                               ! s'rc'/2Sigma_s2
+(  416)                                               ! multiplied by Lambda_3
+(  417) TYPE(TYPE_GFL_NAML)  :: YAMF_NL               ! Cloud fraction from mass flux
+(  418) TYPE(TYPE_GFL_NAML)  :: YLMF_NL               ! Cloud from mass flux
+(  419) TYPE(TYPE_GFL_NAML)  :: YIMF_NL               ! ice from mass flux
+(  420) TYPE(TYPE_GFL_NAML)  :: YMXL_NL               ! Prognostic mixing length
+(  421) TYPE(TYPE_GFL_NAML)  :: YSHTUR_NL             ! Shear source term for turbulence.
+(  422) TYPE(TYPE_GFL_NAML)  :: YFQTUR_NL             ! Flux form source term for turbulence -moisture.
+(  423) TYPE(TYPE_GFL_NAML)  :: YFSTUR_NL             ! Flux form source term for turbulence -enthalpy.
+(  424) TYPE(TYPE_GFL_NAML)  :: YCPF_NL               ! Convective precipitation flux
+(  425) TYPE(TYPE_GFL_NAML)  :: YSPF_NL               ! Stratiform precipitation flux
+(  426) TYPE(TYPE_GFL_NAML)  :: YCVGQ_NL              ! Moisture Convergence for french physics
+(  427) TYPE(TYPE_GFL_NAML)  :: YQVA_NL               ! Total humidity variation
+(  428) # 429 "./yom_ygfl.F90"
+(  429) TYPE(TYPE_GFL_NAML)  :: YGHG_NL(JPGHG)        ! Greenhouse Gases
+(  430) TYPE(TYPE_GFL_NAML)  :: YCHEM_NL(JPCHEM)      ! Chemical species
+(  431) TYPE(TYPE_GFL_NAML)  :: YAERO_NL(JPAERO)      ! Aerosol fields
+(  432) TYPE(TYPE_GFL_NAML)  :: YERA40_NL(JPERA40)    ! ERA40 diagnostic fields
+(  433) TYPE(TYPE_GFL_NAML)  :: YNOGW_NL(JPNOGW)      ! NORO GWD SCHEME
+(  434) TYPE(TYPE_GFL_NAML)  :: YEDRP_NL(JPEDRP)      ! EDR Parameter turbulence diagnostics
+(  435) TYPE(TYPE_GFL_NAML)  :: YSLDIA_NL(JPSLDIA)    ! SL dynamics diagnostics
+(  436) TYPE(TYPE_GFL_NAML)  :: YLRCH4_NL             ! CH4 loss rate
+(  437) TYPE(TYPE_GFL_NAML)  :: YAERAOT_NL(NPAERAOT)  ! Aerosol optical thicknesses
+(  438) TYPE(TYPE_GFL_NAML)  :: YAERLISI_NL(NPAERLISI_WVL,NPAERLISI_VAR) ! Aerosol lidar simulator
+(  439) TYPE(TYPE_GFL_NAML)  :: YAEROUT_NL(JPAEROUT)  ! Aerosol outputs
+(  440) TYPE(TYPE_GFL_NAML)  :: YAEROCLIM_NL(JPAEROCLIM)  ! Aerosol climatology
+(  441) TYPE(TYPE_GFL_NAML)  :: YUVP_NL(JPUVP)        ! UV-processor outputs
+(  442) TYPE(TYPE_GFL_NAML)  :: YRKTH_NL              ! Rasch-Kristjansson H tendency
+(  443) TYPE(TYPE_GFL_NAML)  :: YRKTQV_NL             ! Rasch-Kristjansson Qv tendency
+(  444) TYPE(TYPE_GFL_NAML)  :: YRKTQC_NL             ! Rasch-Kristjansson Qc tendency
+(  445) TYPE(TYPE_GFL_NAML)  :: YPHYCTY_NL            ! PHYS input for MassCTY
+(  446) TYPE(TYPE_GFL_NAML)  :: YFSD_NL               ! cloud heterogeneity
+(  447) TYPE(TYPE_GFL_NAML)  :: YRSPEC_NL             ! Specific humidity
+(  448) # 449 "./yom_ygfl.F90"
+(  449) ! Extra fields
+(  450) TYPE(TYPE_GFL_NAML)  :: YSDSAT_NL             ! Standard Deviation of the
+(  451)                                               ! SATuration Depression (Sigma_s) 
+(  452) TYPE(TYPE_GFL_NAML)  :: YCVV_NL               ! Convective Vertical Velocity
+(  453) TYPE(TYPE_GFL_NAML)  :: YFORC_NL(JPFORC)      ! Forcing precursor
+(  454) TYPE(TYPE_GFL_NAML)  :: YEZDIAG_NL(JPEZDIAG)  ! Easy diagnostics
+(  455) TYPE(TYPE_GFL_NAML)  :: YEXT_NL(JPGFL-JPNAMED_GFL-JPGHG-JPFORC-JPEZDIAG-JPAERO-JPERA40-&
+(  456)  &                              JPNOGW-JPSLDIA-JPCH4S-JPAEROUT-JPAEROCLIM-NPAERAOT-NPAERLISI-&
+(  457)  &                              JPUVP-JPCHEM-JPLIMA-JPPHYCTY-JPFSD-JPEDRP) ! Extra fields
+(  458) # 459 "./yom_ygfl.F90"
+(  459) ! Prognostic convection variables: 6 more namelist components
+(  460) TYPE(TYPE_GFL_NAML)  :: YUOM_NL               ! Updraught vert velocity
+(  461) TYPE(TYPE_GFL_NAML)  :: YUAL_NL               ! Updraught mesh fraction
+(  462) TYPE(TYPE_GFL_NAML)  :: YDOM_NL               ! Downdraught vert velocity
+(  463) TYPE(TYPE_GFL_NAML)  :: YDAL_NL               ! Downdraught mesh fraction
+(  464) TYPE(TYPE_GFL_NAML)  :: YUEN_NL               ! Updraught entrainment
+(  465) TYPE(TYPE_GFL_NAML)  :: YUNEBH_NL             ! Pseudi Hist Conv cloud fraction
+(  466) # 467 "./yom_ygfl.F90"
+(  467) TYPE(TYPE_AERO_WVL_DIAG) :: YAERO_WVL_DIAG_NL(NPAERO_WVL_DIAG) ! Per-wavelength aerosol optical diagnostics
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:26      page 18
+
+(  468) TYPE(TYPE_GFL_NAML)  :: YLIMA_NL(JPLIMA)      ! LIMA prognostic fields
+(  469) # 470 "./yom_ygfl.F90"
+(  470) END TYPE TYPE_GFLD
+(  471) # 472 "./yom_ygfl.F90"
+(  472) ! GFL general descriptor
+(  473) TYPE(TYPE_GFLD), POINTER :: YGFL => NULL()
+(  474) # 475 "./yom_ygfl.F90"
+(  475) END MODULE YOM_YGFL

@@ -2,6 +2,6 @@
 ../venv/bin/loki-transform.py convert -m scc-stack -b . --config ./loki_cucalln.config -s .
 ../venv/bin/loki-transform.py convert --help
 
-
 --log-level=debug
 --log-level=detail
+../venv/bin/loki-transform.py convert -m scc-stack -b ./build --config ./loki_cucalln.config -s .

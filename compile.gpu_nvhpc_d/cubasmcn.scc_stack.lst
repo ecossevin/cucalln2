@@ -1,0 +1,386 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./cubasmcn.scc_stack.F90
+
+(    1) MODULE CUBASMCN_LOKI_MOD
+(    2)   CONTAINS
+(    3)   SUBROUTINE CUBASMCN_LOKI (YDCST, YDECUMF, KIDIA, KFDIA, KLON, KLEV, KK, PTEN, PQEN, PQSEN, PVERVEL, PGEO, PGEOH, LDCUM, KT
+(    4)   & KLAB, KCBOT, PMFU, PMFUB, PLRAIN, PTU, PQU, PLU, PMFUS, PMFUQ, PMFUL, PDMFUP, YDSTACK_L)
+(    5)     
+(    6)     !          M.TIEDTKE         E.C.M.W.F.     12/89
+(    7)     
+(    8)     !          PURPOSE.
+(    9)     !          --------
+(   10)     !          THIS ROUTINE CALCULATES CLOUD BASE VALUES
+(   11)     !          FOR MIDLEVEL CONVECTION
+(   12)     
+(   13)     !          INTERFACE
+(   14)     !          ---------
+(   15)     
+(   16)     !          THIS ROUTINE IS CALLED FROM *CUASC*.
+(   17)     !          INPUT ARE ENVIRONMENTAL VALUES T,Q ETC
+(   18)     !          IT RETURNS CLOUDBASE VALUES FOR MIDLEVEL CONVECTION
+(   19)     
+(   20)     !          METHOD.
+(   21)     !          --------
+(   22)     !          S. TIEDTKE (1989)
+(   23)     
+(   24)     !     PARAMETER     DESCRIPTION                                   UNITS
+(   25)     !     ---------     -----------                                   -----
+(   26)     !     INPUT PARAMETERS (INTEGER):
+(   27)     
+(   28)     !    *KIDIA*        START POINT
+(   29)     !    *KFDIA*        END POINT
+(   30)     !    *KLON*         NUMBER OF GRID POINTS PER PACKET
+(   31)     !    *KLEV*         NUMBER OF LEVELS
+(   32)     !    *KK*           ACTUAL LEVEL
+(   33)     
+(   34)     !    INPUT PARAMETERS (REAL):
+(   35)     
+(   36)     !    *PTEN*         PROVISIONAL ENVIRONMENT TEMPERATURE (T+1)       K
+(   37)     !    *PQEN*         PROVISIONAL ENVIRONMENT SPEC. HUMIDITY (T+1)  KG/KG
+(   38)     !    *PQSEN*        ENVIRONMENT SPEC. SATURATION HUMIDITY (T+1)   KG/KG
+(   39)     !    *PVERVEL*      VERTICAL VELOCITY                             PA/S
+(   40)     !    *PGEO*         GEOPOTENTIAL                                  M2/S2
+(   41)     !    *PGEOH*        GEOPOTENTIAL ON HALF LEVELS                   M2/S2
+(   42)     !    *PLRAIN*       RAIN WATER CONTENT IN UPDRAFTS                KG/KG
+(   43)     
+(   44)     !    INPUT PARAMETERS (LOGICAL):
+(   45)     
+(   46)     !    *LDCUM*        FLAG: .TRUE. FOR CONVECTIVE POINTS
+(   47)     
+(   48)     !    UPDATED PARAMETERS (INTEGER):
+(   49)     
+(   50)     !    *KTYPE*        TYPE OF CONVECTION
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 2
+
+(   51)     !                       1 = PENETRATIVE CONVECTION
+(   52)     !                       2 = SHALLOW CONVECTION
+(   53)     !                       3 = MIDLEVEL CONVECTION
+(   54)     !    *KLAB*         FLAG KLAB=1 FOR SUBCLOUD LEVELS
+(   55)     !                        KLAB=2 FOR CLOUD LEVELS
+(   56)     !    *KCBOT*        CLOUD BASE LEVEL
+(   57)     
+(   58)     !    OUTPUT PARAMETERS (REAL):
+(   59)     
+(   60)     !    *PMFU*         MASSFLUX IN UPDRAFTS                          KG/(M2*S)
+(   61)     !    *PMFUB*        MASSFLUX IN UPDRAFTS AT CLOUD BASE            KG/(M2*S)
+(   62)     !    *PTU*          TEMPERATURE IN UPDRAFTS                         K
+(   63)     !    *PQU*          SPEC. HUMIDITY IN UPDRAFTS                    KG/KG
+(   64)     !    *PLU*          LIQUID WATER CONTENT IN UPDRAFTS              KG/KG
+(   65)     !    *PMFUS*        FLUX OF DRY STATIC ENERGY IN UPDRAFTS          J/(M2*S)
+(   66)     !    *PMFUQ*        FLUX OF SPEC. HUMIDITY IN UPDRAFTS            KG/(M2*S)
+(   67)     !    *PMFUL*        FLUX OF LIQUID WATER IN UPDRAFTS              KG/(M2*S)
+(   68)     !    *PDMFUP*       FLUX DIFFERENCE OF PRECIP. IN UPDRAFTS        KG/(M2*S)
+(   69)     
+(   70)     !          EXTERNALS
+(   71)     !          ---------
+(   72)     !          NONE
+(   73)     
+(   74)     !     R. El Khatib 22-Jun-2022 A contribution to simplify phasing after the refactoring of YOMCLI/YOMCST/YOETHF.
+(   75)     !     R. El Khatib 06-Sep-2023 vectorization
+(   76)     !----------------------------------------------------------------------
+(   77)     
+(   78)     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY: REAL64
+(   79)     USE, intrinsic :: ISO_C_BINDING, ONLY: C_SIZEOF
+(   80)     USE PARKIND1, ONLY: JPIM, JPRB
+(   81)     USE YOMHOOK, ONLY: LHOOK, JPHOOK
+(   82)     
+(   83)     USE YOMCST, ONLY: TCST
+(   84)     USE YOECUMF, ONLY: TECUMF
+(   85)     
+(   86)     IMPLICIT NONE
+(   87)     
+(   88)     TYPE(TCST), INTENT(IN) :: YDCST
+(   89)     TYPE(TECUMF), INTENT(IN) :: YDECUMF
+(   90)     INTEGER(KIND=JPIM), INTENT(IN) :: KLON
+(   91)     INTEGER(KIND=JPIM), INTENT(IN) :: KLEV
+(   92)     INTEGER(KIND=JPIM), INTENT(IN) :: KIDIA
+(   93)     INTEGER(KIND=JPIM), INTENT(IN) :: KFDIA
+(   94)     INTEGER(KIND=JPIM), INTENT(IN) :: KK
+(   95)     REAL(KIND=JPRB), INTENT(IN) :: PTEN(KLON, KLEV)
+(   96)     REAL(KIND=JPRB), INTENT(IN) :: PQEN(KLON, KLEV)
+(   97)     REAL(KIND=JPRB), INTENT(IN) :: PQSEN(KLON, KLEV)
+(   98)     REAL(KIND=JPRB), INTENT(IN) :: PVERVEL(KLON, KLEV)
+(   99)     REAL(KIND=JPRB), INTENT(IN) :: PGEO(KLON, KLEV)
+(  100)     REAL(KIND=JPRB), INTENT(IN) :: PGEOH(KLON, KLEV + 1)
+(  101)     LOGICAL, INTENT(IN) :: LDCUM(KLON)
+(  102)     INTEGER(KIND=JPIM), INTENT(OUT) :: KTYPE(KLON)
+(  103)     INTEGER(KIND=JPIM), INTENT(INOUT) :: KLAB(KLON, KLEV)
+(  104)     INTEGER(KIND=JPIM), INTENT(OUT) :: KCBOT(KLON)
+(  105)     REAL(KIND=JPRB), INTENT(OUT) :: PMFU(KLON, KLEV)
+(  106)     REAL(KIND=JPRB), INTENT(OUT) :: PMFUB(KLON)
+(  107)     REAL(KIND=JPRB), INTENT(OUT) :: PLRAIN(KLON, KLEV)
+(  108)     REAL(KIND=JPRB), INTENT(OUT) :: PTU(KLON, KLEV)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 3
+
+(  109)     REAL(KIND=JPRB), INTENT(OUT) :: PQU(KLON, KLEV)
+(  110)     REAL(KIND=JPRB), INTENT(OUT) :: PLU(KLON, KLEV)
+(  111)     REAL(KIND=JPRB), INTENT(OUT) :: PMFUS(KLON, KLEV)
+(  112)     REAL(KIND=JPRB), INTENT(OUT) :: PMFUQ(KLON, KLEV)
+(  113)     REAL(KIND=JPRB), INTENT(OUT) :: PMFUL(KLON, KLEV)
+(  114)     REAL(KIND=JPRB), INTENT(OUT) :: PDMFUP(KLON, KLEV)
+(  115)     INTEGER(KIND=JPIM) :: JL
+(  116)     
+(  117)     REAL(KIND=JPRB) :: ZZZMB, ZRG, ZORCPD
+(  118)     REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+(  119) !$acc routine vector
+(  120)     INTEGER(KIND=8) :: YLSTACK_L
+(  121)     INTEGER(KIND=8), INTENT(INOUT) :: YDSTACK_L
+(  122)     YLSTACK_L = YDSTACK_L
+(  123) !$acc data present( PTEN, PQEN, PQSEN, PVERVEL, PGEO, PGEOH, LDCUM, KTYPE, KLAB, KCBOT, PMFU, PMFUB, PLRAIN, PTU, PQU, PLU, 
+(  124) !$acc & PMFUS, PMFUQ, PMFUL, PDMFUP, YDCST, YDECUMF )
+(  125)     
+(  126)     !----------------------------------------------------------------------
+(  127)     
+(  128)     
+(  129)     !*    1.           CALCULATE ENTRAINMENT AND DETRAINMENT RATES
+(  130)     !                  -------------------------------------------
+(  131)     
+(  132)     
+(  133)     ZRG = 1.0_JPRB / YDCST%RG
+(  134)     ZORCPD = 1.0_JPRB / YDCST%RCPD
+(  135)     !DIR$ IVDEP
+(  136)     !OCL NOVREC
+(  137)     
+(  138) !$acc loop vector
+(  139)     DO JL=KIDIA,KFDIA
+(  140)       IF (.not.LDCUM(JL) .and. KLAB(JL, 1 + KK) == 0) THEN
+(  141)         IF (YDECUMF%LMFMID .and. KK > YDECUMF%NJKT7 .and. PQEN(JL, KK) > 0.80_JPRB*PQSEN(JL, KK)) THEN
+(  142)           PTU(JL, KK + 1) = (YDCST%RCPD*PTEN(JL, KK) + PGEO(JL, KK) - PGEOH(JL, KK + 1))*ZORCPD
+(  143)           PQU(JL, KK + 1) = PQEN(JL, KK)
+(  144)           PLU(JL, KK + 1) = 0.0_JPRB
+(  145)           ! ZZZMB=MAX(RMFCMIN,-PVERVEL(JL,KK)/RG)
+(  146)           ZZZMB = MAX(1.E-6_JPRB, -PVERVEL(JL, KK)*ZRG)
+(  147)           ZZZMB = MIN(ZZZMB, YDECUMF%RMFLIA)
+(  148)           PMFUB(JL) = ZZZMB
+(  149)           PMFU(JL, KK + 1) = PMFUB(JL)
+(  150)           PMFUS(JL, KK + 1) = PMFUB(JL)*(YDCST%RCPD*PTU(JL, KK + 1) + PGEOH(JL, KK + 1))
+(  151)           PMFUQ(JL, KK + 1) = PMFUB(JL)*PQU(JL, KK + 1)
+(  152)           PMFUL(JL, KK + 1) = 0.0_JPRB
+(  153)           PDMFUP(JL, KK + 1) = 0.0_JPRB
+(  154)           PLRAIN(JL, KK + 1) = 0.0_JPRB
+(  155)           KCBOT(JL) = KK
+(  156)           KLAB(JL, KK + 1) = 1
+(  157)           KTYPE(JL) = 3
+(  158)         END IF
+(  159)       END IF
+(  160)     END DO
+(  161)     
+(  162)     
+(  163)     
+(  164) !$acc end data
+(  165)   END SUBROUTINE CUBASMCN_LOKI
+(  166) END MODULE CUBASMCN_LOKI_MOD
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 4
+
+(    1) # 1 "./cubasmcn.scc_stack.F90"
+(    1) MODULE CUBASMCN_LOKI_MOD
+(    2)   CONTAINS
+(    3)   SUBROUTINE CUBASMCN_LOKI (YDCST, YDECUMF, KIDIA, KFDIA, KLON, KLEV, KK, PTEN, PQEN, PQSEN, PVERVEL, PGEO, PGEOH, LDCUM, KTYPE,  &
+(    4)   & KLAB, KCBOT, PMFU, PMFUB, PLRAIN, PTU, PQU, PLU, PMFUS, PMFUQ, PMFUL, PDMFUP, YDSTACK_L)
+(    5)     
+(    6)     !          M.TIEDTKE         E.C.M.W.F.     12/89
+(    7)     
+(    8)     !          PURPOSE.
+(    9)     !          --------
+(   10)     !          THIS ROUTINE CALCULATES CLOUD BASE VALUES
+(   11)     !          FOR MIDLEVEL CONVECTION
+(   12)     
+(   13)     !          INTERFACE
+(   14)     !          ---------
+(   15)     
+(   16)     !          THIS ROUTINE IS CALLED FROM *CUASC*.
+(   17)     !          INPUT ARE ENVIRONMENTAL VALUES T,Q ETC
+(   18)     !          IT RETURNS CLOUDBASE VALUES FOR MIDLEVEL CONVECTION
+(   19)     
+(   20)     !          METHOD.
+(   21)     !          --------
+(   22)     !          S. TIEDTKE (1989)
+(   23)     
+(   24)     !     PARAMETER     DESCRIPTION                                   UNITS
+(   25)     !     ---------     -----------                                   -----
+(   26)     !     INPUT PARAMETERS (INTEGER):
+(   27)     
+(   28)     !    *KIDIA*        START POINT
+(   29)     !    *KFDIA*        END POINT
+(   30)     !    *KLON*         NUMBER OF GRID POINTS PER PACKET
+(   31)     !    *KLEV*         NUMBER OF LEVELS
+(   32)     !    *KK*           ACTUAL LEVEL
+(   33)     
+(   34)     !    INPUT PARAMETERS (REAL):
+(   35)     
+(   36)     !    *PTEN*         PROVISIONAL ENVIRONMENT TEMPERATURE (T+1)       K
+(   37)     !    *PQEN*         PROVISIONAL ENVIRONMENT SPEC. HUMIDITY (T+1)  KG/KG
+(   38)     !    *PQSEN*        ENVIRONMENT SPEC. SATURATION HUMIDITY (T+1)   KG/KG
+(   39)     !    *PVERVEL*      VERTICAL VELOCITY                             PA/S
+(   40)     !    *PGEO*         GEOPOTENTIAL                                  M2/S2
+(   41)     !    *PGEOH*        GEOPOTENTIAL ON HALF LEVELS                   M2/S2
+(   42)     !    *PLRAIN*       RAIN WATER CONTENT IN UPDRAFTS                KG/KG
+(   43)     
+(   44)     !    INPUT PARAMETERS (LOGICAL):
+(   45)     
+(   46)     !    *LDCUM*        FLAG: .TRUE. FOR CONVECTIVE POINTS
+(   47)     
+(   48)     !    UPDATED PARAMETERS (INTEGER):
+(   49)     
+(   50)     !    *KTYPE*        TYPE OF CONVECTION
+(   51)     !                       1 = PENETRATIVE CONVECTION
+(   52)     !                       2 = SHALLOW CONVECTION
+(   53)     !                       3 = MIDLEVEL CONVECTION
+(   54)     !    *KLAB*         FLAG KLAB=1 FOR SUBCLOUD LEVELS
+(   55)     !                        KLAB=2 FOR CLOUD LEVELS
+(   56)     !    *KCBOT*        CLOUD BASE LEVEL
+(   57)     
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 5
+
+(   58)     !    OUTPUT PARAMETERS (REAL):
+(   59)     
+(   60)     !    *PMFU*         MASSFLUX IN UPDRAFTS                          KG/(M2*S)
+(   61)     !    *PMFUB*        MASSFLUX IN UPDRAFTS AT CLOUD BASE            KG/(M2*S)
+(   62)     !    *PTU*          TEMPERATURE IN UPDRAFTS                         K
+(   63)     !    *PQU*          SPEC. HUMIDITY IN UPDRAFTS                    KG/KG
+(   64)     !    *PLU*          LIQUID WATER CONTENT IN UPDRAFTS              KG/KG
+(   65)     !    *PMFUS*        FLUX OF DRY STATIC ENERGY IN UPDRAFTS          J/(M2*S)
+(   66)     !    *PMFUQ*        FLUX OF SPEC. HUMIDITY IN UPDRAFTS            KG/(M2*S)
+(   67)     !    *PMFUL*        FLUX OF LIQUID WATER IN UPDRAFTS              KG/(M2*S)
+(   68)     !    *PDMFUP*       FLUX DIFFERENCE OF PRECIP. IN UPDRAFTS        KG/(M2*S)
+(   69)     
+(   70)     !          EXTERNALS
+(   71)     !          ---------
+(   72)     !          NONE
+(   73)     
+(   74)     !     R. El Khatib 22-Jun-2022 A contribution to simplify phasing after the refactoring of YOMCLI/YOMCST/YOETHF.
+(   75)     !     R. El Khatib 06-Sep-2023 vectorization
+(   76)     !----------------------------------------------------------------------
+(   77)     
+(   78)     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY: REAL64
+(   79)     USE, intrinsic :: ISO_C_BINDING, ONLY: C_SIZEOF
+(   80)     USE PARKIND1, ONLY: JPIM, JPRB
+(   81)     USE YOMHOOK, ONLY: LHOOK, JPHOOK
+(   82)     
+(   83)     USE YOMCST, ONLY: TCST
+(   84)     USE YOECUMF, ONLY: TECUMF
+(   85)     
+(   86)     IMPLICIT NONE
+(   87)     
+(   88)     TYPE(TCST), INTENT(IN) :: YDCST
+(   89)     TYPE(TECUMF), INTENT(IN) :: YDECUMF
+(   90)     INTEGER(KIND=JPIM), INTENT(IN) :: KLON
+(   91)     INTEGER(KIND=JPIM), INTENT(IN) :: KLEV
+(   92)     INTEGER(KIND=JPIM), INTENT(IN) :: KIDIA
+(   93)     INTEGER(KIND=JPIM), INTENT(IN) :: KFDIA
+(   94)     INTEGER(KIND=JPIM), INTENT(IN) :: KK
+(   95)     REAL(KIND=JPRB), INTENT(IN) :: PTEN(KLON, KLEV)
+(   96)     REAL(KIND=JPRB), INTENT(IN) :: PQEN(KLON, KLEV)
+(   97)     REAL(KIND=JPRB), INTENT(IN) :: PQSEN(KLON, KLEV)
+(   98)     REAL(KIND=JPRB), INTENT(IN) :: PVERVEL(KLON, KLEV)
+(   99)     REAL(KIND=JPRB), INTENT(IN) :: PGEO(KLON, KLEV)
+(  100)     REAL(KIND=JPRB), INTENT(IN) :: PGEOH(KLON, KLEV + 1)
+(  101)     LOGICAL, INTENT(IN) :: LDCUM(KLON)
+(  102)     INTEGER(KIND=JPIM), INTENT(OUT) :: KTYPE(KLON)
+(  103)     INTEGER(KIND=JPIM), INTENT(INOUT) :: KLAB(KLON, KLEV)
+(  104)     INTEGER(KIND=JPIM), INTENT(OUT) :: KCBOT(KLON)
+(  105)     REAL(KIND=JPRB), INTENT(OUT) :: PMFU(KLON, KLEV)
+(  106)     REAL(KIND=JPRB), INTENT(OUT) :: PMFUB(KLON)
+(  107)     REAL(KIND=JPRB), INTENT(OUT) :: PLRAIN(KLON, KLEV)
+(  108)     REAL(KIND=JPRB), INTENT(OUT) :: PTU(KLON, KLEV)
+(  109)     REAL(KIND=JPRB), INTENT(OUT) :: PQU(KLON, KLEV)
+(  110)     REAL(KIND=JPRB), INTENT(OUT) :: PLU(KLON, KLEV)
+(  111)     REAL(KIND=JPRB), INTENT(OUT) :: PMFUS(KLON, KLEV)
+(  112)     REAL(KIND=JPRB), INTENT(OUT) :: PMFUQ(KLON, KLEV)
+(  113)     REAL(KIND=JPRB), INTENT(OUT) :: PMFUL(KLON, KLEV)
+(  114)     REAL(KIND=JPRB), INTENT(OUT) :: PDMFUP(KLON, KLEV)
+(  115)     INTEGER(KIND=JPIM) :: JL
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 6
+
+(  116)     
+(  117)     REAL(KIND=JPRB) :: ZZZMB, ZRG, ZORCPD
+(  118)     REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+(  119) !$acc routine vector
+(  120)     INTEGER(KIND=8) :: YLSTACK_L
+(  121)     INTEGER(KIND=8), INTENT(INOUT) :: YDSTACK_L
+(  122)     YLSTACK_L = YDSTACK_L
+(  124) !$acc & PMFUS, PMFUQ, PMFUL, PDMFUP, YDCST, YDECUMF )
+(  125)     
+(  126)     !----------------------------------------------------------------------
+(  127)     
+(  128)     
+(  129)     !*    1.           CALCULATE ENTRAINMENT AND DETRAINMENT RATES
+(  130)     !                  -------------------------------------------
+(  131)     
+(  132)     
+(  133)     ZRG = 1.0_JPRB / YDCST%RG
+(  134)     ZORCPD = 1.0_JPRB / YDCST%RCPD
+(  135)     !DIR$ IVDEP
+(  136)     !OCL NOVREC
+(  137)     
+(  138) !$acc loop vector
+(  139)     DO JL=KIDIA,KFDIA
+(  140)       IF (.not.LDCUM(JL) .and. KLAB(JL, 1 + KK) == 0) THEN
+(  141)         IF (YDECUMF%LMFMID .and. KK > YDECUMF%NJKT7 .and. PQEN(JL, KK) > 0.80_JPRB*PQSEN(JL, KK)) THEN
+(  142)           PTU(JL, KK + 1) = (YDCST%RCPD*PTEN(JL, KK) + PGEO(JL, KK) - PGEOH(JL, KK + 1))*ZORCPD
+(  143)           PQU(JL, KK + 1) = PQEN(JL, KK)
+(  144)           PLU(JL, KK + 1) = 0.0_JPRB
+(  145)           ! ZZZMB=MAX(RMFCMIN,-PVERVEL(JL,KK)/RG)
+(  146)           ZZZMB = MAX(1.E-6_JPRB, -PVERVEL(JL, KK)*ZRG)
+(  147)           ZZZMB = MIN(ZZZMB, YDECUMF%RMFLIA)
+(  148)           PMFUB(JL) = ZZZMB
+(  149)           PMFU(JL, KK + 1) = PMFUB(JL)
+(  150)           PMFUS(JL, KK + 1) = PMFUB(JL)*(YDCST%RCPD*PTU(JL, KK + 1) + PGEOH(JL, KK + 1))
+(  151)           PMFUQ(JL, KK + 1) = PMFUB(JL)*PQU(JL, KK + 1)
+(  152)           PMFUL(JL, KK + 1) = 0.0_JPRB
+(  153)           PDMFUP(JL, KK + 1) = 0.0_JPRB
+(  154)           PLRAIN(JL, KK + 1) = 0.0_JPRB
+(  155)           KCBOT(JL) = KK
+(  156)           KLAB(JL, KK + 1) = 1
+(  157)           KTYPE(JL) = 3
+(  158)         END IF
+(  159)       END IF
+(  160)     END DO
+(  161)     
+(  162)     
+(  163)     
+(  164) !$acc end data
+(  165)   END SUBROUTINE CUBASMCN_LOKI
+(  166) END MODULE CUBASMCN_LOKI_MOD

@@ -1,0 +1,850 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:00      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./cuadjtqs.scc_stack.F90
+
+(    1) MODULE CUADJTQS_LOKI_MOD
+(    2)   CONTAINS
+(    3)   SUBROUTINE CUADJTQS_LOKI (YDTHF, YDCST, KIDIA, KFDIA, KLON, KLEV, KK, PSP, PT, PQ, LDFLAG, KCALL, YDSTACK_L)
+(    4)     
+(    5)     !**   *CUADJTQS* - SIMPLIFIED VERSION OF MOIST ADJUSTMENT
+(    6)     
+(    7)     !     PURPOSE.
+(    8)     !     --------
+(    9)     !     TO PRODUCE T,Q AND L VALUES FOR CLOUD ASCENT
+(   10)     
+(   11)     !     INTERFACE
+(   12)     !     ---------
+(   13)     !     THIS ROUTINE IS CALLED FROM SUBROUTINES:
+(   14)     
+(   15)     !       *COND*
+(   16)     !       *CUBMADJ*
+(   17)     !       *CUBMD*
+(   18)     !       *CONDAD*
+(   19)     !       *CUBMADJAD*
+(   20)     !       *CUBMDAD*
+(   21)     
+(   22)     !     INPUT ARE UNADJUSTED T AND Q VALUES,
+(   23)     !     IT RETURNS ADJUSTED VALUES OF T AND Q
+(   24)     
+(   25)     !     PARAMETER     DESCRIPTION                                   UNITS
+(   26)     !     ---------     -----------                                   -----
+(   27)     !     INPUT PARAMETERS (INTEGER):
+(   28)     
+(   29)     !    *KIDIA*        START POINT
+(   30)     !    *KFDIA*        END POINT
+(   31)     !    *KLON*         NUMBER OF GRID POINTS PER PACKET
+(   32)     !    *KLEV*         NUMBER OF LEVELS
+(   33)     !    *KK*           LEVEL
+(   34)     !    *KCALL*        DEFINES CALCULATION AS
+(   35)     !                      KCALL=0  ENV. T AND QS IN*CUINI*
+(   36)     !                      KCALL=1  CONDENSATION IN UPDRAFTS  (E.G. CUBASE, CUASC)
+(   37)     !                      KCALL=2  EVAPORATION IN DOWNDRAFTS (E.G. CUDLFS,CUDDRAF)
+(   38)     
+(   39)     !     INPUT PARAMETERS (LOGICAL):
+(   40)     
+(   41)     !    *LDLAND*       LAND-SEA MASK (.TRUE. FOR LAND POINTS)
+(   42)     
+(   43)     !     INPUT PARAMETERS (REAL):
+(   44)     
+(   45)     !    *PSP*          PRESSURE                                        PA
+(   46)     
+(   47)     !     UPDATED PARAMETERS (REAL):
+(   48)     
+(   49)     !    *PT*           TEMPERATURE                                     K
+(   50)     !    *PQ*           SPECIFIC HUMIDITY                             KG/KG
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:00      page 2
+
+(   51)     
+(   52)     !     AUTHOR.
+(   53)     !     -------
+(   54)     !      J.F. MAHFOUF      ECMWF
+(   55)     
+(   56)     !     MODIFICATIONS.
+(   57)     !     --------------
+(   58)     !      M.Hamrud     01-Oct-2003 CY28 Cleaning
+(   59)     !      20180303 : Gabor: Just a comment line to force recompilation due to
+(   60)     !                        compiler wrapper optimation exception liat change
+(   61)     !     R. El Khatib 22-Jun-2022 A contribution to simplify phasing after the refactoring of YOMCLI/YOMCST/YOETHF.
+(   62)     
+(   63)     !----------------------------------------------------------------------
+(   64)     
+(   65)     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY: REAL64
+(   66)     USE, intrinsic :: ISO_C_BINDING, ONLY: C_SIZEOF
+(   67)     USE PARKIND1, ONLY: JPIM, JPRB
+(   68)     USE YOMHOOK, ONLY: LHOOK, JPHOOK
+(   69)     
+(   70)     USE YOMCST, ONLY: TCST
+(   71)     USE YOETHF, ONLY: TTHF
+(   72)     
+(   73)     IMPLICIT NONE
+(   74)     
+(   75)     INTEGER(KIND=JPIM), INTENT(IN) :: KLON
+(   76)     INTEGER(KIND=JPIM), INTENT(IN) :: KLEV
+(   77)     TYPE(TTHF), INTENT(IN) :: YDTHF
+(   78)     TYPE(TCST), INTENT(IN) :: YDCST
+(   79)     INTEGER(KIND=JPIM), INTENT(IN) :: KIDIA
+(   80)     INTEGER(KIND=JPIM), INTENT(IN) :: KFDIA
+(   81)     INTEGER(KIND=JPIM), INTENT(IN) :: KK
+(   82)     REAL(KIND=JPRB), INTENT(IN) :: PSP(KLON)
+(   83)     REAL(KIND=JPRB), INTENT(INOUT) :: PT(KLON, KLEV)
+(   84)     REAL(KIND=JPRB), INTENT(INOUT) :: PQ(KLON, KLEV)
+(   85)     LOGICAL, INTENT(IN) :: LDFLAG(KLON)
+(   86)     INTEGER(KIND=JPIM), INTENT(IN) :: KCALL
+(   87)     REAL(KIND=JPRB) :: Z3ES, Z4ES, Z5ALCP, ZALDCP
+(   88)     
+(   89)     INTEGER(KIND=JPIM) :: JL
+(   90)     
+(   91)     REAL(KIND=JPRB) :: ZQMAX, ZQP, ZCOND, ZCOND1, ZTARG, ZCOR, ZQSAT, ZFOEEW, Z2S
+(   92)     REAL(KIND=JPHOOK) :: CUADJTQS_ZHOOK_HANDLE
+(   93)     
+(   94)     !DIR$ VFUNCTION EXPHF
+(   95) #include "fcttre.func.h"
+(   96) !$acc routine vector
+(   97)     INTEGER(KIND=8) :: YLSTACK_L
+(   98)     INTEGER(KIND=8), INTENT(INOUT) :: YDSTACK_L
+(   99)     YLSTACK_L = YDSTACK_L
+(  100) !$acc data present( PSP, PT, PQ, LDFLAG, YDTHF, YDCST )
+(  101)     !----------------------------------------------------------------------
+(  102)     
+(  103)     !     1.           DEFINE CONSTANTS
+(  104)     !                  ----------------
+(  105)     
+(  106)     
+(  107)     ZQMAX = 0.5_JPRB
+(  108)     
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:00      page 3
+
+(  109)     !     2.           CALCULATE CONDENSATION AND ADJUST T AND Q ACCORDINGLY
+(  110)     !                  -----------------------------------------------------
+(  111)     
+(  112)     !*    ICE-WATER THERMODYNAMICAL FUNCTIONS
+(  113)     
+(  114)     
+(  115) !$acc loop vector
+(  116)     DO JL=KIDIA,KFDIA
+(  117)       IF (PT(JL, KK) > YDCST%RTT) THEN
+(  118)         Z3ES = YDTHF%R3LES
+(  119)         Z4ES = YDTHF%R4LES
+(  120)         Z5ALCP = YDTHF%R5ALVCP
+(  121)         ZALDCP = YDTHF%RALVDCP
+(  122)       ELSE
+(  123)         Z3ES = YDTHF%R3IES
+(  124)         Z4ES = YDTHF%R4IES
+(  125)         Z5ALCP = YDTHF%R5ALSCP
+(  126)         ZALDCP = YDTHF%RALSDCP
+(  127)       END IF
+(  128)       
+(  129)       IF (KCALL == 1) THEN
+(  130)         
+(  131)         !DIR$    IVDEP
+(  132)         !OCL NOVREC
+(  133)         IF (LDFLAG(JL)) THEN
+(  134)           ZQP = 1.0_JPRB / PSP(JL)
+(  135)           ZTARG = PT(JL, KK)
+(  136)           ZFOEEW = YDTHF%R2ES*EXP(Z3ES*(ZTARG - YDCST%RTT) / (ZTARG - Z4ES))
+(  137)           ZQSAT = ZQP*ZFOEEW
+(  138)           IF (ZQSAT > ZQMAX) THEN
+(  139)             ZQSAT = ZQMAX
+(  140)           END IF
+(  141)           ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*ZQSAT)
+(  142)           ZQSAT = ZQSAT*ZCOR
+(  143)           Z2S = Z5ALCP / (ZTARG - Z4ES)**2
+(  144)           ZCOND = (PQ(JL, KK) - ZQSAT) / (1.0_JPRB + ZQSAT*ZCOR*Z2S)
+(  145)           ZCOND = MAX(ZCOND, 0.0_JPRB)
+(  146)           !     IF(ZCOND /= _ZERO_) THEN
+(  147)           PT(JL, KK) = PT(JL, KK) + ZALDCP*ZCOND
+(  148)           PQ(JL, KK) = PQ(JL, KK) - ZCOND
+(  149)           ZTARG = PT(JL, KK)
+(  150)           ZFOEEW = YDTHF%R2ES*EXP(Z3ES*(ZTARG - YDCST%RTT) / (ZTARG - Z4ES))
+(  151)           ZQSAT = ZQP*ZFOEEW
+(  152)           IF (ZQSAT > ZQMAX) THEN
+(  153)             ZQSAT = ZQMAX
+(  154)           END IF
+(  155)           ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*ZQSAT)
+(  156)           ZQSAT = ZQSAT*ZCOR
+(  157)           Z2S = Z5ALCP / (ZTARG - Z4ES)**2
+(  158)           ZCOND1 = (PQ(JL, KK) - ZQSAT) / (1.0_JPRB + ZQSAT*ZCOR*Z2S)
+(  159)           IF (ZCOND == 0.0_JPRB) ZCOND1 = 0.0_JPRB
+(  160)           PT(JL, KK) = PT(JL, KK) + ZALDCP*ZCOND1
+(  161)           PQ(JL, KK) = PQ(JL, KK) - ZCOND1
+(  162)           !     ENDIF
+(  163)         END IF
+(  164)         
+(  165)       END IF
+(  166)       
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:00      page 4
+
+(  167)       IF (KCALL == 2) THEN
+(  168)         
+(  169)         !DIR$    IVDEP
+(  170)         !OCL NOVREC
+(  171)         IF (LDFLAG(JL)) THEN
+(  172)           ZQP = 1.0_JPRB / PSP(JL)
+(  173)           ZTARG = PT(JL, KK)
+(  174)           ZFOEEW = YDTHF%R2ES*EXP(Z3ES*(ZTARG - YDCST%RTT) / (ZTARG - Z4ES))
+(  175)           ZQSAT = ZQP*ZFOEEW
+(  176)           IF (ZQSAT > ZQMAX) THEN
+(  177)             ZQSAT = ZQMAX
+(  178)           END IF
+(  179)           ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*ZQSAT)
+(  180)           ZQSAT = ZQSAT*ZCOR
+(  181)           Z2S = Z5ALCP / (ZTARG - Z4ES)**2
+(  182)           ZCOND = (PQ(JL, KK) - ZQSAT) / (1.0_JPRB + ZQSAT*ZCOR*Z2S)
+(  183)           ZCOND = MIN(ZCOND, 0.0_JPRB)
+(  184)           !     IF(ZCOND /= _ZERO_) THEN
+(  185)           PT(JL, KK) = PT(JL, KK) + ZALDCP*ZCOND
+(  186)           PQ(JL, KK) = PQ(JL, KK) - ZCOND
+(  187)           ZTARG = PT(JL, KK)
+(  188)           ZFOEEW = YDTHF%R2ES*EXP(Z3ES*(ZTARG - YDCST%RTT) / (ZTARG - Z4ES))
+(  189)           ZQSAT = ZQP*ZFOEEW
+(  190)           IF (ZQSAT > ZQMAX) THEN
+(  191)             ZQSAT = ZQMAX
+(  192)           END IF
+(  193)           ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*ZQSAT)
+(  194)           ZQSAT = ZQSAT*ZCOR
+(  195)           Z2S = Z5ALCP / (ZTARG - Z4ES)**2
+(  196)           ZCOND1 = (PQ(JL, KK) - ZQSAT) / (1.0_JPRB + ZQSAT*ZCOR*Z2S)
+(  197)           IF (ZCOND == 0.0_JPRB) ZCOND1 = 0.0_JPRB
+(  198)           PT(JL, KK) = PT(JL, KK) + ZALDCP*ZCOND1
+(  199)           PQ(JL, KK) = PQ(JL, KK) - ZCOND1
+(  200)           !     ENDIF
+(  201)         END IF
+(  202)         
+(  203)       END IF
+(  204)       
+(  205)       IF (KCALL == 0) THEN
+(  206)         
+(  207)         !DIR$    IVDEP
+(  208)         !OCL NOVREC
+(  209)         ZQP = 1.0_JPRB / PSP(JL)
+(  210)         ZTARG = PT(JL, KK)
+(  211)         ZFOEEW = YDTHF%R2ES*EXP(Z3ES*(ZTARG - YDCST%RTT) / (ZTARG - Z4ES))
+(  212)         ZQSAT = ZQP*ZFOEEW
+(  213)         IF (ZQSAT > ZQMAX) THEN
+(  214)           ZQSAT = ZQMAX
+(  215)         END IF
+(  216)         ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*ZQSAT)
+(  217)         ZQSAT = ZQSAT*ZCOR
+(  218)         Z2S = Z5ALCP / (ZTARG - Z4ES)**2
+(  219)         ZCOND1 = (PQ(JL, KK) - ZQSAT) / (1.0_JPRB + ZQSAT*ZCOR*Z2S)
+(  220)         PT(JL, KK) = PT(JL, KK) + ZALDCP*ZCOND1
+(  221)         PQ(JL, KK) = PQ(JL, KK) - ZCOND1
+(  222)         ZTARG = PT(JL, KK)
+(  223)         ZFOEEW = YDTHF%R2ES*EXP(Z3ES*(ZTARG - YDCST%RTT) / (ZTARG - Z4ES))
+(  224)         ZQSAT = ZQP*ZFOEEW
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:00      page 5
+
+(  225)         IF (ZQSAT > ZQMAX) THEN
+(  226)           ZQSAT = ZQMAX
+(  227)         END IF
+(  228)         ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*ZQSAT)
+(  229)         ZQSAT = ZQSAT*ZCOR
+(  230)         Z2S = Z5ALCP / (ZTARG - Z4ES)**2
+(  231)         ZCOND1 = (PQ(JL, KK) - ZQSAT) / (1.0_JPRB + ZQSAT*ZCOR*Z2S)
+(  232)         PT(JL, KK) = PT(JL, KK) + ZALDCP*ZCOND1
+(  233)         PQ(JL, KK) = PQ(JL, KK) - ZCOND1
+(  234)         
+(  235)       END IF
+(  236)       
+(  237)       IF (KCALL == 4) THEN
+(  238)         
+(  239)         !DIR$    IVDEP
+(  240)         !OCL NOVREC
+(  241)         ZQP = 1.0_JPRB / PSP(JL)
+(  242)         ZTARG = PT(JL, KK)
+(  243)         ZFOEEW = YDTHF%R2ES*EXP(Z3ES*(ZTARG - YDCST%RTT) / (ZTARG - Z4ES))
+(  244)         ZQSAT = ZQP*ZFOEEW
+(  245)         IF (ZQSAT > ZQMAX) THEN
+(  246)           ZQSAT = ZQMAX
+(  247)         END IF
+(  248)         ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*ZQSAT)
+(  249)         ZQSAT = ZQSAT*ZCOR
+(  250)         Z2S = Z5ALCP / (ZTARG - Z4ES)**2
+(  251)         ZCOND = (PQ(JL, KK) - ZQSAT) / (1.0_JPRB + ZQSAT*ZCOR*Z2S)
+(  252)         PT(JL, KK) = PT(JL, KK) + ZALDCP*ZCOND
+(  253)         PQ(JL, KK) = PQ(JL, KK) - ZCOND
+(  254)         ZTARG = PT(JL, KK)
+(  255)         ZFOEEW = YDTHF%R2ES*EXP(Z3ES*(ZTARG - YDCST%RTT) / (ZTARG - Z4ES))
+(  256)         ZQSAT = ZQP*ZFOEEW
+(  257)         IF (ZQSAT > ZQMAX) THEN
+(  258)           ZQSAT = ZQMAX
+(  259)         END IF
+(  260)         ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*ZQSAT)
+(  261)         ZQSAT = ZQSAT*ZCOR
+(  262)         Z2S = Z5ALCP / (ZTARG - Z4ES)**2
+(  263)         ZCOND1 = (PQ(JL, KK) - ZQSAT) / (1.0_JPRB + ZQSAT*ZCOR*Z2S)
+(  264)         PT(JL, KK) = PT(JL, KK) + ZALDCP*ZCOND1
+(  265)         PQ(JL, KK) = PQ(JL, KK) - ZCOND1
+(  266)         
+(  267)       END IF
+(  268)     END DO
+(  269)     
+(  270)     
+(  271)     
+(  272) !$acc end data
+(  273)   END SUBROUTINE CUADJTQS_LOKI
+(  274) END MODULE CUADJTQS_LOKI_MOD
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:00      page 6
+
+(    1) # 1 "./cuadjtqs.scc_stack.F90"
+(    1) MODULE CUADJTQS_LOKI_MOD
+(    2)   CONTAINS
+(    3)   SUBROUTINE CUADJTQS_LOKI (YDTHF, YDCST, KIDIA, KFDIA, KLON, KLEV, KK, PSP, PT, PQ, LDFLAG, KCALL, YDSTACK_L)
+(    4)     
+(    5)     !**   *CUADJTQS* - SIMPLIFIED VERSION OF MOIST ADJUSTMENT
+(    6)     
+(    7)     !     PURPOSE.
+(    8)     !     --------
+(    9)     !     TO PRODUCE T,Q AND L VALUES FOR CLOUD ASCENT
+(   10)     
+(   11)     !     INTERFACE
+(   12)     !     ---------
+(   13)     !     THIS ROUTINE IS CALLED FROM SUBROUTINES:
+(   14)     
+(   15)     !       *COND*
+(   16)     !       *CUBMADJ*
+(   17)     !       *CUBMD*
+(   18)     !       *CONDAD*
+(   19)     !       *CUBMADJAD*
+(   20)     !       *CUBMDAD*
+(   21)     
+(   22)     !     INPUT ARE UNADJUSTED T AND Q VALUES,
+(   23)     !     IT RETURNS ADJUSTED VALUES OF T AND Q
+(   24)     
+(   25)     !     PARAMETER     DESCRIPTION                                   UNITS
+(   26)     !     ---------     -----------                                   -----
+(   27)     !     INPUT PARAMETERS (INTEGER):
+(   28)     
+(   29)     !    *KIDIA*        START POINT
+(   30)     !    *KFDIA*        END POINT
+(   31)     !    *KLON*         NUMBER OF GRID POINTS PER PACKET
+(   32)     !    *KLEV*         NUMBER OF LEVELS
+(   33)     !    *KK*           LEVEL
+(   34)     !    *KCALL*        DEFINES CALCULATION AS
+(   35)     !                      KCALL=0  ENV. T AND QS IN*CUINI*
+(   36)     !                      KCALL=1  CONDENSATION IN UPDRAFTS  (E.G. CUBASE, CUASC)
+(   37)     !                      KCALL=2  EVAPORATION IN DOWNDRAFTS (E.G. CUDLFS,CUDDRAF)
+(   38)     
+(   39)     !     INPUT PARAMETERS (LOGICAL):
+(   40)     
+(   41)     !    *LDLAND*       LAND-SEA MASK (.TRUE. FOR LAND POINTS)
+(   42)     
+(   43)     !     INPUT PARAMETERS (REAL):
+(   44)     
+(   45)     !    *PSP*          PRESSURE                                        PA
+(   46)     
+(   47)     !     UPDATED PARAMETERS (REAL):
+(   48)     
+(   49)     !    *PT*           TEMPERATURE                                     K
+(   50)     !    *PQ*           SPECIFIC HUMIDITY                             KG/KG
+(   51)     
+(   52)     !     AUTHOR.
+(   53)     !     -------
+(   54)     !      J.F. MAHFOUF      ECMWF
+(   55)     
+(   56)     !     MODIFICATIONS.
+(   57)     !     --------------
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:00      page 7
+
+(   58)     !      M.Hamrud     01-Oct-2003 CY28 Cleaning
+(   59)     !      20180303 : Gabor: Just a comment line to force recompilation due to
+(   60)     !                        compiler wrapper optimation exception liat change
+(   61)     !     R. El Khatib 22-Jun-2022 A contribution to simplify phasing after the refactoring of YOMCLI/YOMCST/YOETHF.
+(   62)     
+(   63)     !----------------------------------------------------------------------
+(   64)     
+(   65)     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY: REAL64
+(   66)     USE, intrinsic :: ISO_C_BINDING, ONLY: C_SIZEOF
+(   67)     USE PARKIND1, ONLY: JPIM, JPRB
+(   68)     USE YOMHOOK, ONLY: LHOOK, JPHOOK
+(   69)     
+(   70)     USE YOMCST, ONLY: TCST
+(   71)     USE YOETHF, ONLY: TTHF
+(   72)     
+(   73)     IMPLICIT NONE
+(   74)     
+(   75)     INTEGER(KIND=JPIM), INTENT(IN) :: KLON
+(   76)     INTEGER(KIND=JPIM), INTENT(IN) :: KLEV
+(   77)     TYPE(TTHF), INTENT(IN) :: YDTHF
+(   78)     TYPE(TCST), INTENT(IN) :: YDCST
+(   79)     INTEGER(KIND=JPIM), INTENT(IN) :: KIDIA
+(   80)     INTEGER(KIND=JPIM), INTENT(IN) :: KFDIA
+(   81)     INTEGER(KIND=JPIM), INTENT(IN) :: KK
+(   82)     REAL(KIND=JPRB), INTENT(IN) :: PSP(KLON)
+(   83)     REAL(KIND=JPRB), INTENT(INOUT) :: PT(KLON, KLEV)
+(   84)     REAL(KIND=JPRB), INTENT(INOUT) :: PQ(KLON, KLEV)
+(   85)     LOGICAL, INTENT(IN) :: LDFLAG(KLON)
+(   86)     INTEGER(KIND=JPIM), INTENT(IN) :: KCALL
+(   87)     REAL(KIND=JPRB) :: Z3ES, Z4ES, Z5ALCP, ZALDCP
+(   88)     
+(   89)     INTEGER(KIND=JPIM) :: JL
+(   90)     
+(   91)     REAL(KIND=JPRB) :: ZQMAX, ZQP, ZCOND, ZCOND1, ZTARG, ZCOR, ZQSAT, ZFOEEW, Z2S
+(   92)     REAL(KIND=JPHOOK) :: CUADJTQS_ZHOOK_HANDLE
+(   93)     
+(   94)     !DIR$ VFUNCTION EXPHF
+(   95) # 95 "./cuadjtqs.scc_stack.F90"
+(   95) # 1 "./fcttre.func.h"
+(    1) ! (C) Copyright 1988- ECMWF.
+(    2) !
+(    3) ! This software is licensed under the terms of the Apache Licence Version 2.0
+(    4) ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+(    5) !
+(    6) ! In applying this licence, ECMWF does not waive the privileges and immunities
+(    7) ! granted to it by virtue of its status as an intergovernmental organisation
+(    8) ! nor does it submit to any jurisdiction.
+(    9) # 10 "./fcttre.func.h"
+(   10) !*
+(   11) !     ------------------------------------------------------------------
+(   12) # 13 "./fcttre.func.h"
+(   13) !     This COMDECK includes the Thermodynamical functions for the cy39
+(   14) !       ECMWF Physics package.
+(   15) !       Consistent with YOMCST Basic physics constants, assuming the
+(   16) !       partial pressure of water vapour is given by a first order
+(   17) !       Taylor expansion of Qs(T) w.r.t. to Temperature, using constants
+(   18) !       in YOETHF
+(   19) !       Two sets of functions are available. In the first set only the
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:00      page 8
+
+(   20) !       cases water or ice are distinguished by temperature.  This set 
+(   21) !       consists of the functions FOEDELTA,FOEEW,FOEDE and FOELH.
+(   22) !       The second set considers, besides the two cases water and ice 
+(   23) !       also a mix of both for the temperature range YDTHF%RTICE < T < YDTHF%RTWAT.
+(   24) !       This set contains FOEALFA,FOEEWM,FOEDEM,FOELDCPM and FOELHM.
+(   25) !       FKOOP modifies the ice saturation mixing ratio for homogeneous 
+(   26) !       nucleation. FOE_DEWM_DT provides an approximate first derivative
+(   27) !       of FOEEWM.
+(   28) # 29 "./fcttre.func.h"
+(   29) !       Depending on the consideration of mixed phases either the first 
+(   30) !       set (e.g. surface, post-processing) or the second set 
+(   31) !       (e.g. clouds, condensation, convection) should be used.
+(   32) # 33 "./fcttre.func.h"
+(   33) !     ------------------------------------------------------------------
+(   34) !     *****************************************************************
+(   35) # 36 "./fcttre.func.h"
+(   36) !                NO CONSIDERATION OF MIXED PHASES
+(   37) # 38 "./fcttre.func.h"
+(   38) !     *****************************************************************
+(   39) REAL(KIND=JPRB) :: FOEDELTA
+(   40) REAL(KIND=JPRB) :: PTARE
+(   41) FOEDELTA (PTARE) = MAX (0.0_JPRB,SIGN(1.0_JPRB,PTARE-YDCST%RTT))
+(   42) # 43 "./fcttre.func.h"
+(   43) !                  FOEDELTA = 1    water
+(   44) !                  FOEDELTA = 0    ice
+(   45) # 46 "./fcttre.func.h"
+(   46) !     THERMODYNAMICAL FUNCTIONS .
+(   47) # 48 "./fcttre.func.h"
+(   48) !     Pressure of water vapour at saturation
+(   49) !        INPUT : PTARE = TEMPERATURE
+(   50) REAL(KIND=JPRB) :: FOEEW,FOEDE,FOEDESU,FOELH,FOELDCP
+(   51) FOEEW ( PTARE ) = YDTHF%R2ES*EXP (&
+(   52)   &(YDTHF%R3LES*FOEDELTA(PTARE)+YDTHF%R3IES*(1.0_JPRB-FOEDELTA(PTARE)))*(PTARE-YDCST%RTT)&
+(   53) &/ (PTARE-(YDTHF%R4LES*FOEDELTA(PTARE)+YDTHF%R4IES*(1.0_JPRB-FOEDELTA(PTARE)))))
+(   54) # 55 "./fcttre.func.h"
+(   55) FOEDE ( PTARE ) = &
+(   56)   &(FOEDELTA(PTARE)*YDTHF%R5ALVCP+(1.0_JPRB-FOEDELTA(PTARE))*YDTHF%R5ALSCP)&
+(   57) &/ (PTARE-(YDTHF%R4LES*FOEDELTA(PTARE)+YDTHF%R4IES*(1.0_JPRB-FOEDELTA(PTARE))))**2
+(   58) # 59 "./fcttre.func.h"
+(   59) FOEDESU ( PTARE ) = &
+(   60)   &(FOEDELTA(PTARE)*YDTHF%R5LES+(1.0_JPRB-FOEDELTA(PTARE))*YDTHF%R5IES)&
+(   61) &/ (PTARE-(YDTHF%R4LES*FOEDELTA(PTARE)+YDTHF%R4IES*(1.0_JPRB-FOEDELTA(PTARE))))**2
+(   62) # 63 "./fcttre.func.h"
+(   63) FOELH ( PTARE ) =&
+(   64)          &FOEDELTA(PTARE)*YDCST%RLVTT + (1.0_JPRB-FOEDELTA(PTARE))*YDCST%RLSTT
+(   65) # 66 "./fcttre.func.h"
+(   66) FOELDCP ( PTARE ) = &
+(   67)          &FOEDELTA(PTARE)*YDTHF%RALVDCP + (1.0_JPRB-FOEDELTA(PTARE))*YDTHF%RALSDCP
+(   68) # 69 "./fcttre.func.h"
+(   69) !     *****************************************************************
+(   70) # 71 "./fcttre.func.h"
+(   71) !           CONSIDERATION OF MIXED PHASES
+(   72) # 73 "./fcttre.func.h"
+(   73) !     *****************************************************************
+(   74) # 75 "./fcttre.func.h"
+(   75) !     FOEALFA is calculated to distinguish the three cases:
+(   76) # 77 "./fcttre.func.h"
+(   77) !                       FOEALFA=1            water phase
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:00      page 9
+
+(   78) !                       FOEALFA=0            ice phase
+(   79) !                       0 < FOEALFA < 1      mixed phase
+(   80) # 81 "./fcttre.func.h"
+(   81) !               INPUT : PTARE = TEMPERATURE
+(   82) REAL(KIND=JPRB) :: FOEALFA
+(   83) FOEALFA (PTARE) = MIN(1.0_JPRB,((MAX(YDTHF%RTICE,MIN(YDTHF%RTWAT,PTARE))-YDTHF%RTICE)&
+(   84)  &*YDTHF%RTWAT_RTICE_R)**2) 
+(   85) # 87 "./fcttre.func.h"
+(   87) !     Pressure of water vapour at saturation
+(   88) !        INPUT : PTARE = TEMPERATURE
+(   89) REAL(KIND=JPRB) :: FOEEWM,FOEDEM,FOELDCPM,FOELHM,FOE_DEWM_DT
+(   90) FOEEWM ( PTARE ) = YDTHF%R2ES *&
+(   91)      &(FOEALFA(PTARE)*EXP(YDTHF%R3LES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4LES))+&
+(   92)   &(1.0_JPRB-FOEALFA(PTARE))*EXP(YDTHF%R3IES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4IES)))
+(   93) # 94 "./fcttre.func.h"
+(   94) FOE_DEWM_DT( PTARE ) = YDTHF%R2ES * ( &
+(   95)      & YDTHF%R3LES*FOEALFA(PTARE)*EXP(YDTHF%R3LES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4LES)) &
+(   96)      &    *(YDCST%RTT-YDTHF%R4LES)/(PTARE-YDTHF%R4LES)**2 + &
+(   97)      & YDTHF%R3IES*(1.0-FOEALFA(PTARE))*EXP(YDTHF%R3IES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4IES)) &
+(   98)      &    *(YDCST%RTT-YDTHF%R4IES)/(PTARE-YDTHF%R4IES)**2)
+(   99) # 100 "./fcttre.func.h"
+(  100) FOEDEM ( PTARE ) = FOEALFA(PTARE)*YDTHF%R5ALVCP*(1.0_JPRB/(PTARE-YDTHF%R4LES)**2)+&
+(  101)              &(1.0_JPRB-FOEALFA(PTARE))*YDTHF%R5ALSCP*(1.0_JPRB/(PTARE-YDTHF%R4IES)**2)
+(  102) # 103 "./fcttre.func.h"
+(  103) FOELDCPM ( PTARE ) = FOEALFA(PTARE)*YDTHF%RALVDCP+&
+(  104)             &(1.0_JPRB-FOEALFA(PTARE))*YDTHF%RALSDCP
+(  105) # 106 "./fcttre.func.h"
+(  106) FOELHM ( PTARE ) =&
+(  107)          &FOEALFA(PTARE)*YDCST%RLVTT+(1.0_JPRB-FOEALFA(PTARE))*YDCST%RLSTT
+(  108) # 110 "./fcttre.func.h"
+(  110) !     Temperature normalization for humidity background change of variable
+(  111) !        INPUT : PTARE = TEMPERATURE
+(  112) REAL(KIND=JPRB) :: FOETB
+(  113) FOETB ( PTARE )=FOEALFA(PTARE)*YDTHF%R3LES*(YDCST%RTT-YDTHF%R4LES)*(1.0_JPRB/(PTARE-YDTHF%R4LES)**2)+&
+(  114)              &(1.0_JPRB-FOEALFA(PTARE))*YDTHF%R3IES*(YDCST%RTT-YDTHF%R4IES)*(1.0_JPRB/(PTARE-YDTHF%R4IES)**2)
+(  115) # 116 "./fcttre.func.h"
+(  116) !     ------------------------------------------------------------------
+(  117) !     *****************************************************************
+(  118) # 119 "./fcttre.func.h"
+(  119) !           CONSIDERATION OF DIFFERENT MIXED PHASE FOR CONV
+(  120) # 121 "./fcttre.func.h"
+(  121) !     *****************************************************************
+(  122) # 123 "./fcttre.func.h"
+(  123) !     FOEALFCU is calculated to distinguish the three cases:
+(  124) # 125 "./fcttre.func.h"
+(  125) !                       FOEALFCU=1            water phase
+(  126) !                       FOEALFCU=0            ice phase
+(  127) !                       0 < FOEALFCU < 1      mixed phase
+(  128) # 129 "./fcttre.func.h"
+(  129) !               INPUT : PTARE = TEMPERATURE
+(  130) REAL(KIND=JPRB) :: FOEALFCU 
+(  131) FOEALFCU (PTARE) = MIN(1.0_JPRB,((MAX(YDTHF%RTICECU,MIN(YDTHF%RTWAT,PTARE))&
+(  132) &-YDTHF%RTICECU)*YDTHF%RTWAT_RTICECU_R)**2) 
+(  133) # 135 "./fcttre.func.h"
+(  135) !     Pressure of water vapour at saturation
+(  136) !        INPUT : PTARE = TEMPERATURE
+(  137) REAL(KIND=JPRB) :: FOEEWMCU,FOEDEMCU,FOELDCPMCU,FOELHMCU
+(  138) FOEEWMCU ( PTARE ) = YDTHF%R2ES *&
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:00      page 10
+
+(  139)      &(FOEALFCU(PTARE)*EXP(YDTHF%R3LES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4LES))+&
+(  140)   &(1.0_JPRB-FOEALFCU(PTARE))*EXP(YDTHF%R3IES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4IES)))
+(  141) # 142 "./fcttre.func.h"
+(  142) FOEDEMCU ( PTARE )=FOEALFCU(PTARE)*YDTHF%R5ALVCP*(1.0_JPRB/(PTARE-YDTHF%R4LES)**2)+&
+(  143)              &(1.0_JPRB-FOEALFCU(PTARE))*YDTHF%R5ALSCP*(1.0_JPRB/(PTARE-YDTHF%R4IES)**2)
+(  144) # 145 "./fcttre.func.h"
+(  145) FOELDCPMCU ( PTARE ) = FOEALFCU(PTARE)*YDTHF%RALVDCP+&
+(  146)             &(1.0_JPRB-FOEALFCU(PTARE))*YDTHF%RALSDCP
+(  147) # 148 "./fcttre.func.h"
+(  148) FOELHMCU ( PTARE ) =&
+(  149)          &FOEALFCU(PTARE)*YDCST%RLVTT+(1.0_JPRB-FOEALFCU(PTARE))*YDCST%RLSTT
+(  150) !     ------------------------------------------------------------------
+(  151) # 152 "./fcttre.func.h"
+(  152) !     Pressure of water vapour at saturation
+(  153) !     This one is for the WMO definition of saturation, i.e. always
+(  154) !     with respect to water.
+(  155) !     
+(  156) !     Duplicate to FOEELIQ and FOEEICE for separate ice variable
+(  157) !     FOEELIQ always respect to water 
+(  158) !     FOEEICE always respect to ice 
+(  159) !     FOEELIQ2ICE is the ratio of vapour pressures over water and ice 
+(  160) !       (analytically simplified to avoid a suspected Cray compiler bug and using a single call to exp)
+(  161) !     (could use FOEEW and FOEEWMO, but naming convention unclear)
+(  162) !     FOELSON returns e wrt liquid water using D Sonntag (1994, Met. Zeit.)
+(  163) !      - now recommended for use with radiosonde data (WMO CIMO guide, 2014)
+(  164) !      unlike the FOEE functions does not include 1/(YDCST%RETV+1.0_JPRB) factor
+(  165) # 166 "./fcttre.func.h"
+(  166) REAL(KIND=JPRB) :: FOEEWMO, FOEELIQ, FOEEICE, FOEELIQ2ICE, FOELSON 
+(  167) FOEEWMO( PTARE ) = YDTHF%R2ES*EXP(YDTHF%R3LES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4LES))
+(  168) FOEELIQ( PTARE ) = YDTHF%R2ES*EXP(YDTHF%R3LES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4LES))
+(  169) FOEEICE( PTARE ) = YDTHF%R2ES*EXP(YDTHF%R3IES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4IES))
+(  170) FOEELIQ2ICE( PTARE )  = EXP(      (PTARE-YDCST%RTT)*(YDTHF%R3LES/(PTARE-YDTHF%R4LES) - YDTHF%R3IES/(PTARE-YDTHF%R4IES)))
+(  171) FOELSON( PTARE ) = EXP( -6096.9385_JPRB/PTARE + 21.2409642_JPRB &
+(  172) 	             - 2.711193E-2_JPRB * PTARE    &
+(  173)                      + 1.673952E-5_JPRB * PTARE**2 &
+(  174) 		     + 2.433502_JPRB * LOG(PTARE))
+(  175) # 176 "./fcttre.func.h"
+(  176) REAL(KIND=JPRB) :: FOEEWM_V,FOEEWMCU_V,FOELES_V,FOEIES_V
+(  177) REAL(KIND=JPRB) :: EXP1,EXP2
+(  178)       FOELES_V(PTARE)=YDTHF%R3LES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4LES)
+(  179)       FOEIES_V(PTARE)=YDTHF%R3IES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4IES)
+(  180)       FOEEWM_V( PTARE,EXP1,EXP2 )=YDTHF%R2ES*(FOEALFA(PTARE)*EXP1+ &
+(  181)           & (1.0_JPRB-FOEALFA(PTARE))*EXP2)
+(  182)       FOEEWMCU_V ( PTARE,EXP1,EXP2 ) = YDTHF%R2ES*(FOEALFCU(PTARE)*EXP1+&
+(  183)           &(1.0_JPRB-FOEALFCU(PTARE))*EXP2)
+(  184) # 96 "./cuadjtqs.scc_stack.F90"
+(   96) # 96 "./cuadjtqs.scc_stack.F90"
+(   96) !$acc routine vector
+(   97)     INTEGER(KIND=8) :: YLSTACK_L
+(   98)     INTEGER(KIND=8), INTENT(INOUT) :: YDSTACK_L
+(   99)     YLSTACK_L = YDSTACK_L
+(  100) !$acc data present( PSP, PT, PQ, LDFLAG, YDTHF, YDCST )
+(  101)     !----------------------------------------------------------------------
+(  102)     
+(  103)     !     1.           DEFINE CONSTANTS
+(  104)     !                  ----------------
+(  105)     
+(  106)     
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:00      page 11
+
+(  107)     ZQMAX = 0.5_JPRB
+(  108)     
+(  109)     !     2.           CALCULATE CONDENSATION AND ADJUST T AND Q ACCORDINGLY
+(  110)     !                  -----------------------------------------------------
+(  111)     
+(  112)     !*    ICE-WATER THERMODYNAMICAL FUNCTIONS
+(  113)     
+(  114)     
+(  115) !$acc loop vector
+(  116)     DO JL=KIDIA,KFDIA
+(  117)       IF (PT(JL, KK) > YDCST%RTT) THEN
+(  118)         Z3ES = YDTHF%R3LES
+(  119)         Z4ES = YDTHF%R4LES
+(  120)         Z5ALCP = YDTHF%R5ALVCP
+(  121)         ZALDCP = YDTHF%RALVDCP
+(  122)       ELSE
+(  123)         Z3ES = YDTHF%R3IES
+(  124)         Z4ES = YDTHF%R4IES
+(  125)         Z5ALCP = YDTHF%R5ALSCP
+(  126)         ZALDCP = YDTHF%RALSDCP
+(  127)       END IF
+(  128)       
+(  129)       IF (KCALL == 1) THEN
+(  130)         
+(  131)         !DIR$    IVDEP
+(  132)         !OCL NOVREC
+(  133)         IF (LDFLAG(JL)) THEN
+(  134)           ZQP = 1.0_JPRB / PSP(JL)
+(  135)           ZTARG = PT(JL, KK)
+(  136)           ZFOEEW = YDTHF%R2ES*EXP(Z3ES*(ZTARG - YDCST%RTT) / (ZTARG - Z4ES))
+(  137)           ZQSAT = ZQP*ZFOEEW
+(  138)           IF (ZQSAT > ZQMAX) THEN
+(  139)             ZQSAT = ZQMAX
+(  140)           END IF
+(  141)           ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*ZQSAT)
+(  142)           ZQSAT = ZQSAT*ZCOR
+(  143)           Z2S = Z5ALCP / (ZTARG - Z4ES)**2
+(  144)           ZCOND = (PQ(JL, KK) - ZQSAT) / (1.0_JPRB + ZQSAT*ZCOR*Z2S)
+(  145)           ZCOND = MAX(ZCOND, 0.0_JPRB)
+(  146)           !     IF(ZCOND /= _ZERO_) THEN
+(  147)           PT(JL, KK) = PT(JL, KK) + ZALDCP*ZCOND
+(  148)           PQ(JL, KK) = PQ(JL, KK) - ZCOND
+(  149)           ZTARG = PT(JL, KK)
+(  150)           ZFOEEW = YDTHF%R2ES*EXP(Z3ES*(ZTARG - YDCST%RTT) / (ZTARG - Z4ES))
+(  151)           ZQSAT = ZQP*ZFOEEW
+(  152)           IF (ZQSAT > ZQMAX) THEN
+(  153)             ZQSAT = ZQMAX
+(  154)           END IF
+(  155)           ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*ZQSAT)
+(  156)           ZQSAT = ZQSAT*ZCOR
+(  157)           Z2S = Z5ALCP / (ZTARG - Z4ES)**2
+(  158)           ZCOND1 = (PQ(JL, KK) - ZQSAT) / (1.0_JPRB + ZQSAT*ZCOR*Z2S)
+(  159)           IF (ZCOND == 0.0_JPRB) ZCOND1 = 0.0_JPRB
+(  160)           PT(JL, KK) = PT(JL, KK) + ZALDCP*ZCOND1
+(  161)           PQ(JL, KK) = PQ(JL, KK) - ZCOND1
+(  162)           !     ENDIF
+(  163)         END IF
+(  164)         
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:00      page 12
+
+(  165)       END IF
+(  166)       
+(  167)       IF (KCALL == 2) THEN
+(  168)         
+(  169)         !DIR$    IVDEP
+(  170)         !OCL NOVREC
+(  171)         IF (LDFLAG(JL)) THEN
+(  172)           ZQP = 1.0_JPRB / PSP(JL)
+(  173)           ZTARG = PT(JL, KK)
+(  174)           ZFOEEW = YDTHF%R2ES*EXP(Z3ES*(ZTARG - YDCST%RTT) / (ZTARG - Z4ES))
+(  175)           ZQSAT = ZQP*ZFOEEW
+(  176)           IF (ZQSAT > ZQMAX) THEN
+(  177)             ZQSAT = ZQMAX
+(  178)           END IF
+(  179)           ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*ZQSAT)
+(  180)           ZQSAT = ZQSAT*ZCOR
+(  181)           Z2S = Z5ALCP / (ZTARG - Z4ES)**2
+(  182)           ZCOND = (PQ(JL, KK) - ZQSAT) / (1.0_JPRB + ZQSAT*ZCOR*Z2S)
+(  183)           ZCOND = MIN(ZCOND, 0.0_JPRB)
+(  184)           !     IF(ZCOND /= _ZERO_) THEN
+(  185)           PT(JL, KK) = PT(JL, KK) + ZALDCP*ZCOND
+(  186)           PQ(JL, KK) = PQ(JL, KK) - ZCOND
+(  187)           ZTARG = PT(JL, KK)
+(  188)           ZFOEEW = YDTHF%R2ES*EXP(Z3ES*(ZTARG - YDCST%RTT) / (ZTARG - Z4ES))
+(  189)           ZQSAT = ZQP*ZFOEEW
+(  190)           IF (ZQSAT > ZQMAX) THEN
+(  191)             ZQSAT = ZQMAX
+(  192)           END IF
+(  193)           ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*ZQSAT)
+(  194)           ZQSAT = ZQSAT*ZCOR
+(  195)           Z2S = Z5ALCP / (ZTARG - Z4ES)**2
+(  196)           ZCOND1 = (PQ(JL, KK) - ZQSAT) / (1.0_JPRB + ZQSAT*ZCOR*Z2S)
+(  197)           IF (ZCOND == 0.0_JPRB) ZCOND1 = 0.0_JPRB
+(  198)           PT(JL, KK) = PT(JL, KK) + ZALDCP*ZCOND1
+(  199)           PQ(JL, KK) = PQ(JL, KK) - ZCOND1
+(  200)           !     ENDIF
+(  201)         END IF
+(  202)         
+(  203)       END IF
+(  204)       
+(  205)       IF (KCALL == 0) THEN
+(  206)         
+(  207)         !DIR$    IVDEP
+(  208)         !OCL NOVREC
+(  209)         ZQP = 1.0_JPRB / PSP(JL)
+(  210)         ZTARG = PT(JL, KK)
+(  211)         ZFOEEW = YDTHF%R2ES*EXP(Z3ES*(ZTARG - YDCST%RTT) / (ZTARG - Z4ES))
+(  212)         ZQSAT = ZQP*ZFOEEW
+(  213)         IF (ZQSAT > ZQMAX) THEN
+(  214)           ZQSAT = ZQMAX
+(  215)         END IF
+(  216)         ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*ZQSAT)
+(  217)         ZQSAT = ZQSAT*ZCOR
+(  218)         Z2S = Z5ALCP / (ZTARG - Z4ES)**2
+(  219)         ZCOND1 = (PQ(JL, KK) - ZQSAT) / (1.0_JPRB + ZQSAT*ZCOR*Z2S)
+(  220)         PT(JL, KK) = PT(JL, KK) + ZALDCP*ZCOND1
+(  221)         PQ(JL, KK) = PQ(JL, KK) - ZCOND1
+(  222)         ZTARG = PT(JL, KK)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:00      page 13
+
+(  223)         ZFOEEW = YDTHF%R2ES*EXP(Z3ES*(ZTARG - YDCST%RTT) / (ZTARG - Z4ES))
+(  224)         ZQSAT = ZQP*ZFOEEW
+(  225)         IF (ZQSAT > ZQMAX) THEN
+(  226)           ZQSAT = ZQMAX
+(  227)         END IF
+(  228)         ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*ZQSAT)
+(  229)         ZQSAT = ZQSAT*ZCOR
+(  230)         Z2S = Z5ALCP / (ZTARG - Z4ES)**2
+(  231)         ZCOND1 = (PQ(JL, KK) - ZQSAT) / (1.0_JPRB + ZQSAT*ZCOR*Z2S)
+(  232)         PT(JL, KK) = PT(JL, KK) + ZALDCP*ZCOND1
+(  233)         PQ(JL, KK) = PQ(JL, KK) - ZCOND1
+(  234)         
+(  235)       END IF
+(  236)       
+(  237)       IF (KCALL == 4) THEN
+(  238)         
+(  239)         !DIR$    IVDEP
+(  240)         !OCL NOVREC
+(  241)         ZQP = 1.0_JPRB / PSP(JL)
+(  242)         ZTARG = PT(JL, KK)
+(  243)         ZFOEEW = YDTHF%R2ES*EXP(Z3ES*(ZTARG - YDCST%RTT) / (ZTARG - Z4ES))
+(  244)         ZQSAT = ZQP*ZFOEEW
+(  245)         IF (ZQSAT > ZQMAX) THEN
+(  246)           ZQSAT = ZQMAX
+(  247)         END IF
+(  248)         ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*ZQSAT)
+(  249)         ZQSAT = ZQSAT*ZCOR
+(  250)         Z2S = Z5ALCP / (ZTARG - Z4ES)**2
+(  251)         ZCOND = (PQ(JL, KK) - ZQSAT) / (1.0_JPRB + ZQSAT*ZCOR*Z2S)
+(  252)         PT(JL, KK) = PT(JL, KK) + ZALDCP*ZCOND
+(  253)         PQ(JL, KK) = PQ(JL, KK) - ZCOND
+(  254)         ZTARG = PT(JL, KK)
+(  255)         ZFOEEW = YDTHF%R2ES*EXP(Z3ES*(ZTARG - YDCST%RTT) / (ZTARG - Z4ES))
+(  256)         ZQSAT = ZQP*ZFOEEW
+(  257)         IF (ZQSAT > ZQMAX) THEN
+(  258)           ZQSAT = ZQMAX
+(  259)         END IF
+(  260)         ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*ZQSAT)
+(  261)         ZQSAT = ZQSAT*ZCOR
+(  262)         Z2S = Z5ALCP / (ZTARG - Z4ES)**2
+(  263)         ZCOND1 = (PQ(JL, KK) - ZQSAT) / (1.0_JPRB + ZQSAT*ZCOR*Z2S)
+(  264)         PT(JL, KK) = PT(JL, KK) + ZALDCP*ZCOND1
+(  265)         PQ(JL, KK) = PQ(JL, KK) - ZCOND1
+(  266)         
+(  267)       END IF
+(  268)     END DO
+(  269)     
+(  270)     
+(  271)     
+(  272) !$acc end data
+(  273)   END SUBROUTINE CUADJTQS_LOKI
+(  274) END MODULE CUADJTQS_LOKI_MOD

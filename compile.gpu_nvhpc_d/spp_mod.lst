@@ -1,0 +1,247 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:28      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./spp_mod.F90
+
+(    1) MODULE SPP_MOD
+(    2) 
+(    3) ! Purpose :
+(    4) ! -------
+(    5) !    Define types for the SPP scheme, which represents model uncertainties
+(    6) !    with Stochastically Perturbed Parameterisations.
+(    7) 
+(    8) ! Interface :
+(    9) ! ---------
+(   10) !    Empty.
+(   11) 
+(   12) ! External :
+(   13) ! --------
+(   14) !    None.
+(   15) 
+(   16) ! Method :
+(   17) ! ------
+(   18) !    See Documentation.
+(   19) 
+(   20) ! Reference :
+(   21) ! ---------
+(   22) 
+(   23) ! Author :
+(   24) ! ------
+(   25) !    M. Leutbecher (ECMWF)
+(   26) !    Original : July 2020
+(   27) 
+(   28) ! Modifications :
+(   29) ! -------------
+(   30) !    
+(   31) !  
+(   32) !-----------------------------------------------------------------------------
+(   33) 
+(   34) USE PARKIND1 , ONLY : JPIM, JPRB
+(   35) USE YOMHOOK  , ONLY : LHOOK, DR_HOOK, JPHOOK
+(   36) USE SPP_GEN_MOD, ONLY : SPP_MODEL
+(   37) USE SPP_DEF_MOD, ONLY : SPP_PERT_POINTER
+(   38) 
+(   39) IMPLICIT NONE
+(   40) SAVE
+(   41) 
+(   42) INTEGER(KIND=JPIM), PARAMETER :: JPSPPLABLEN=16, NWRMAX=255
+(   43) !=============================================================================
+(   44) 
+(   45) !      1.    TYPE DEFINITIONS
+(   46) !            ----------------
+(   47) 
+(   48) TYPE TSPP_CONFIG
+(   49)   LOGICAL :: LSPP=.FALSE.        !> activates stochastically perturbed parameterisation scheme
+(   50)   CHARACTER(LEN=32) :: CSPP_MODEL_NAME !> name of SPP model, selects define_spp routine
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:28      page 2
+
+(   51)   TYPE(SPP_MODEL) :: SM          !> structure storing details of configuration
+(   52)   TYPE(SPP_PERT_POINTER) :: PPTR !> perturbation pointer structure
+(   53) 
+(   54)   LOGICAL :: LRAMIDLIMIT1        !> limit perturbed value of RAMID to be <=1.
+(   55) 
+(   56)   LOGICAL :: LUSE_SETRAN=.TRUE.  !> use setran to randomize seed depending on start date, ensemble member number, ...
+(   57)   LOGICAL :: LNSEED_OFFS0        !> set all seed offsets to 0 regardless of NSEED_OFFS_* given below
+(   58) 
+(   59)   ! write out pattern and reset seed
+(   60)   LOGICAL            :: LRDPATINIT 
+(   61)   LOGICAL            :: LWRPATTRUN
+(   62)   INTEGER(KIND=JPIM) :: NWRPATTRUN
+(   63)   INTEGER(KIND=JPIM), DIMENSION(NWRMAX) :: NHOUR_PATTRUN
+(   64)   INTEGER(KIND=JPIM), DIMENSION(NWRMAX) :: NSTEP_PATTRUN
+(   65)   LOGICAL            :: LRESETSEED 
+(   66)   LOGICAL            :: LABSTIMSEED 
+(   67)   INTEGER(KIND=JPIM) :: RESETSEEDFRQ
+(   68)   INTEGER(KIND=JPIM) :: SHIFTSEED
+(   69)   CHARACTER(LEN=256) :: SPP_RDPATINIT
+(   70)   CHARACTER(LEN=256) :: SPP_WRPATTRUN
+(   71) 
+(   72)   INTEGER(JPIM) :: ISEEDFAC      !> seed factor for random numbers
+(   73)   INTEGER(JPIM) :: IEZDIAG_POS   !> Location of output diagnostics in the EZDIAG array
+(   74) 
+(   75)   INTEGER(JPIM) :: NPATFR=1      !> frequency of pattern updates:
+(   76)                                  !> >0: every NPATFR timesteps / <0: every -NPATFR hours
+(   77) 
+(   78)   REAL(KIND=JPRB) :: XPRESS_PHR_ST      !> pressure defining level of stratosphere, for heating rate perturbations
+(   79) 
+(   80)   ! SPG flags
+(   81)   LOGICAL :: LSPG_SPP=.FALSE.    !> activates SPG as pattern generator
+(   82) 
+(   83)   REAL(KIND=JPRB) :: SPGMU       !>
+(   84)   REAL(KIND=JPRB) :: SPGLAMBDA   !>
+(   85)   REAL(KIND=JPRB) :: SPGSIGMA    !>
+(   86)   REAL(KIND=JPRB) :: SPGQ        !>
+(   87)   REAL(KIND=JPRB) :: SPGADTMIN   !>
+(   88)   REAL(KIND=JPRB) :: SPGADTMAX   !>
+(   89)   REAL(KIND=JPRB) :: SPGTDT      !>
+(   90) 
+(   91) 
+(   92) END TYPE TSPP_CONFIG
+(   93) 
+(   94) !     1.2    TYPE holding the data of the spp scheme
+(   95) TYPE TSPP_DATA
+(   96)   INTEGER(JPIM), DIMENSION(:), ALLOCATABLE :: IGRIBCODE !> array with grib codes of pattern
+(   97) 
+(   98)   CHARACTER(LEN=JPSPPLABLEN)     , DIMENSION(:), POINTER :: LAB_ARP=>NULL() !> label to refer to ARP
+(   99) END TYPE TSPP_DATA
+(  100) 
+(  101) END MODULE SPP_MOD
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:28      page 3
+
+(    1) # 1 "./spp_mod.F90"
+(    1) MODULE SPP_MOD
+(    2) # 3 "./spp_mod.F90"
+(    3) ! Purpose :
+(    4) ! -------
+(    5) !    Define types for the SPP scheme, which represents model uncertainties
+(    6) !    with Stochastically Perturbed Parameterisations.
+(    7) # 8 "./spp_mod.F90"
+(    8) ! Interface :
+(    9) ! ---------
+(   10) !    Empty.
+(   11) # 12 "./spp_mod.F90"
+(   12) ! External :
+(   13) ! --------
+(   14) !    None.
+(   15) # 16 "./spp_mod.F90"
+(   16) ! Method :
+(   17) ! ------
+(   18) !    See Documentation.
+(   19) # 20 "./spp_mod.F90"
+(   20) ! Reference :
+(   21) ! ---------
+(   22) # 23 "./spp_mod.F90"
+(   23) ! Author :
+(   24) ! ------
+(   25) !    M. Leutbecher (ECMWF)
+(   26) !    Original : July 2020
+(   27) # 28 "./spp_mod.F90"
+(   28) ! Modifications :
+(   29) ! -------------
+(   30) !    
+(   31) !  
+(   32) !-----------------------------------------------------------------------------
+(   33) # 34 "./spp_mod.F90"
+(   34) USE PARKIND1 , ONLY : JPIM, JPRB
+(   35) USE YOMHOOK  , ONLY : LHOOK, DR_HOOK, JPHOOK
+(   36) USE SPP_GEN_MOD, ONLY : SPP_MODEL
+(   37) USE SPP_DEF_MOD, ONLY : SPP_PERT_POINTER
+(   38) # 39 "./spp_mod.F90"
+(   39) IMPLICIT NONE
+(   40) SAVE
+(   41) # 42 "./spp_mod.F90"
+(   42) INTEGER(KIND=JPIM), PARAMETER :: JPSPPLABLEN=16, NWRMAX=255
+(   43) !=============================================================================
+(   44) # 45 "./spp_mod.F90"
+(   45) !      1.    TYPE DEFINITIONS
+(   46) !            ----------------
+(   47) # 48 "./spp_mod.F90"
+(   48) TYPE TSPP_CONFIG
+(   49)   LOGICAL :: LSPP=.FALSE.        !> activates stochastically perturbed parameterisation scheme
+(   50)   CHARACTER(LEN=32) :: CSPP_MODEL_NAME !> name of SPP model, selects define_spp routine
+(   51)   TYPE(SPP_MODEL) :: SM          !> structure storing details of configuration
+(   52)   TYPE(SPP_PERT_POINTER) :: PPTR !> perturbation pointer structure
+(   53) # 54 "./spp_mod.F90"
+(   54)   LOGICAL :: LRAMIDLIMIT1        !> limit perturbed value of RAMID to be <=1.
+(   55) # 56 "./spp_mod.F90"
+(   56)   LOGICAL :: LUSE_SETRAN=.TRUE.  !> use setran to randomize seed depending on start date, ensemble member number, ...
+(   57)   LOGICAL :: LNSEED_OFFS0        !> set all seed offsets to 0 regardless of NSEED_OFFS_* given below
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:28      page 4
+
+(   58) # 59 "./spp_mod.F90"
+(   59)   ! write out pattern and reset seed
+(   60)   LOGICAL            :: LRDPATINIT 
+(   61)   LOGICAL            :: LWRPATTRUN
+(   62)   INTEGER(KIND=JPIM) :: NWRPATTRUN
+(   63)   INTEGER(KIND=JPIM), DIMENSION(NWRMAX) :: NHOUR_PATTRUN
+(   64)   INTEGER(KIND=JPIM), DIMENSION(NWRMAX) :: NSTEP_PATTRUN
+(   65)   LOGICAL            :: LRESETSEED 
+(   66)   LOGICAL            :: LABSTIMSEED 
+(   67)   INTEGER(KIND=JPIM) :: RESETSEEDFRQ
+(   68)   INTEGER(KIND=JPIM) :: SHIFTSEED
+(   69)   CHARACTER(LEN=256) :: SPP_RDPATINIT
+(   70)   CHARACTER(LEN=256) :: SPP_WRPATTRUN
+(   71) # 72 "./spp_mod.F90"
+(   72)   INTEGER(JPIM) :: ISEEDFAC      !> seed factor for random numbers
+(   73)   INTEGER(JPIM) :: IEZDIAG_POS   !> Location of output diagnostics in the EZDIAG array
+(   74) # 75 "./spp_mod.F90"
+(   75)   INTEGER(JPIM) :: NPATFR=1      !> frequency of pattern updates:
+(   76)                                  !> >0: every NPATFR timesteps / <0: every -NPATFR hours
+(   77) # 78 "./spp_mod.F90"
+(   78)   REAL(KIND=JPRB) :: XPRESS_PHR_ST      !> pressure defining level of stratosphere, for heating rate perturbations
+(   79) # 80 "./spp_mod.F90"
+(   80)   ! SPG flags
+(   81)   LOGICAL :: LSPG_SPP=.FALSE.    !> activates SPG as pattern generator
+(   82) # 83 "./spp_mod.F90"
+(   83)   REAL(KIND=JPRB) :: SPGMU       !>
+(   84)   REAL(KIND=JPRB) :: SPGLAMBDA   !>
+(   85)   REAL(KIND=JPRB) :: SPGSIGMA    !>
+(   86)   REAL(KIND=JPRB) :: SPGQ        !>
+(   87)   REAL(KIND=JPRB) :: SPGADTMIN   !>
+(   88)   REAL(KIND=JPRB) :: SPGADTMAX   !>
+(   89)   REAL(KIND=JPRB) :: SPGTDT      !>
+(   90) # 92 "./spp_mod.F90"
+(   92) END TYPE TSPP_CONFIG
+(   93) # 94 "./spp_mod.F90"
+(   94) !     1.2    TYPE holding the data of the spp scheme
+(   95) TYPE TSPP_DATA
+(   96)   INTEGER(JPIM), DIMENSION(:), ALLOCATABLE :: IGRIBCODE !> array with grib codes of pattern
+(   97) # 98 "./spp_mod.F90"
+(   98)   CHARACTER(LEN=JPSPPLABLEN)     , DIMENSION(:), POINTER :: LAB_ARP=>NULL() !> label to refer to ARP
+(   99) END TYPE TSPP_DATA
+(  100) # 101 "./spp_mod.F90"
+(  101) END MODULE SPP_MOD

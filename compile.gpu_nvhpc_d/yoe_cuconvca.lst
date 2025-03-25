@@ -1,0 +1,348 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:21      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./yoe_cuconvca.F90
+
+(    1) MODULE YOE_CUCONVCA
+(    2) 
+(    3) ! Modified : 
+(    4) !    R. El Khatib 09-Mar-2012 Allocate RCUCONVCA/RNLCONVCA for safe bound checkings later
+(    5) !    L. Bengtsson 05-Aug-2014 Correction if using with GOL
+(    6) !    L. Gerard    31-Mar-2016 Add RCADELX
+(    7) USE PARKIND1 , ONLY : JPIM, JPRB
+(    8) 
+(    9) IMPLICIT NONE
+(   10) 
+(   11) SAVE
+(   12) 
+(   13) !     ------------------------------------------------------
+(   14) 
+(   15) !*    control parameters for cellular automaton for convection
+(   16) 
+(   17) !      yd_random_stream_CA: random number stream for CA update
+(   18) !      NIJH         : Multiplicative for number of points in high resolution grid
+(   19) !      NBmax        : maximum possible number of neighbours for every gridcell
+(   20) !      RCADELX      : Length of individual CA cell (meters) to compute NIJH
+(   21) !      RCUCONVCA    : Array for interaction with the physics
+(   22) !      RNLCONVCA    : Array for interaction with the physics
+(   23) !      RCAPECONVCA  : Array to store "good" CAPE between its calculation [MOD(KSTEP*TSPHY,3600._JPRB)]
+(   24) !      NCELLCU      : Lat-lon grid for cellular automaton
+(   25) !      NFERTCU      : Lat-lon grid for cellular automaton (fertile cell indicator)
+(   26) !      NBLS         : neighbours for large scale grid (= model red gaussian grid)
+(   27) !      NBSS         : neighbours for small scale grid (= NIJH*NIJH cells in every LS cell)
+(   28) !      NRNBLS       : number of neighbours for large scale cells
+(   29) !      NRNBSS       : number of neighbours for small scale cells
+(   30) !      NBNS         : neighbour north/south or on same lat (1/-1/0)
+(   31) !      NBEW         : neighbour east/west or on same long (1/-1/0)
+(   32) !      RWASALIVE    : Array indicating grid-points where CA was alive before
+(   33) !      RWGHTCU      : Weighted and smoothed CA pattern
+(   34) !      LCUCONV_CA   : TRUE IF CELLULAR AUTOMATON USED IN CONVECTION
+(   35) !      LCA_ADVECT   : switch for "kind of" semi-Lagrangian advection
+(   36) !      LCA_GLOBAL   : switch for global CA instead ov "convective" CA
+(   37) !      LCA_SMOOTH   : swith for smoothing CA on large scale grid
+(   38) !      LCA_RANTROP  : switch for random coupling of CA to deep convection (concerns initialization)
+(   39) !      LCA_TEST     : switch for initialize CA at single point
+(   40) !      LCA_ADVTEST  : switch for advection test (CA only evolved first 5 steps)
+(   41) !      NTESTPROC    : set on which processor the single point should lie
+(   42) !      NTESTGP      : set which gridpoint the single point is on
+(   43) !      NSPINUP      : set number of spin-up cycles for global pattern
+(   44) !      CA_FORC      : switch to choose convective forcing
+(   45) !      CA_WIND      : switch to choose CA-wind (real/idealized)
+(   46) !      CA_PROB      : switch to choose probabilities
+(   47) !      NLIVES       : switch to choose number of lives (scaled by CAPE in callpar)
+(   48) !      NFERTYRS     : switch to choose max number of steps a cell can be fertile
+(   49) !      NFRCASEED    : Frequency of seeding CA where physics diagnoses deep convection
+(   50) !      RCA_SEEDPROB : Probability of random seeding for global CA
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:21      page 2
+
+(   51) 
+(   52) !      RPROB_SURVIVE: probabilities for cell survival
+(   53) !      RPROB_BIRTH: probabilities for cell birth
+(   54) !      RPROB_FUN_FERT_S: function for specifying probabilities for survival as function of upwind(uw)+downwind(dw) neighbour
+(   55) !      RPROB_FUN_UW_DW_S: function for specifying probabilities for survival as function of upwind(uw)-downwind(dw) neighbou
+(   56) !      RPROB_FUN_FERT_B: function for specifying probabilities for birth as function of upwind(uw)+downwind(dw) neighbours
+(   57) !      RPROB_FUN_UW_DW_B: function for specifying probabilities for birth as function of upwind(uw)-downwind(dw) neighbours
+(   58) 
+(   59) !      SLLONG(YRSL%NASLB1)       : Array containing the longitude for each gridpoint in a semi/lagrangian buffer array
+(   60) !      SLLAT(YRSL%NASLB1)        : Array containing the latitude for each gridpoint in a semi/lagrangian buffer array
+(   61) !      SLDLONG(YRSL%NASLB1)      : Array containing the width of each gridbox in longitudinal direction 
+(   62) !                             in a semi/lagrangian buffer array
+(   63) !      SLDLAT(YRSL%NASLB1)       : Array containing the width of each gridbox in latitudinal direction 
+(   64) !                             in a semi/lagrangian buffer array
+(   65) !      SLDDLAT(YRSL%NASLB1)      : Array containing the difference of the gridbox's northern boundary latitude 
+(   66) !                             and the latitude of the gp (necessary because latitudes are not uniformly distributed)
+(   67) 
+(   68) INTEGER(KIND=JPIM)            :: NIJH=4
+(   69) INTEGER(KIND=JPIM), PARAMETER :: NBMAX=8
+(   70) 
+(   71) TYPE :: TECUCONVCA
+(   72) INTEGER(KIND=JPIM)            :: NLIVES
+(   73) INTEGER(KIND=JPIM)            :: NFERTYRS
+(   74) INTEGER(KIND=JPIM)            :: NSPINUP
+(   75) 
+(   76) INTEGER(KIND=JPIM),ALLOCATABLE:: NCELLCU(:,:)
+(   77) INTEGER(KIND=JPIM),ALLOCATABLE:: NFERTCU(:,:)
+(   78) INTEGER(KIND=JPIM),ALLOCATABLE:: NBLS(:,:)
+(   79) INTEGER(KIND=JPIM),ALLOCATABLE:: NBSS(:,:,:,:)
+(   80) INTEGER(KIND=JPIM),ALLOCATABLE:: NRNBLS(:)
+(   81) INTEGER(KIND=JPIM),ALLOCATABLE:: NRNBSS(:,:)
+(   82) INTEGER(KIND=JPIM),ALLOCATABLE:: NBEW(:,:,:)
+(   83) INTEGER(KIND=JPIM),ALLOCATABLE:: NBNS(:,:,:)
+(   84) REAL(KIND=JPRB)   ,ALLOCATABLE:: RCUCONVCA(:)
+(   85) REAL(KIND=JPRB)   ,ALLOCATABLE:: RNLCONVCA(:)
+(   86) REAL(KIND=JPRB)   ,ALLOCATABLE:: RCAPECONVCA(:)
+(   87) REAL(KIND=JPRB)   ,ALLOCATABLE:: RWASALIVE(:)
+(   88) REAL(KIND=JPRB)   ,ALLOCATABLE:: RWGHTCU(:)
+(   89) REAL(KIND=JPRB)   ,ALLOCATABLE:: RLATLONNBLS(:,:,:)
+(   90) REAL(KIND=JPRB)   ,ALLOCATABLE:: RLATLONNBSS(:,:,:,:)
+(   91) 
+(   92) REAL(KIND=JPRB)               :: RPROB_SURVIVE(0:8,0:8)
+(   93) REAL(KIND=JPRB)               :: RPROB_BIRTH(0:8,0:8)
+(   94) REAL(KIND=JPRB)               :: RPROB_FUN_FERT_S(0:16)
+(   95) REAL(KIND=JPRB)               :: RPROB_FUN_UW_DW_S(0:16)
+(   96) REAL(KIND=JPRB)               :: RPROB_FUN_FERT_B(0:16)
+(   97) REAL(KIND=JPRB)               :: RPROB_FUN_UW_DW_B(0:16)
+(   98) 
+(   99) REAL(KIND=JPRB)   ,ALLOCATABLE:: RLONDEP(:,:,:)
+(  100) REAL(KIND=JPRB)   ,ALLOCATABLE:: RLATDEP(:,:,:)
+(  101) 
+(  102) REAL(KIND=JPRB)               :: RCA_SEEDPROB
+(  103) REAL(KIND=JPRB)               :: RCADELX
+(  104) 
+(  105) LOGICAL                       :: LCUCONV_CA
+(  106) LOGICAL                       :: LCA_ADVECT
+(  107) LOGICAL                       :: LCA_GLOBAL
+(  108) LOGICAL                       :: LCA_SMOOTH
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:21      page 3
+
+(  109) LOGICAL                       :: LCA_TEST,LCA_ADVTEST
+(  110) LOGICAL                       :: LCA_RANTROP
+(  111) LOGICAL                       :: LCA_NBDEBUG
+(  112) LOGICAL                       :: LCA_EXTRACT
+(  113) CHARACTER(LEN=10)             :: CA_FORC
+(  114) CHARACTER(LEN=10)             :: CA_WIND
+(  115) CHARACTER(LEN=10)             :: CA_PROB
+(  116) INTEGER(KIND=JPIM)            :: NFRCASEED
+(  117) INTEGER(KIND=JPIM)            :: NTESTPROC, NTESTGP
+(  118) INTEGER(KIND=JPIM)            :: NDXUNREAL, NDYUNREAL
+(  119) 
+(  120) REAL(KIND=JPRB)   ,ALLOCATABLE:: SLLONG(:), SLLAT(:)
+(  121) REAL(KIND=JPRB)   ,ALLOCATABLE:: SLDLONG(:), SLDLAT(:), SLDDLAT(:)
+(  122) !----------------------------------------------------------------------------
+(  123) CONTAINS
+(  124) END TYPE TECUCONVCA
+(  125) 
+(  126) 
+(  127) !     ------------------------------------------------------
+(  128) END MODULE YOE_CUCONVCA
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:21      page 4
+
+(    1) # 1 "./yoe_cuconvca.F90"
+(    1) MODULE YOE_CUCONVCA
+(    2) # 3 "./yoe_cuconvca.F90"
+(    3) ! Modified : 
+(    4) !    R. El Khatib 09-Mar-2012 Allocate RCUCONVCA/RNLCONVCA for safe bound checkings later
+(    5) !    L. Bengtsson 05-Aug-2014 Correction if using with GOL
+(    6) !    L. Gerard    31-Mar-2016 Add RCADELX
+(    7) USE PARKIND1 , ONLY : JPIM, JPRB
+(    8) # 9 "./yoe_cuconvca.F90"
+(    9) IMPLICIT NONE
+(   10) # 11 "./yoe_cuconvca.F90"
+(   11) SAVE
+(   12) # 13 "./yoe_cuconvca.F90"
+(   13) !     ------------------------------------------------------
+(   14) # 15 "./yoe_cuconvca.F90"
+(   15) !*    control parameters for cellular automaton for convection
+(   16) # 17 "./yoe_cuconvca.F90"
+(   17) !      yd_random_stream_CA: random number stream for CA update
+(   18) !      NIJH         : Multiplicative for number of points in high resolution grid
+(   19) !      NBmax        : maximum possible number of neighbours for every gridcell
+(   20) !      RCADELX      : Length of individual CA cell (meters) to compute NIJH
+(   21) !      RCUCONVCA    : Array for interaction with the physics
+(   22) !      RNLCONVCA    : Array for interaction with the physics
+(   23) !      RCAPECONVCA  : Array to store "good" CAPE between its calculation [MOD(KSTEP*TSPHY,3600._JPRB)]
+(   24) !      NCELLCU      : Lat-lon grid for cellular automaton
+(   25) !      NFERTCU      : Lat-lon grid for cellular automaton (fertile cell indicator)
+(   26) !      NBLS         : neighbours for large scale grid (= model red gaussian grid)
+(   27) !      NBSS         : neighbours for small scale grid (= NIJH*NIJH cells in every LS cell)
+(   28) !      NRNBLS       : number of neighbours for large scale cells
+(   29) !      NRNBSS       : number of neighbours for small scale cells
+(   30) !      NBNS         : neighbour north/south or on same lat (1/-1/0)
+(   31) !      NBEW         : neighbour east/west or on same long (1/-1/0)
+(   32) !      RWASALIVE    : Array indicating grid-points where CA was alive before
+(   33) !      RWGHTCU      : Weighted and smoothed CA pattern
+(   34) !      LCUCONV_CA   : TRUE IF CELLULAR AUTOMATON USED IN CONVECTION
+(   35) !      LCA_ADVECT   : switch for "kind of" semi-Lagrangian advection
+(   36) !      LCA_GLOBAL   : switch for global CA instead ov "convective" CA
+(   37) !      LCA_SMOOTH   : swith for smoothing CA on large scale grid
+(   38) !      LCA_RANTROP  : switch for random coupling of CA to deep convection (concerns initialization)
+(   39) !      LCA_TEST     : switch for initialize CA at single point
+(   40) !      LCA_ADVTEST  : switch for advection test (CA only evolved first 5 steps)
+(   41) !      NTESTPROC    : set on which processor the single point should lie
+(   42) !      NTESTGP      : set which gridpoint the single point is on
+(   43) !      NSPINUP      : set number of spin-up cycles for global pattern
+(   44) !      CA_FORC      : switch to choose convective forcing
+(   45) !      CA_WIND      : switch to choose CA-wind (real/idealized)
+(   46) !      CA_PROB      : switch to choose probabilities
+(   47) !      NLIVES       : switch to choose number of lives (scaled by CAPE in callpar)
+(   48) !      NFERTYRS     : switch to choose max number of steps a cell can be fertile
+(   49) !      NFRCASEED    : Frequency of seeding CA where physics diagnoses deep convection
+(   50) !      RCA_SEEDPROB : Probability of random seeding for global CA
+(   51) # 52 "./yoe_cuconvca.F90"
+(   52) !      RPROB_SURVIVE: probabilities for cell survival
+(   53) !      RPROB_BIRTH: probabilities for cell birth
+(   54) !      RPROB_FUN_FERT_S: function for specifying probabilities for survival as function of upwind(uw)+downwind(dw) neighbours
+(   55) !      RPROB_FUN_UW_DW_S: function for specifying probabilities for survival as function of upwind(uw)-downwind(dw) neighbours
+(   56) !      RPROB_FUN_FERT_B: function for specifying probabilities for birth as function of upwind(uw)+downwind(dw) neighbours
+(   57) !      RPROB_FUN_UW_DW_B: function for specifying probabilities for birth as function of upwind(uw)-downwind(dw) neighbours
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:21      page 5
+
+(   58) # 59 "./yoe_cuconvca.F90"
+(   59) !      SLLONG(YRSL%NASLB1)       : Array containing the longitude for each gridpoint in a semi/lagrangian buffer array
+(   60) !      SLLAT(YRSL%NASLB1)        : Array containing the latitude for each gridpoint in a semi/lagrangian buffer array
+(   61) !      SLDLONG(YRSL%NASLB1)      : Array containing the width of each gridbox in longitudinal direction 
+(   62) !                             in a semi/lagrangian buffer array
+(   63) !      SLDLAT(YRSL%NASLB1)       : Array containing the width of each gridbox in latitudinal direction 
+(   64) !                             in a semi/lagrangian buffer array
+(   65) !      SLDDLAT(YRSL%NASLB1)      : Array containing the difference of the gridbox's northern boundary latitude 
+(   66) !                             and the latitude of the gp (necessary because latitudes are not uniformly distributed)
+(   67) # 68 "./yoe_cuconvca.F90"
+(   68) INTEGER(KIND=JPIM)            :: NIJH=4
+(   69) INTEGER(KIND=JPIM), PARAMETER :: NBMAX=8
+(   70) # 71 "./yoe_cuconvca.F90"
+(   71) TYPE :: TECUCONVCA
+(   72) INTEGER(KIND=JPIM)            :: NLIVES
+(   73) INTEGER(KIND=JPIM)            :: NFERTYRS
+(   74) INTEGER(KIND=JPIM)            :: NSPINUP
+(   75) # 76 "./yoe_cuconvca.F90"
+(   76) INTEGER(KIND=JPIM),ALLOCATABLE:: NCELLCU(:,:)
+(   77) INTEGER(KIND=JPIM),ALLOCATABLE:: NFERTCU(:,:)
+(   78) INTEGER(KIND=JPIM),ALLOCATABLE:: NBLS(:,:)
+(   79) INTEGER(KIND=JPIM),ALLOCATABLE:: NBSS(:,:,:,:)
+(   80) INTEGER(KIND=JPIM),ALLOCATABLE:: NRNBLS(:)
+(   81) INTEGER(KIND=JPIM),ALLOCATABLE:: NRNBSS(:,:)
+(   82) INTEGER(KIND=JPIM),ALLOCATABLE:: NBEW(:,:,:)
+(   83) INTEGER(KIND=JPIM),ALLOCATABLE:: NBNS(:,:,:)
+(   84) REAL(KIND=JPRB)   ,ALLOCATABLE:: RCUCONVCA(:)
+(   85) REAL(KIND=JPRB)   ,ALLOCATABLE:: RNLCONVCA(:)
+(   86) REAL(KIND=JPRB)   ,ALLOCATABLE:: RCAPECONVCA(:)
+(   87) REAL(KIND=JPRB)   ,ALLOCATABLE:: RWASALIVE(:)
+(   88) REAL(KIND=JPRB)   ,ALLOCATABLE:: RWGHTCU(:)
+(   89) REAL(KIND=JPRB)   ,ALLOCATABLE:: RLATLONNBLS(:,:,:)
+(   90) REAL(KIND=JPRB)   ,ALLOCATABLE:: RLATLONNBSS(:,:,:,:)
+(   91) # 92 "./yoe_cuconvca.F90"
+(   92) REAL(KIND=JPRB)               :: RPROB_SURVIVE(0:8,0:8)
+(   93) REAL(KIND=JPRB)               :: RPROB_BIRTH(0:8,0:8)
+(   94) REAL(KIND=JPRB)               :: RPROB_FUN_FERT_S(0:16)
+(   95) REAL(KIND=JPRB)               :: RPROB_FUN_UW_DW_S(0:16)
+(   96) REAL(KIND=JPRB)               :: RPROB_FUN_FERT_B(0:16)
+(   97) REAL(KIND=JPRB)               :: RPROB_FUN_UW_DW_B(0:16)
+(   98) # 99 "./yoe_cuconvca.F90"
+(   99) REAL(KIND=JPRB)   ,ALLOCATABLE:: RLONDEP(:,:,:)
+(  100) REAL(KIND=JPRB)   ,ALLOCATABLE:: RLATDEP(:,:,:)
+(  101) # 102 "./yoe_cuconvca.F90"
+(  102) REAL(KIND=JPRB)               :: RCA_SEEDPROB
+(  103) REAL(KIND=JPRB)               :: RCADELX
+(  104) # 105 "./yoe_cuconvca.F90"
+(  105) LOGICAL                       :: LCUCONV_CA
+(  106) LOGICAL                       :: LCA_ADVECT
+(  107) LOGICAL                       :: LCA_GLOBAL
+(  108) LOGICAL                       :: LCA_SMOOTH
+(  109) LOGICAL                       :: LCA_TEST,LCA_ADVTEST
+(  110) LOGICAL                       :: LCA_RANTROP
+(  111) LOGICAL                       :: LCA_NBDEBUG
+(  112) LOGICAL                       :: LCA_EXTRACT
+(  113) CHARACTER(LEN=10)             :: CA_FORC
+(  114) CHARACTER(LEN=10)             :: CA_WIND
+(  115) CHARACTER(LEN=10)             :: CA_PROB
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:21      page 6
+
+(  116) INTEGER(KIND=JPIM)            :: NFRCASEED
+(  117) INTEGER(KIND=JPIM)            :: NTESTPROC, NTESTGP
+(  118) INTEGER(KIND=JPIM)            :: NDXUNREAL, NDYUNREAL
+(  119) # 120 "./yoe_cuconvca.F90"
+(  120) REAL(KIND=JPRB)   ,ALLOCATABLE:: SLLONG(:), SLLAT(:)
+(  121) REAL(KIND=JPRB)   ,ALLOCATABLE:: SLDLONG(:), SLDLAT(:), SLDDLAT(:)
+(  122) !----------------------------------------------------------------------------
+(  123) CONTAINS
+(  124) END TYPE TECUCONVCA
+(  125) # 127 "./yoe_cuconvca.F90"
+(  127) !     ------------------------------------------------------
+(  128) END MODULE YOE_CUCONVCA

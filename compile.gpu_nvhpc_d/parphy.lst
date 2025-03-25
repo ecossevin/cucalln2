@@ -1,0 +1,103 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:28      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./parphy.F90
+
+(    1) MODULE PARPHY
+(    2) 
+(    3) USE PARKIND1  ,ONLY : JPIM     ,JPRB
+(    4) 
+(    5) IMPLICIT NONE
+(    6) 
+(    7) SAVE
+(    8) 
+(    9) !     ------------------------------------------------------------------
+(   10) !*    ** *PARPHY* CONTAINS CONSTANTS NEEDED BY *VDF....*
+(   11) !     ------------------------------------------------------------------
+(   12) 
+(   13) REAL(KIND=JPRB),PARAMETER  :: RKAP=0.4_JPRB
+(   14) REAL(KIND=JPRB) ,PARAMETER :: REPDU2=(0.1_JPRB)**2
+(   15) 
+(   16) 
+(   17) !*     *PARPHY* CONTAINS CONSTANTS NEEDED BY *VDF....*
+(   18) !     FOR THE COMPUTATION OF VERTICAL DIFFUSION
+(   19) 
+(   20) !     A.C.M. BELJAARS      E.C.M.W.F.    14/12/89
+(   21) 
+(   22) !     OBUKHOV-L UPDATE     ACMB          26/03/90.
+(   23) !     LWDS-upate           A.Beljaars    Jan-2014   
+(   24) 
+(   25) !     NAME        TYPE     DESCRIPTION
+(   26) !     ----        ----     -----------
+(   27) 
+(   28) !     *RKAP*      REAL     *VONKARMAN CONSTANT
+(   29) !     *REPDU2*    REAL     *MINIMUM VELOCITY DIFFERENCE IN RI-NUMBER
+(   30) !     ------------------------------------------------------------------
+(   31) END MODULE PARPHY
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:28      page 2
+
+(    1) # 1 "./parphy.F90"
+(    1) MODULE PARPHY
+(    2) # 3 "./parphy.F90"
+(    3) USE PARKIND1  ,ONLY : JPIM     ,JPRB
+(    4) # 5 "./parphy.F90"
+(    5) IMPLICIT NONE
+(    6) # 7 "./parphy.F90"
+(    7) SAVE
+(    8) # 9 "./parphy.F90"
+(    9) !     ------------------------------------------------------------------
+(   10) !*    ** *PARPHY* CONTAINS CONSTANTS NEEDED BY *VDF....*
+(   11) !     ------------------------------------------------------------------
+(   12) # 13 "./parphy.F90"
+(   13) REAL(KIND=JPRB),PARAMETER  :: RKAP=0.4_JPRB
+(   14) REAL(KIND=JPRB) ,PARAMETER :: REPDU2=(0.1_JPRB)**2
+(   15) # 17 "./parphy.F90"
+(   17) !*     *PARPHY* CONTAINS CONSTANTS NEEDED BY *VDF....*
+(   18) !     FOR THE COMPUTATION OF VERTICAL DIFFUSION
+(   19) # 20 "./parphy.F90"
+(   20) !     A.C.M. BELJAARS      E.C.M.W.F.    14/12/89
+(   21) # 22 "./parphy.F90"
+(   22) !     OBUKHOV-L UPDATE     ACMB          26/03/90.
+(   23) !     LWDS-upate           A.Beljaars    Jan-2014   
+(   24) # 25 "./parphy.F90"
+(   25) !     NAME        TYPE     DESCRIPTION
+(   26) !     ----        ----     -----------
+(   27) # 28 "./parphy.F90"
+(   28) !     *RKAP*      REAL     *VONKARMAN CONSTANT
+(   29) !     *REPDU2*    REAL     *MINIMUM VELOCITY DIFFERENCE IN RI-NUMBER
+(   30) !     ------------------------------------------------------------------
+(   31) END MODULE PARPHY

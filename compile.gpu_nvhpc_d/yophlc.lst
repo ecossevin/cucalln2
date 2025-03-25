@@ -1,0 +1,209 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:24      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./yophlc.F90
+
+(    1) MODULE YOPHLC
+(    2) 
+(    3) USE PARKIND1  ,ONLY : JPRB
+(    4) 
+(    5) IMPLICIT NONE
+(    6) 
+(    7) SAVE
+(    8) 
+(    9) !     -----------------------------------------------------------------
+(   10) !*    ** *YOPHLC* - SWITCHES FOR SIMPLE PHYSICS
+(   11) !     -----------------------------------------------------------------
+(   12) 
+(   13) !        * E.C.M.W.F. PHYSICS PACKAGE *
+(   14) 
+(   15) TYPE :: TPHLC
+(   16) REAL(KIND=JPRB) :: ALPHA
+(   17) REAL(KIND=JPRB) :: AH0
+(   18) REAL(KIND=JPRB) :: USTARL
+(   19) REAL(KIND=JPRB) :: USTARS
+(   20) REAL(KIND=JPRB) :: ALANDZ0
+(   21) REAL(KIND=JPRB) :: ASEAZ0
+(   22) LOGICAL :: LSPHLC
+(   23) LOGICAL :: LVDFLC
+(   24) LOGICAL :: LSDRLC
+(   25) LOGICAL :: LZMCON
+(   26) LOGICAL :: LKEXP
+(   27) LOGICAL :: LVDFDS
+(   28) LOGICAL :: LSDRDS
+(   29) !----------------------------------------------------------------------------
+(   30) CONTAINS
+(   31) END TYPE TPHLC
+(   32) !============================================================================
+(   33) 
+(   34) !! TYPE(TPHLC), POINTER :: YRPHLC => NULL()
+(   35) 
+(   36) !     ------------------------------------------------------------------
+(   37) !  NAME     TYPE     PURPOSE
+(   38) !  ----  :  ----   : ---------------------------------------------------
+(   39) ! LSPHLC : LOGICAL : SWITCH TO TURN ON THE SIMPLE PHYSICS SCHEME
+(   40) ! LVDFLC : LOGICAL : TO TURN ON THE VERTICAL DIFFUSION ON U,V
+(   41) ! LVDFDS : LOGICAL : TO TURN ON THE VERT DIFF ALSO ON THE DRY STATIC ENERGY
+(   42) ! LSDRLC : LOGICAL : TO TURN ON THE SURFACE DRAG ON U,V
+(   43) ! LSDRDS : LOGICAL : TO TURN ON THE SURFACE DRAG ALSO ON THE DRY STATIC ENERGY
+(   44) ! LZMCON : LOGICAL : IF TRUE THE VERT DIFF COEFF K IS CONSTANT
+(   45) ! LKEXP  : LOGICAL : EXPONENTIAL APPROXIMATION OF THE CONSTANT K
+(   46) ! ALPHA  : REAL    : COEFFICIENT FOR THE IMPLICIT TIME STEP SCHEME
+(   47) ! AH0    : REAL    : REFERENCE HEIGHT FOR CONSTANT VERT DIFF (M)
+(   48) ! USTARL : REAL    : CONSTANT USTAR OVER LAND (M SEC-1)
+(   49) ! USTARS : REAL    : CONSTANT USTAR OVER SEA (M SEC-1)
+(   50) ! ALANDZ0: REAL    : CONSTANT Z0 OVER LAND (M)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:24      page 2
+
+(   51) ! ASEAZ0 : REAL    : CONSTANT Z0 OVER SEA (M)
+(   52) ! NDIFLC : INTEGER : CONTROL DIFFERENT VERT DIFF SCHEMES
+(   53) !                   - 1: CALL VDIFLCZ (DIRECT+TL+ADJ):
+(   54) !                        X(T+1)-X(T-1)=K*X(T+1)
+(   55) !                        K=CONSTANT
+(   56) !                   - 2: CALL VDIFLCZ1 (DIRECT):
+(   57) !                        X(T*)-X(T)=K(X(T))*(ALPHA*X(T*)+(1-ALPHA)*X(T))
+(   58) !                        DX=X(T*)-X(T)
+(   59) !                        X(T+1)=X(T-1)+2*DX
+(   60) !     -----------------------------------------------------------------
+(   61) 
+(   62) END MODULE YOPHLC
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:24      page 3
+
+(    1) # 1 "./yophlc.F90"
+(    1) MODULE YOPHLC
+(    2) # 3 "./yophlc.F90"
+(    3) USE PARKIND1  ,ONLY : JPRB
+(    4) # 5 "./yophlc.F90"
+(    5) IMPLICIT NONE
+(    6) # 7 "./yophlc.F90"
+(    7) SAVE
+(    8) # 9 "./yophlc.F90"
+(    9) !     -----------------------------------------------------------------
+(   10) !*    ** *YOPHLC* - SWITCHES FOR SIMPLE PHYSICS
+(   11) !     -----------------------------------------------------------------
+(   12) # 13 "./yophlc.F90"
+(   13) !        * E.C.M.W.F. PHYSICS PACKAGE *
+(   14) # 15 "./yophlc.F90"
+(   15) TYPE :: TPHLC
+(   16) REAL(KIND=JPRB) :: ALPHA
+(   17) REAL(KIND=JPRB) :: AH0
+(   18) REAL(KIND=JPRB) :: USTARL
+(   19) REAL(KIND=JPRB) :: USTARS
+(   20) REAL(KIND=JPRB) :: ALANDZ0
+(   21) REAL(KIND=JPRB) :: ASEAZ0
+(   22) LOGICAL :: LSPHLC
+(   23) LOGICAL :: LVDFLC
+(   24) LOGICAL :: LSDRLC
+(   25) LOGICAL :: LZMCON
+(   26) LOGICAL :: LKEXP
+(   27) LOGICAL :: LVDFDS
+(   28) LOGICAL :: LSDRDS
+(   29) !----------------------------------------------------------------------------
+(   30) CONTAINS
+(   31) END TYPE TPHLC
+(   32) !============================================================================
+(   33) # 34 "./yophlc.F90"
+(   34) !! TYPE(TPHLC), POINTER :: YRPHLC => NULL()
+(   35) # 36 "./yophlc.F90"
+(   36) !     ------------------------------------------------------------------
+(   37) !  NAME     TYPE     PURPOSE
+(   38) !  ----  :  ----   : ---------------------------------------------------
+(   39) ! LSPHLC : LOGICAL : SWITCH TO TURN ON THE SIMPLE PHYSICS SCHEME
+(   40) ! LVDFLC : LOGICAL : TO TURN ON THE VERTICAL DIFFUSION ON U,V
+(   41) ! LVDFDS : LOGICAL : TO TURN ON THE VERT DIFF ALSO ON THE DRY STATIC ENERGY
+(   42) ! LSDRLC : LOGICAL : TO TURN ON THE SURFACE DRAG ON U,V
+(   43) ! LSDRDS : LOGICAL : TO TURN ON THE SURFACE DRAG ALSO ON THE DRY STATIC ENERGY
+(   44) ! LZMCON : LOGICAL : IF TRUE THE VERT DIFF COEFF K IS CONSTANT
+(   45) ! LKEXP  : LOGICAL : EXPONENTIAL APPROXIMATION OF THE CONSTANT K
+(   46) ! ALPHA  : REAL    : COEFFICIENT FOR THE IMPLICIT TIME STEP SCHEME
+(   47) ! AH0    : REAL    : REFERENCE HEIGHT FOR CONSTANT VERT DIFF (M)
+(   48) ! USTARL : REAL    : CONSTANT USTAR OVER LAND (M SEC-1)
+(   49) ! USTARS : REAL    : CONSTANT USTAR OVER SEA (M SEC-1)
+(   50) ! ALANDZ0: REAL    : CONSTANT Z0 OVER LAND (M)
+(   51) ! ASEAZ0 : REAL    : CONSTANT Z0 OVER SEA (M)
+(   52) ! NDIFLC : INTEGER : CONTROL DIFFERENT VERT DIFF SCHEMES
+(   53) !                   - 1: CALL VDIFLCZ (DIRECT+TL+ADJ):
+(   54) !                        X(T+1)-X(T-1)=K*X(T+1)
+(   55) !                        K=CONSTANT
+(   56) !                   - 2: CALL VDIFLCZ1 (DIRECT):
+(   57) !                        X(T*)-X(T)=K(X(T))*(ALPHA*X(T*)+(1-ALPHA)*X(T))
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:24      page 4
+
+(   58) !                        DX=X(T*)-X(T)
+(   59) !                        X(T+1)=X(T-1)+2*DX
+(   60) !     -----------------------------------------------------------------
+(   61) # 62 "./yophlc.F90"
+(   62) END MODULE YOPHLC

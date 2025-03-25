@@ -98,18 +98,18 @@ MODULE CUENTR_LOKI_MOD
     REAL(KIND=JPRB), INTENT(OUT) :: PDMFEN(KLON)
     REAL(KIND=JPRB), INTENT(OUT) :: PDMFDE(KLON)
     
-    LOGICAL :: LLO1
+    LOGICAL :: CUENTR_LLO1
     
     INTEGER(KIND=JPIM) :: JL
     
     ! A bunch of SPP variables that are saved between calls for efficiency reasons
     LOGICAL :: LLPERT_DETRPEN    ! SPP perturbation on?
     INTEGER(KIND=JPIM) :: IPDETRPEN    ! SPP random field pointer
-    INTEGER(KIND=JPIM) :: IPN    ! SPP perturbation pointer
+    INTEGER(KIND=JPIM) :: CUENTR_IPN    ! SPP perturbation pointer
     TYPE(SPP_PERT) :: PN1    ! SPP pertn. config. for RTAU
     
-    REAL(KIND=JPRB) :: ZDZ, ZENTR, ZMF, ZRG, ZXDETRPEN
-    REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+    REAL(KIND=JPRB) :: ZDZ, ZENTR, ZMF, CUENTR_ZRG, ZXDETRPEN
+    REAL(KIND=JPHOOK) :: CUENTR_ZHOOK_HANDLE
 !$acc routine vector
     INTEGER(KIND=8) :: YLSTACK_L
     INTEGER(KIND=8), INTENT(INOUT) :: YDSTACK_L
@@ -126,14 +126,14 @@ MODULE CUENTR_LOKI_MOD
     DO JL=KIDIA,KFDIA
       IF (LDWORK) THEN
         
-        ZRG = 1.0_JPRB / YDCST%RG
+        CUENTR_ZRG = 1.0_JPRB / YDCST%RG
         
         ! prepare SPP perturbations (just once)
         IF (YDSPP_CONFIG%LSPP) THEN
-          IPN = YDSPP_CONFIG%PPTR%DETRPEN
-          LLPERT_DETRPEN = IPN > 0
+          CUENTR_IPN = YDSPP_CONFIG%PPTR%DETRPEN
+          LLPERT_DETRPEN = CUENTR_IPN > 0
           IF (LLPERT_DETRPEN) THEN
-            PN1 = YDSPP_CONFIG%SM%PN(IPN)
+            PN1 = YDSPP_CONFIG%SM%PN(CUENTR_IPN)
             IPDETRPEN = PN1%MP
           END IF
         ELSE
@@ -148,10 +148,10 @@ MODULE CUENTR_LOKI_MOD
         !                  -------------------------
         
         IF (LDCUM(JL)) THEN
-          ZDZ = (PGEOH(JL, KK) - PGEOH(JL, KK + 1))*ZRG
+          ZDZ = (PGEOH(JL, KK) - PGEOH(JL, KK + 1))*CUENTR_ZRG
           ZMF = PMFU(JL, KK + 1)*ZDZ
-          LLO1 = KK < KCBOT(JL)
-          IF (LLO1) THEN
+          CUENTR_LLO1 = KK < KCBOT(JL)
+          IF (CUENTR_LLO1) THEN
             IF (YDSPP_CONFIG%LSPP .and. LLPERT_DETRPEN) THEN
               ZXDETRPEN = YDECUMF%DETRPEN*EXP(PN1%MU(1) + PN1%XMAG(1)*PGP2DSPP(JL, IPDETRPEN))
             ELSE

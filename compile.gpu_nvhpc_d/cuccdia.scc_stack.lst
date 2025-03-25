@@ -1,0 +1,359 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./cuccdia.scc_stack.F90
+
+(    1) MODULE CUCCDIA_LOKI_MOD
+(    2)   CONTAINS
+(    3)   SUBROUTINE CUCCDIA_LOKI (YDERAD, YDEPHLI, YDEPHY, KIDIA, KFDIA, KLON, KLEV, KSTEP, KCBOT, KCTOP, LDCUM, PQU, PLU, PMFU, PR
+(    4)   & PARPRC, KTOPC, KBASEC, YDSTACK_L)
+(    5)     
+(    6)     !**** *CUCCDIA*- UPDATES PRECIPITAION, CLOUD BASE AND CLOUD TOP
+(    7)     !                FOR DIAGNOSTIC SCHEME FOR CONVECTIVE CLOUDS
+(    8)     
+(    9)     !          M.TIEDTKE         E.C.M.W.F.    12/89
+(   10)     
+(   11)     !**   INTERFACE.
+(   12)     !     ----------
+(   13)     
+(   14)     !          *CUCCDIA* IS CALLED FROM *CUCALL*
+(   15)     
+(   16)     !     PARAMETER     DESCRIPTION                                   UNITS
+(   17)     !     ---------     -----------                                   -----
+(   18)     !     INPUT PARAMETERS (INTEGER):
+(   19)     
+(   20)     !    *KIDIA*        START POINT
+(   21)     !    *KFDIA*        END POINT
+(   22)     !    *KLON*         NUMBER OF GRID POINTS PER PACKET
+(   23)     !    *KLEV*         NUMBER OF LEVELS
+(   24)     !    *KSTEP*        CURRENT TIME STEP INDEX
+(   25)     !    *KCBOT*        CLOUD BASE LEVEL
+(   26)     !    *KCTOP*        CLOUD TOP LEVEL
+(   27)     
+(   28)     !     INPUT PARAMETERS (LOGICAL)
+(   29)     
+(   30)     !    *LDCUM*        FLAG: .TRUE. FOR CONVECTIVE POINTS
+(   31)     
+(   32)     !     INPUT PARAMETERS (REAL)
+(   33)     
+(   34)     !    *PQU*          SPEC. HUMIDITY IN UPDRAFTS                    KG/KG
+(   35)     !    *PLU*          LIQUID WATER CONTENT IN UPDRAFTS              KG/KG
+(   36)     !    *PMFU*         MASSFLUX UPDRAFTS                             KG/(M2*S)
+(   37)     
+(   38)     !    UPDATED PARAMETERS (REAL):
+(   39)     
+(   40)     !    *PARPRC*       ACCUMULATED PRECIPITATION AMMOUNT             KG/(M2*S)
+(   41)     !                   FOR RADIATION CALCULATION
+(   42)     !    *KTOPC*        CONVECTIVE CLOUD TOP LEVEL FOR RADIATION
+(   43)     !    *KBASEC*       CONVECTIVE CLOUD BASE LEVEL FOR RADIATION
+(   44)     
+(   45)     !-----------------------------------------------------------------------
+(   46)     
+(   47)     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY: REAL64
+(   48)     USE, intrinsic :: ISO_C_BINDING, ONLY: C_SIZEOF
+(   49)     USE PARKIND1, ONLY: JPIM, JPRB
+(   50)     USE YOMHOOK, ONLY: LHOOK, JPHOOK
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 2
+
+(   51)     
+(   52)     USE YOEPHY, ONLY: TEPHY
+(   53)     USE YOERAD, ONLY: TERAD
+(   54)     USE YOEPHLI, ONLY: TEPHLI
+(   55)     
+(   56)     IMPLICIT NONE
+(   57)     
+(   58)     TYPE(TEPHLI), INTENT(IN) :: YDEPHLI
+(   59)     TYPE(TEPHY), INTENT(IN) :: YDEPHY
+(   60)     TYPE(TERAD), INTENT(IN) :: YDERAD
+(   61)     INTEGER(KIND=JPIM), INTENT(IN) :: KLON
+(   62)     INTEGER(KIND=JPIM), INTENT(IN) :: KLEV
+(   63)     INTEGER(KIND=JPIM), INTENT(IN) :: KIDIA
+(   64)     INTEGER(KIND=JPIM), INTENT(IN) :: KFDIA
+(   65)     INTEGER(KIND=JPIM), INTENT(IN) :: KSTEP
+(   66)     INTEGER(KIND=JPIM), INTENT(IN) :: KCBOT(KLON)
+(   67)     INTEGER(KIND=JPIM), INTENT(IN) :: KCTOP(KLON)
+(   68)     LOGICAL, INTENT(IN) :: LDCUM(KLON)
+(   69)     REAL(KIND=JPRB), INTENT(IN) :: PQU(KLON, KLEV)
+(   70)     REAL(KIND=JPRB), INTENT(IN) :: PLU(KLON, KLEV)
+(   71)     REAL(KIND=JPRB), INTENT(IN) :: PMFU(KLON, KLEV)
+(   72)     REAL(KIND=JPRB), INTENT(IN) :: PRAIN(KLON)
+(   73)     REAL(KIND=JPRB), INTENT(INOUT) :: PARPRC(KLON)
+(   74)     INTEGER(KIND=JPIM), INTENT(INOUT) :: KTOPC(KLON)
+(   75)     INTEGER(KIND=JPIM), INTENT(INOUT) :: KBASEC(KLON)
+(   76)     !     ------------------------------------------------------------------
+(   77)     
+(   78)     INTEGER(KIND=JPIM) :: IKB, IKT, JL
+(   79)     
+(   80)     REAL(KIND=JPRB) :: ZDMFQ, ZNORMR
+(   81)     REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+(   82) !$acc routine vector
+(   83)     INTEGER(KIND=8) :: YLSTACK_L
+(   84)     INTEGER(KIND=8), INTENT(INOUT) :: YDSTACK_L
+(   85)     YLSTACK_L = YDSTACK_L
+(   86) !$acc data present( KCBOT, KCTOP, LDCUM, PQU, PLU, PMFU, PRAIN, PARPRC, KTOPC, KBASEC, YDERAD, YDEPHLI, YDEPHY )
+(   87)     
+(   88)     !---------------------------------------------------------------------
+(   89)     
+(   90)     !*    1.0          STORE CLOUD PARAMETERS FOR RADIATION CALCULATION
+(   91)     !                  -----------------------------------------------
+(   92)     
+(   93)     !********************************
+(   94)     
+(   95) !$acc loop vector
+(   96)     DO JL=KIDIA,KFDIA
+(   97)       IF (.not.YDEPHLI%LPHYLIN .and. YDERAD%NRADFR /= 1) THEN
+(   98)         !********************************
+(   99)         IF (YDEPHY%LECUMF .and. YDEPHY%LERADI .and. MOD(1 + KSTEP, YDERAD%NRADFR) /= 0) THEN
+(  100)           ZNORMR = 1.0_JPRB / REAL(MAX(YDERAD%NRADFR - 1, 1), kind=JPRB)
+(  101)           !DIR$ IVDEP
+(  102)           !OCL NOVREC
+(  103)           IF (LDCUM(JL)) THEN
+(  104)             KBASEC(JL) = MAX(KBASEC(JL), KCBOT(JL))
+(  105)             KTOPC(JL) = MIN(KTOPC(JL), KCTOP(JL))
+(  106)             IF (KTOPC(JL) == 1) KTOPC(JL) = KCTOP(JL)
+(  107)             IKB = KCBOT(JL)
+(  108)             IKT = KCTOP(JL)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 3
+
+(  109)             ZDMFQ = PMFU(JL, IKB)*MAX(PQU(JL, IKB) + PLU(JL, IKB) - PQU(JL, IKT), PQU(JL, IKB)*0.05_JPRB)
+(  110)             PARPRC(JL) = PARPRC(JL) + MAX(ZDMFQ, PRAIN(JL))*ZNORMR
+(  111)           END IF
+(  112)         END IF
+(  113)         !********************************
+(  114)       ELSE
+(  115)         !********************************
+(  116)         IF (YDEPHY%LECUMF) THEN
+(  117)           !DIR$ IVDEP
+(  118)           !OCL NOVREC
+(  119)           IF (LDCUM(JL)) THEN
+(  120)             KBASEC(JL) = KCBOT(JL)
+(  121)             KTOPC(JL) = KCTOP(JL)
+(  122)             IF (KTOPC(JL) == 1) KTOPC(JL) = KCTOP(JL)
+(  123)             IKB = KCBOT(JL)
+(  124)             IKT = KCTOP(JL)
+(  125)             ZDMFQ = PMFU(JL, IKB)*MAX(PQU(JL, IKB) + PLU(JL, IKB) - PQU(JL, IKT), PQU(JL, IKB)*0.05_JPRB)
+(  126)             PARPRC(JL) = MAX(ZDMFQ, PRAIN(JL))
+(  127)           END IF
+(  128)         END IF
+(  129)         !********************************
+(  130)       END IF
+(  131)     END DO
+(  132)     
+(  133)     !********************************
+(  134)     
+(  135)     
+(  136) !$acc end data
+(  137)   END SUBROUTINE CUCCDIA_LOKI
+(  138) END MODULE CUCCDIA_LOKI_MOD
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 4
+
+(    1) # 1 "./cuccdia.scc_stack.F90"
+(    1) MODULE CUCCDIA_LOKI_MOD
+(    2)   CONTAINS
+(    3)   SUBROUTINE CUCCDIA_LOKI (YDERAD, YDEPHLI, YDEPHY, KIDIA, KFDIA, KLON, KLEV, KSTEP, KCBOT, KCTOP, LDCUM, PQU, PLU, PMFU, PRAIN,  &
+(    4)   & PARPRC, KTOPC, KBASEC, YDSTACK_L)
+(    5)     
+(    6)     !**** *CUCCDIA*- UPDATES PRECIPITAION, CLOUD BASE AND CLOUD TOP
+(    7)     !                FOR DIAGNOSTIC SCHEME FOR CONVECTIVE CLOUDS
+(    8)     
+(    9)     !          M.TIEDTKE         E.C.M.W.F.    12/89
+(   10)     
+(   11)     !**   INTERFACE.
+(   12)     !     ----------
+(   13)     
+(   14)     !          *CUCCDIA* IS CALLED FROM *CUCALL*
+(   15)     
+(   16)     !     PARAMETER     DESCRIPTION                                   UNITS
+(   17)     !     ---------     -----------                                   -----
+(   18)     !     INPUT PARAMETERS (INTEGER):
+(   19)     
+(   20)     !    *KIDIA*        START POINT
+(   21)     !    *KFDIA*        END POINT
+(   22)     !    *KLON*         NUMBER OF GRID POINTS PER PACKET
+(   23)     !    *KLEV*         NUMBER OF LEVELS
+(   24)     !    *KSTEP*        CURRENT TIME STEP INDEX
+(   25)     !    *KCBOT*        CLOUD BASE LEVEL
+(   26)     !    *KCTOP*        CLOUD TOP LEVEL
+(   27)     
+(   28)     !     INPUT PARAMETERS (LOGICAL)
+(   29)     
+(   30)     !    *LDCUM*        FLAG: .TRUE. FOR CONVECTIVE POINTS
+(   31)     
+(   32)     !     INPUT PARAMETERS (REAL)
+(   33)     
+(   34)     !    *PQU*          SPEC. HUMIDITY IN UPDRAFTS                    KG/KG
+(   35)     !    *PLU*          LIQUID WATER CONTENT IN UPDRAFTS              KG/KG
+(   36)     !    *PMFU*         MASSFLUX UPDRAFTS                             KG/(M2*S)
+(   37)     
+(   38)     !    UPDATED PARAMETERS (REAL):
+(   39)     
+(   40)     !    *PARPRC*       ACCUMULATED PRECIPITATION AMMOUNT             KG/(M2*S)
+(   41)     !                   FOR RADIATION CALCULATION
+(   42)     !    *KTOPC*        CONVECTIVE CLOUD TOP LEVEL FOR RADIATION
+(   43)     !    *KBASEC*       CONVECTIVE CLOUD BASE LEVEL FOR RADIATION
+(   44)     
+(   45)     !-----------------------------------------------------------------------
+(   46)     
+(   47)     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY: REAL64
+(   48)     USE, intrinsic :: ISO_C_BINDING, ONLY: C_SIZEOF
+(   49)     USE PARKIND1, ONLY: JPIM, JPRB
+(   50)     USE YOMHOOK, ONLY: LHOOK, JPHOOK
+(   51)     
+(   52)     USE YOEPHY, ONLY: TEPHY
+(   53)     USE YOERAD, ONLY: TERAD
+(   54)     USE YOEPHLI, ONLY: TEPHLI
+(   55)     
+(   56)     IMPLICIT NONE
+(   57)     
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 5
+
+(   58)     TYPE(TEPHLI), INTENT(IN) :: YDEPHLI
+(   59)     TYPE(TEPHY), INTENT(IN) :: YDEPHY
+(   60)     TYPE(TERAD), INTENT(IN) :: YDERAD
+(   61)     INTEGER(KIND=JPIM), INTENT(IN) :: KLON
+(   62)     INTEGER(KIND=JPIM), INTENT(IN) :: KLEV
+(   63)     INTEGER(KIND=JPIM), INTENT(IN) :: KIDIA
+(   64)     INTEGER(KIND=JPIM), INTENT(IN) :: KFDIA
+(   65)     INTEGER(KIND=JPIM), INTENT(IN) :: KSTEP
+(   66)     INTEGER(KIND=JPIM), INTENT(IN) :: KCBOT(KLON)
+(   67)     INTEGER(KIND=JPIM), INTENT(IN) :: KCTOP(KLON)
+(   68)     LOGICAL, INTENT(IN) :: LDCUM(KLON)
+(   69)     REAL(KIND=JPRB), INTENT(IN) :: PQU(KLON, KLEV)
+(   70)     REAL(KIND=JPRB), INTENT(IN) :: PLU(KLON, KLEV)
+(   71)     REAL(KIND=JPRB), INTENT(IN) :: PMFU(KLON, KLEV)
+(   72)     REAL(KIND=JPRB), INTENT(IN) :: PRAIN(KLON)
+(   73)     REAL(KIND=JPRB), INTENT(INOUT) :: PARPRC(KLON)
+(   74)     INTEGER(KIND=JPIM), INTENT(INOUT) :: KTOPC(KLON)
+(   75)     INTEGER(KIND=JPIM), INTENT(INOUT) :: KBASEC(KLON)
+(   76)     !     ------------------------------------------------------------------
+(   77)     
+(   78)     INTEGER(KIND=JPIM) :: IKB, IKT, JL
+(   79)     
+(   80)     REAL(KIND=JPRB) :: ZDMFQ, ZNORMR
+(   81)     REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+(   82) !$acc routine vector
+(   83)     INTEGER(KIND=8) :: YLSTACK_L
+(   84)     INTEGER(KIND=8), INTENT(INOUT) :: YDSTACK_L
+(   85)     YLSTACK_L = YDSTACK_L
+(   86) !$acc data present( KCBOT, KCTOP, LDCUM, PQU, PLU, PMFU, PRAIN, PARPRC, KTOPC, KBASEC, YDERAD, YDEPHLI, YDEPHY )
+(   87)     
+(   88)     !---------------------------------------------------------------------
+(   89)     
+(   90)     !*    1.0          STORE CLOUD PARAMETERS FOR RADIATION CALCULATION
+(   91)     !                  -----------------------------------------------
+(   92)     
+(   93)     !********************************
+(   94)     
+(   95) !$acc loop vector
+(   96)     DO JL=KIDIA,KFDIA
+(   97)       IF (.not.YDEPHLI%LPHYLIN .and. YDERAD%NRADFR /= 1) THEN
+(   98)         !********************************
+(   99)         IF (YDEPHY%LECUMF .and. YDEPHY%LERADI .and. MOD(1 + KSTEP, YDERAD%NRADFR) /= 0) THEN
+(  100)           ZNORMR = 1.0_JPRB / REAL(MAX(YDERAD%NRADFR - 1, 1), kind=JPRB)
+(  101)           !DIR$ IVDEP
+(  102)           !OCL NOVREC
+(  103)           IF (LDCUM(JL)) THEN
+(  104)             KBASEC(JL) = MAX(KBASEC(JL), KCBOT(JL))
+(  105)             KTOPC(JL) = MIN(KTOPC(JL), KCTOP(JL))
+(  106)             IF (KTOPC(JL) == 1) KTOPC(JL) = KCTOP(JL)
+(  107)             IKB = KCBOT(JL)
+(  108)             IKT = KCTOP(JL)
+(  109)             ZDMFQ = PMFU(JL, IKB)*MAX(PQU(JL, IKB) + PLU(JL, IKB) - PQU(JL, IKT), PQU(JL, IKB)*0.05_JPRB)
+(  110)             PARPRC(JL) = PARPRC(JL) + MAX(ZDMFQ, PRAIN(JL))*ZNORMR
+(  111)           END IF
+(  112)         END IF
+(  113)         !********************************
+(  114)       ELSE
+(  115)         !********************************
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 6
+
+(  116)         IF (YDEPHY%LECUMF) THEN
+(  117)           !DIR$ IVDEP
+(  118)           !OCL NOVREC
+(  119)           IF (LDCUM(JL)) THEN
+(  120)             KBASEC(JL) = KCBOT(JL)
+(  121)             KTOPC(JL) = KCTOP(JL)
+(  122)             IF (KTOPC(JL) == 1) KTOPC(JL) = KCTOP(JL)
+(  123)             IKB = KCBOT(JL)
+(  124)             IKT = KCTOP(JL)
+(  125)             ZDMFQ = PMFU(JL, IKB)*MAX(PQU(JL, IKB) + PLU(JL, IKB) - PQU(JL, IKT), PQU(JL, IKB)*0.05_JPRB)
+(  126)             PARPRC(JL) = MAX(ZDMFQ, PRAIN(JL))
+(  127)           END IF
+(  128)         END IF
+(  129)         !********************************
+(  130)       END IF
+(  131)     END DO
+(  132)     
+(  133)     !********************************
+(  134)     
+(  135)     
+(  136) !$acc end data
+(  137)   END SUBROUTINE CUCCDIA_LOKI
+(  138) END MODULE CUCCDIA_LOKI_MOD

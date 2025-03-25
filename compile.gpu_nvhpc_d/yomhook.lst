@@ -1,0 +1,93 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:21      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./yomhook.F90
+
+(    1) MODULE YOMHOOK
+(    2) 
+(    3) USE PARKIND1, ONLY : JPRB, JPIM
+(    4) IMPLICIT NONE
+(    5) 
+(    6) LOGICAL :: LHOOK = .FALSE.
+(    7) 
+(    8) INTEGER, PARAMETER :: JPHOOK = 8
+(    9) 
+(   10) CONTAINS
+(   11) 
+(   12) SUBROUTINE DR_HOOK (CDNAME, KPART, PHOOK_HANDLE)
+(   13) 
+(   14) CHARACTER (LEN=*) :: CDNAME
+(   15) INTEGER (KIND=JPIM) :: KPART
+(   16) REAL (KIND=JPHOOK) :: PHOOK_HANDLE
+(   17) 
+(   18) END SUBROUTINE
+(   19) 
+(   20) END MODULE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:21      page 2
+
+(    1) # 1 "./yomhook.F90"
+(    1) MODULE YOMHOOK
+(    2) # 3 "./yomhook.F90"
+(    3) USE PARKIND1, ONLY : JPRB, JPIM
+(    4) IMPLICIT NONE
+(    5) # 6 "./yomhook.F90"
+(    6) LOGICAL :: LHOOK = .FALSE.
+(    7) # 8 "./yomhook.F90"
+(    8) INTEGER, PARAMETER :: JPHOOK = 8
+(    9) # 10 "./yomhook.F90"
+(   10) CONTAINS
+(   11) # 12 "./yomhook.F90"
+(   12) SUBROUTINE DR_HOOK (CDNAME, KPART, PHOOK_HANDLE)
+(   13) # 14 "./yomhook.F90"
+(   14) CHARACTER (LEN=*) :: CDNAME
+(   15) INTEGER (KIND=JPIM) :: KPART
+(   16) REAL (KIND=JPHOOK) :: PHOOK_HANDLE
+(   17) # 18 "./yomhook.F90"
+(   18) END SUBROUTINE
+(   19) # 20 "./yomhook.F90"
+(   20) END MODULE

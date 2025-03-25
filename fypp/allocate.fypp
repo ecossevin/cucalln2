@@ -1,0 +1,65 @@
+MODULE YOMALLOC
+
+USE PARKIND1
+
+IMPLICIT NONE
+
+#:set kinds = ['LM', 'RD', 'RM', 'IM']
+#:set ranks = [0, 1, 2, 3, 4, 5]
+
+INTERFACE ALLOC
+#:for kind in kinds
+#:for rank in ranks
+MODULE PROCEDURE :: ALLOC${kind}$${rank}$
+#:endfor
+#:endfor
+END INTERFACE
+
+CONTAINS
+
+#:for kind in kinds
+#:for rank in ranks
+
+#:if kind[0:1] == "L"
+  #:set type = "LOGICAL"
+#:elif kind[0:1] == "R"
+  #:set type = "REAL"
+#:elif kind[0:1] == "I"
+  #:set type = "INTEGER"
+#:endif
+
+#:if rank == 0
+
+SUBROUTINE ALLOC${kind}$${rank}$ (P, Z)
+
+${type}$ (KIND=JP${kind}$), POINTER :: P
+${type}$ (KIND=JP${kind}$), POINTER :: Z
+P=Z
+END SUBROUTINE
+
+#:else
+
+SUBROUTINE ALLOC${kind}$${rank}$ (P, Z)
+
+${type}$ (KIND=JP${kind}$), POINTER :: P(${','.join ([':'] * rank)}$)
+${type}$ (KIND=JP${kind}$), POINTER :: Z(${','.join ([':'] * rank)}$)
+
+INTEGER :: ILBOUND(${rank}$)
+INTEGER :: IUBOUND(${rank}$)
+
+ILBOUND = LBOUND(Z)
+IUBOUND = UBOUND(Z)
+
+#:set shape = ','.join (list (map (lambda i: "ILBOUND (" + str (i) + "):IUBOUND (" + str (i) + ")", range (1, rank+1))))
+
+ALLOCATE (P (${shape}$))
+
+P=Z
+
+END SUBROUTINE
+
+#:endif
+#:endfor
+#:endfor
+
+END

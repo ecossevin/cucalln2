@@ -1,0 +1,106 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:24      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./yomsrftlad.F90
+
+(    1) MODULE YOMSRFTLAD
+(    2) 
+(    3) USE PARKIND1  ,ONLY : JPRB,JPIM
+(    4) 
+(    5) IMPLICIT NONE
+(    6) 
+(    7) SAVE
+(    8) 
+(    9) ! ------ SKIN TEMPERATURE FOR LINEARIZED PHYSICS
+(   10) 
+(   11) ! GPSURF  : BUFFER FOR PERTURBATION OF TOP LAYER SURF. FIELDS 
+(   12) !           (SKIN TEMPERATURE,...)
+(   13) ! NGSKIN  : NUMBER OF TOP SOIL FIELDS FOR PERTURBATION
+(   14) 
+(   15) ! LREGSF  : .TRUE. if the regularization for SURF computation is used
+(   16) 
+(   17) TYPE :: TSRFTLAD
+(   18) REAL(KIND=JPRB),ALLOCATABLE :: GPTSKIN0(:,:,:)
+(   19) REAL(KIND=JPRB),ALLOCATABLE :: GPTSKIN9(:,:,:)
+(   20) 
+(   21) INTEGER(KIND=JPIM) :: NGSKIN
+(   22) 
+(   23) LOGICAL :: LREGSF
+(   24) !----------------------------------------------------------------------------
+(   25) CONTAINS
+(   26) END TYPE TSRFTLAD
+(   27) !============================================================================
+(   28) 
+(   29) !!TYPE(TSRFTLAD), POINTER :: YRSRFTLAD => NULL()
+(   30) 
+(   31) !     ------------------------------------------------------------------
+(   32) 
+(   33) END MODULE YOMSRFTLAD
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:24      page 2
+
+(    1) # 1 "./yomsrftlad.F90"
+(    1) MODULE YOMSRFTLAD
+(    2) # 3 "./yomsrftlad.F90"
+(    3) USE PARKIND1  ,ONLY : JPRB,JPIM
+(    4) # 5 "./yomsrftlad.F90"
+(    5) IMPLICIT NONE
+(    6) # 7 "./yomsrftlad.F90"
+(    7) SAVE
+(    8) # 9 "./yomsrftlad.F90"
+(    9) ! ------ SKIN TEMPERATURE FOR LINEARIZED PHYSICS
+(   10) # 11 "./yomsrftlad.F90"
+(   11) ! GPSURF  : BUFFER FOR PERTURBATION OF TOP LAYER SURF. FIELDS 
+(   12) !           (SKIN TEMPERATURE,...)
+(   13) ! NGSKIN  : NUMBER OF TOP SOIL FIELDS FOR PERTURBATION
+(   14) # 15 "./yomsrftlad.F90"
+(   15) ! LREGSF  : .TRUE. if the regularization for SURF computation is used
+(   16) # 17 "./yomsrftlad.F90"
+(   17) TYPE :: TSRFTLAD
+(   18) REAL(KIND=JPRB),ALLOCATABLE :: GPTSKIN0(:,:,:)
+(   19) REAL(KIND=JPRB),ALLOCATABLE :: GPTSKIN9(:,:,:)
+(   20) # 21 "./yomsrftlad.F90"
+(   21) INTEGER(KIND=JPIM) :: NGSKIN
+(   22) # 23 "./yomsrftlad.F90"
+(   23) LOGICAL :: LREGSF
+(   24) !----------------------------------------------------------------------------
+(   25) CONTAINS
+(   26) END TYPE TSRFTLAD
+(   27) !============================================================================
+(   28) # 29 "./yomsrftlad.F90"
+(   29) !!TYPE(TSRFTLAD), POINTER :: YRSRFTLAD => NULL()
+(   30) # 31 "./yomsrftlad.F90"
+(   31) !     ------------------------------------------------------------------
+(   32) # 33 "./yomsrftlad.F90"
+(   33) END MODULE YOMSRFTLAD

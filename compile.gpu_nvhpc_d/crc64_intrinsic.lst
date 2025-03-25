@@ -1,0 +1,1006 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:28      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./crc64_intrinsic.F90
+
+(    1) MODULE CRC64_INTRINSIC
+(    2) 
+(    3) USE PARKIND1
+(    4) 
+(    5) IMPLICIT NONE
+(    6) 
+(    7) INTERFACE CRC64
+(    8) MODULE PROCEDURE CRC64_0RD 
+(    9) MODULE PROCEDURE CRC64_0RM 
+(   10) MODULE PROCEDURE CRC64_0IM 
+(   11) MODULE PROCEDURE CRC64_0LM 
+(   12) MODULE PROCEDURE CRC64_0CH 
+(   13) MODULE PROCEDURE CRC64_1RD 
+(   14) MODULE PROCEDURE CRC64_1RM 
+(   15) MODULE PROCEDURE CRC64_1IM 
+(   16) MODULE PROCEDURE CRC64_1LM 
+(   17) MODULE PROCEDURE CRC64_1CH 
+(   18) MODULE PROCEDURE CRC64_2RD 
+(   19) MODULE PROCEDURE CRC64_2RM 
+(   20) MODULE PROCEDURE CRC64_2IM 
+(   21) MODULE PROCEDURE CRC64_2LM 
+(   22) MODULE PROCEDURE CRC64_2CH 
+(   23) MODULE PROCEDURE CRC64_3RD 
+(   24) MODULE PROCEDURE CRC64_3RM 
+(   25) MODULE PROCEDURE CRC64_3IM 
+(   26) MODULE PROCEDURE CRC64_3LM 
+(   27) MODULE PROCEDURE CRC64_3CH 
+(   28) MODULE PROCEDURE CRC64_4RD 
+(   29) MODULE PROCEDURE CRC64_4RM 
+(   30) MODULE PROCEDURE CRC64_4IM 
+(   31) MODULE PROCEDURE CRC64_4LM 
+(   32) MODULE PROCEDURE CRC64_4CH 
+(   33) END INTERFACE
+(   34) 
+(   35) PUBLIC :: CRC64
+(   36) PRIVATE 
+(   37) 
+(   38) CONTAINS
+(   39) 
+(   40) 
+(   41) INTEGER*8 FUNCTION CRC64_0RD (P) RESULT (ICRC)
+(   42)   
+(   43) 
+(   44) REAL (KIND=JPRD), INTENT (IN) :: P 
+(   45) 
+(   46) EXTERNAL :: CRC64
+(   47) INTEGER*8 :: ILEN
+(   48) 
+(   49) ICRC = 0
+(   50) ILEN =  KIND (P) 
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:28      page 2
+
+(   51) 
+(   52) CALL CRC64 (P, ILEN, ICRC)
+(   53) 
+(   54) END FUNCTION
+(   55) 
+(   56) 
+(   57) INTEGER*8 FUNCTION CRC64_0RM (P) RESULT (ICRC)
+(   58)   
+(   59) 
+(   60) REAL (KIND=JPRM), INTENT (IN) :: P 
+(   61) 
+(   62) EXTERNAL :: CRC64
+(   63) INTEGER*8 :: ILEN
+(   64) 
+(   65) ICRC = 0
+(   66) ILEN =  KIND (P) 
+(   67) 
+(   68) CALL CRC64 (P, ILEN, ICRC)
+(   69) 
+(   70) END FUNCTION
+(   71) 
+(   72) 
+(   73) INTEGER*8 FUNCTION CRC64_0IM (P) RESULT (ICRC)
+(   74)   
+(   75) 
+(   76) INTEGER (KIND=JPIM), INTENT (IN) :: P 
+(   77) 
+(   78) EXTERNAL :: CRC64
+(   79) INTEGER*8 :: ILEN
+(   80) 
+(   81) ICRC = 0
+(   82) ILEN =  KIND (P) 
+(   83) 
+(   84) CALL CRC64 (P, ILEN, ICRC)
+(   85) 
+(   86) END FUNCTION
+(   87) 
+(   88) 
+(   89) INTEGER*8 FUNCTION CRC64_0LM (P) RESULT (ICRC)
+(   90)   
+(   91) 
+(   92) LOGICAL (KIND=JPLM), INTENT (IN) :: P 
+(   93) 
+(   94) EXTERNAL :: CRC64
+(   95) INTEGER*8 :: ILEN
+(   96) 
+(   97) ICRC = 0
+(   98) ILEN =  KIND (P) 
+(   99) 
+(  100) CALL CRC64 (P, ILEN, ICRC)
+(  101) 
+(  102) END FUNCTION
+(  103) 
+(  104) 
+(  105) INTEGER*8 FUNCTION CRC64_0CH (P) RESULT (ICRC)
+(  106)   
+(  107) 
+(  108) CHARACTER (KIND=1, LEN=*), INTENT (IN) :: P 
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:28      page 3
+
+(  109) 
+(  110) EXTERNAL :: CRC64
+(  111) INTEGER*8 :: ILEN
+(  112) 
+(  113) ICRC = 0
+(  114) ILEN =  KIND (P)  * LEN (P)
+(  115) 
+(  116) CALL CRC64 (P, ILEN, ICRC)
+(  117) 
+(  118) END FUNCTION
+(  119) 
+(  120) 
+(  121) INTEGER*8 FUNCTION CRC64_1RD (P) RESULT (ICRC)
+(  122)   
+(  123) 
+(  124) REAL (KIND=JPRD), INTENT (IN) :: P (:)
+(  125) 
+(  126) EXTERNAL :: CRC64
+(  127) INTEGER*8 :: ILEN
+(  128) 
+(  129) ICRC = 0
+(  130) ILEN = SIZE (P) *  KIND (P) 
+(  131) 
+(  132) CALL CRC64 (P, ILEN, ICRC)
+(  133) 
+(  134) END FUNCTION
+(  135) 
+(  136) 
+(  137) INTEGER*8 FUNCTION CRC64_1RM (P) RESULT (ICRC)
+(  138)   
+(  139) 
+(  140) REAL (KIND=JPRM), INTENT (IN) :: P (:)
+(  141) 
+(  142) EXTERNAL :: CRC64
+(  143) INTEGER*8 :: ILEN
+(  144) 
+(  145) ICRC = 0
+(  146) ILEN = SIZE (P) *  KIND (P) 
+(  147) 
+(  148) CALL CRC64 (P, ILEN, ICRC)
+(  149) 
+(  150) END FUNCTION
+(  151) 
+(  152) 
+(  153) INTEGER*8 FUNCTION CRC64_1IM (P) RESULT (ICRC)
+(  154)   
+(  155) 
+(  156) INTEGER (KIND=JPIM), INTENT (IN) :: P (:)
+(  157) 
+(  158) EXTERNAL :: CRC64
+(  159) INTEGER*8 :: ILEN
+(  160) 
+(  161) ICRC = 0
+(  162) ILEN = SIZE (P) *  KIND (P) 
+(  163) 
+(  164) CALL CRC64 (P, ILEN, ICRC)
+(  165) 
+(  166) END FUNCTION
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:28      page 4
+
+(  167) 
+(  168) 
+(  169) INTEGER*8 FUNCTION CRC64_1LM (P) RESULT (ICRC)
+(  170)   
+(  171) 
+(  172) LOGICAL (KIND=JPLM), INTENT (IN) :: P (:)
+(  173) 
+(  174) EXTERNAL :: CRC64
+(  175) INTEGER*8 :: ILEN
+(  176) 
+(  177) ICRC = 0
+(  178) ILEN = SIZE (P) *  KIND (P) 
+(  179) 
+(  180) CALL CRC64 (P, ILEN, ICRC)
+(  181) 
+(  182) END FUNCTION
+(  183) 
+(  184) 
+(  185) INTEGER*8 FUNCTION CRC64_1CH (P) RESULT (ICRC)
+(  186)   
+(  187) 
+(  188) CHARACTER (KIND=1, LEN=*), INTENT (IN) :: P (:)
+(  189) 
+(  190) EXTERNAL :: CRC64
+(  191) INTEGER*8 :: ILEN
+(  192) 
+(  193) ICRC = 0
+(  194) ILEN = SIZE (P) *  KIND (P)  * LEN (P)
+(  195) 
+(  196) CALL CRC64 (P, ILEN, ICRC)
+(  197) 
+(  198) END FUNCTION
+(  199) 
+(  200) 
+(  201) INTEGER*8 FUNCTION CRC64_2RD (P) RESULT (ICRC)
+(  202)   
+(  203) 
+(  204) REAL (KIND=JPRD), INTENT (IN) :: P (:,:)
+(  205) 
+(  206) EXTERNAL :: CRC64
+(  207) INTEGER*8 :: ILEN
+(  208) 
+(  209) ICRC = 0
+(  210) ILEN = SIZE (P) *  KIND (P) 
+(  211) 
+(  212) CALL CRC64 (P, ILEN, ICRC)
+(  213) 
+(  214) END FUNCTION
+(  215) 
+(  216) 
+(  217) INTEGER*8 FUNCTION CRC64_2RM (P) RESULT (ICRC)
+(  218)   
+(  219) 
+(  220) REAL (KIND=JPRM), INTENT (IN) :: P (:,:)
+(  221) 
+(  222) EXTERNAL :: CRC64
+(  223) INTEGER*8 :: ILEN
+(  224) 
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:28      page 5
+
+(  225) ICRC = 0
+(  226) ILEN = SIZE (P) *  KIND (P) 
+(  227) 
+(  228) CALL CRC64 (P, ILEN, ICRC)
+(  229) 
+(  230) END FUNCTION
+(  231) 
+(  232) 
+(  233) INTEGER*8 FUNCTION CRC64_2IM (P) RESULT (ICRC)
+(  234)   
+(  235) 
+(  236) INTEGER (KIND=JPIM), INTENT (IN) :: P (:,:)
+(  237) 
+(  238) EXTERNAL :: CRC64
+(  239) INTEGER*8 :: ILEN
+(  240) 
+(  241) ICRC = 0
+(  242) ILEN = SIZE (P) *  KIND (P) 
+(  243) 
+(  244) CALL CRC64 (P, ILEN, ICRC)
+(  245) 
+(  246) END FUNCTION
+(  247) 
+(  248) 
+(  249) INTEGER*8 FUNCTION CRC64_2LM (P) RESULT (ICRC)
+(  250)   
+(  251) 
+(  252) LOGICAL (KIND=JPLM), INTENT (IN) :: P (:,:)
+(  253) 
+(  254) EXTERNAL :: CRC64
+(  255) INTEGER*8 :: ILEN
+(  256) 
+(  257) ICRC = 0
+(  258) ILEN = SIZE (P) *  KIND (P) 
+(  259) 
+(  260) CALL CRC64 (P, ILEN, ICRC)
+(  261) 
+(  262) END FUNCTION
+(  263) 
+(  264) 
+(  265) INTEGER*8 FUNCTION CRC64_2CH (P) RESULT (ICRC)
+(  266)   
+(  267) 
+(  268) CHARACTER (KIND=1, LEN=*), INTENT (IN) :: P (:,:)
+(  269) 
+(  270) EXTERNAL :: CRC64
+(  271) INTEGER*8 :: ILEN
+(  272) 
+(  273) ICRC = 0
+(  274) ILEN = SIZE (P) *  KIND (P)  * LEN (P)
+(  275) 
+(  276) CALL CRC64 (P, ILEN, ICRC)
+(  277) 
+(  278) END FUNCTION
+(  279) 
+(  280) 
+(  281) INTEGER*8 FUNCTION CRC64_3RD (P) RESULT (ICRC)
+(  282)   
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:28      page 6
+
+(  283) 
+(  284) REAL (KIND=JPRD), INTENT (IN) :: P (:,:,:)
+(  285) 
+(  286) EXTERNAL :: CRC64
+(  287) INTEGER*8 :: ILEN
+(  288) 
+(  289) ICRC = 0
+(  290) ILEN = SIZE (P) *  KIND (P) 
+(  291) 
+(  292) CALL CRC64 (P, ILEN, ICRC)
+(  293) 
+(  294) END FUNCTION
+(  295) 
+(  296) 
+(  297) INTEGER*8 FUNCTION CRC64_3RM (P) RESULT (ICRC)
+(  298)   
+(  299) 
+(  300) REAL (KIND=JPRM), INTENT (IN) :: P (:,:,:)
+(  301) 
+(  302) EXTERNAL :: CRC64
+(  303) INTEGER*8 :: ILEN
+(  304) 
+(  305) ICRC = 0
+(  306) ILEN = SIZE (P) *  KIND (P) 
+(  307) 
+(  308) CALL CRC64 (P, ILEN, ICRC)
+(  309) 
+(  310) END FUNCTION
+(  311) 
+(  312) 
+(  313) INTEGER*8 FUNCTION CRC64_3IM (P) RESULT (ICRC)
+(  314)   
+(  315) 
+(  316) INTEGER (KIND=JPIM), INTENT (IN) :: P (:,:,:)
+(  317) 
+(  318) EXTERNAL :: CRC64
+(  319) INTEGER*8 :: ILEN
+(  320) 
+(  321) ICRC = 0
+(  322) ILEN = SIZE (P) *  KIND (P) 
+(  323) 
+(  324) CALL CRC64 (P, ILEN, ICRC)
+(  325) 
+(  326) END FUNCTION
+(  327) 
+(  328) 
+(  329) INTEGER*8 FUNCTION CRC64_3LM (P) RESULT (ICRC)
+(  330)   
+(  331) 
+(  332) LOGICAL (KIND=JPLM), INTENT (IN) :: P (:,:,:)
+(  333) 
+(  334) EXTERNAL :: CRC64
+(  335) INTEGER*8 :: ILEN
+(  336) 
+(  337) ICRC = 0
+(  338) ILEN = SIZE (P) *  KIND (P) 
+(  339) 
+(  340) CALL CRC64 (P, ILEN, ICRC)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:28      page 7
+
+(  341) 
+(  342) END FUNCTION
+(  343) 
+(  344) 
+(  345) INTEGER*8 FUNCTION CRC64_3CH (P) RESULT (ICRC)
+(  346)   
+(  347) 
+(  348) CHARACTER (KIND=1, LEN=*), INTENT (IN) :: P (:,:,:)
+(  349) 
+(  350) EXTERNAL :: CRC64
+(  351) INTEGER*8 :: ILEN
+(  352) 
+(  353) ICRC = 0
+(  354) ILEN = SIZE (P) *  KIND (P)  * LEN (P)
+(  355) 
+(  356) CALL CRC64 (P, ILEN, ICRC)
+(  357) 
+(  358) END FUNCTION
+(  359) 
+(  360) 
+(  361) INTEGER*8 FUNCTION CRC64_4RD (P) RESULT (ICRC)
+(  362)   
+(  363) 
+(  364) REAL (KIND=JPRD), INTENT (IN) :: P (:,:,:,:)
+(  365) 
+(  366) EXTERNAL :: CRC64
+(  367) INTEGER*8 :: ILEN
+(  368) 
+(  369) ICRC = 0
+(  370) ILEN = SIZE (P) *  KIND (P) 
+(  371) 
+(  372) CALL CRC64 (P, ILEN, ICRC)
+(  373) 
+(  374) END FUNCTION
+(  375) 
+(  376) 
+(  377) INTEGER*8 FUNCTION CRC64_4RM (P) RESULT (ICRC)
+(  378)   
+(  379) 
+(  380) REAL (KIND=JPRM), INTENT (IN) :: P (:,:,:,:)
+(  381) 
+(  382) EXTERNAL :: CRC64
+(  383) INTEGER*8 :: ILEN
+(  384) 
+(  385) ICRC = 0
+(  386) ILEN = SIZE (P) *  KIND (P) 
+(  387) 
+(  388) CALL CRC64 (P, ILEN, ICRC)
+(  389) 
+(  390) END FUNCTION
+(  391) 
+(  392) 
+(  393) INTEGER*8 FUNCTION CRC64_4IM (P) RESULT (ICRC)
+(  394)   
+(  395) 
+(  396) INTEGER (KIND=JPIM), INTENT (IN) :: P (:,:,:,:)
+(  397) 
+(  398) EXTERNAL :: CRC64
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:28      page 8
+
+(  399) INTEGER*8 :: ILEN
+(  400) 
+(  401) ICRC = 0
+(  402) ILEN = SIZE (P) *  KIND (P) 
+(  403) 
+(  404) CALL CRC64 (P, ILEN, ICRC)
+(  405) 
+(  406) END FUNCTION
+(  407) 
+(  408) 
+(  409) INTEGER*8 FUNCTION CRC64_4LM (P) RESULT (ICRC)
+(  410)   
+(  411) 
+(  412) LOGICAL (KIND=JPLM), INTENT (IN) :: P (:,:,:,:)
+(  413) 
+(  414) EXTERNAL :: CRC64
+(  415) INTEGER*8 :: ILEN
+(  416) 
+(  417) ICRC = 0
+(  418) ILEN = SIZE (P) *  KIND (P) 
+(  419) 
+(  420) CALL CRC64 (P, ILEN, ICRC)
+(  421) 
+(  422) END FUNCTION
+(  423) 
+(  424) 
+(  425) INTEGER*8 FUNCTION CRC64_4CH (P) RESULT (ICRC)
+(  426)   
+(  427) 
+(  428) CHARACTER (KIND=1, LEN=*), INTENT (IN) :: P (:,:,:,:)
+(  429) 
+(  430) EXTERNAL :: CRC64
+(  431) INTEGER*8 :: ILEN
+(  432) 
+(  433) ICRC = 0
+(  434) ILEN = SIZE (P) *  KIND (P)  * LEN (P)
+(  435) 
+(  436) CALL CRC64 (P, ILEN, ICRC)
+(  437) 
+(  438) END FUNCTION
+(  439) 
+(  440) 
+(  441) 
+(  442) END MODULE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:28      page 9
+
+(    1) # 1 "./crc64_intrinsic.F90"
+(    1) MODULE CRC64_INTRINSIC
+(    2) # 3 "./crc64_intrinsic.F90"
+(    3) USE PARKIND1
+(    4) # 5 "./crc64_intrinsic.F90"
+(    5) IMPLICIT NONE
+(    6) # 7 "./crc64_intrinsic.F90"
+(    7) INTERFACE CRC64
+(    8) MODULE PROCEDURE CRC64_0RD 
+(    9) MODULE PROCEDURE CRC64_0RM 
+(   10) MODULE PROCEDURE CRC64_0IM 
+(   11) MODULE PROCEDURE CRC64_0LM 
+(   12) MODULE PROCEDURE CRC64_0CH 
+(   13) MODULE PROCEDURE CRC64_1RD 
+(   14) MODULE PROCEDURE CRC64_1RM 
+(   15) MODULE PROCEDURE CRC64_1IM 
+(   16) MODULE PROCEDURE CRC64_1LM 
+(   17) MODULE PROCEDURE CRC64_1CH 
+(   18) MODULE PROCEDURE CRC64_2RD 
+(   19) MODULE PROCEDURE CRC64_2RM 
+(   20) MODULE PROCEDURE CRC64_2IM 
+(   21) MODULE PROCEDURE CRC64_2LM 
+(   22) MODULE PROCEDURE CRC64_2CH 
+(   23) MODULE PROCEDURE CRC64_3RD 
+(   24) MODULE PROCEDURE CRC64_3RM 
+(   25) MODULE PROCEDURE CRC64_3IM 
+(   26) MODULE PROCEDURE CRC64_3LM 
+(   27) MODULE PROCEDURE CRC64_3CH 
+(   28) MODULE PROCEDURE CRC64_4RD 
+(   29) MODULE PROCEDURE CRC64_4RM 
+(   30) MODULE PROCEDURE CRC64_4IM 
+(   31) MODULE PROCEDURE CRC64_4LM 
+(   32) MODULE PROCEDURE CRC64_4CH 
+(   33) END INTERFACE
+(   34) # 35 "./crc64_intrinsic.F90"
+(   35) PUBLIC :: CRC64
+(   36) PRIVATE 
+(   37) # 38 "./crc64_intrinsic.F90"
+(   38) CONTAINS
+(   39) # 41 "./crc64_intrinsic.F90"
+(   41) INTEGER*8 FUNCTION CRC64_0RD (P) RESULT (ICRC)
+(   42)   
+(   43) # 44 "./crc64_intrinsic.F90"
+(   44) REAL (KIND=JPRD), INTENT (IN) :: P 
+(   45) # 46 "./crc64_intrinsic.F90"
+(   46) EXTERNAL :: CRC64
+(   47) INTEGER*8 :: ILEN
+(   48) # 49 "./crc64_intrinsic.F90"
+(   49) ICRC = 0
+(   50) ILEN =  KIND (P) 
+(   51) # 52 "./crc64_intrinsic.F90"
+(   52) CALL CRC64 (P, ILEN, ICRC)
+(   53) # 54 "./crc64_intrinsic.F90"
+(   54) END FUNCTION
+(   55) # 57 "./crc64_intrinsic.F90"
+(   57) INTEGER*8 FUNCTION CRC64_0RM (P) RESULT (ICRC)
+(   58)   
+(   59) # 60 "./crc64_intrinsic.F90"
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:28      page 10
+
+(   60) REAL (KIND=JPRM), INTENT (IN) :: P 
+(   61) # 62 "./crc64_intrinsic.F90"
+(   62) EXTERNAL :: CRC64
+(   63) INTEGER*8 :: ILEN
+(   64) # 65 "./crc64_intrinsic.F90"
+(   65) ICRC = 0
+(   66) ILEN =  KIND (P) 
+(   67) # 68 "./crc64_intrinsic.F90"
+(   68) CALL CRC64 (P, ILEN, ICRC)
+(   69) # 70 "./crc64_intrinsic.F90"
+(   70) END FUNCTION
+(   71) # 73 "./crc64_intrinsic.F90"
+(   73) INTEGER*8 FUNCTION CRC64_0IM (P) RESULT (ICRC)
+(   74)   
+(   75) # 76 "./crc64_intrinsic.F90"
+(   76) INTEGER (KIND=JPIM), INTENT (IN) :: P 
+(   77) # 78 "./crc64_intrinsic.F90"
+(   78) EXTERNAL :: CRC64
+(   79) INTEGER*8 :: ILEN
+(   80) # 81 "./crc64_intrinsic.F90"
+(   81) ICRC = 0
+(   82) ILEN =  KIND (P) 
+(   83) # 84 "./crc64_intrinsic.F90"
+(   84) CALL CRC64 (P, ILEN, ICRC)
+(   85) # 86 "./crc64_intrinsic.F90"
+(   86) END FUNCTION
+(   87) # 89 "./crc64_intrinsic.F90"
+(   89) INTEGER*8 FUNCTION CRC64_0LM (P) RESULT (ICRC)
+(   90)   
+(   91) # 92 "./crc64_intrinsic.F90"
+(   92) LOGICAL (KIND=JPLM), INTENT (IN) :: P 
+(   93) # 94 "./crc64_intrinsic.F90"
+(   94) EXTERNAL :: CRC64
+(   95) INTEGER*8 :: ILEN
+(   96) # 97 "./crc64_intrinsic.F90"
+(   97) ICRC = 0
+(   98) ILEN =  KIND (P) 
+(   99) # 100 "./crc64_intrinsic.F90"
+(  100) CALL CRC64 (P, ILEN, ICRC)
+(  101) # 102 "./crc64_intrinsic.F90"
+(  102) END FUNCTION
+(  103) # 105 "./crc64_intrinsic.F90"
+(  105) INTEGER*8 FUNCTION CRC64_0CH (P) RESULT (ICRC)
+(  106)   
+(  107) # 108 "./crc64_intrinsic.F90"
+(  108) CHARACTER (KIND=1, LEN=*), INTENT (IN) :: P 
+(  109) # 110 "./crc64_intrinsic.F90"
+(  110) EXTERNAL :: CRC64
+(  111) INTEGER*8 :: ILEN
+(  112) # 113 "./crc64_intrinsic.F90"
+(  113) ICRC = 0
+(  114) ILEN =  KIND (P)  * LEN (P)
+(  115) # 116 "./crc64_intrinsic.F90"
+(  116) CALL CRC64 (P, ILEN, ICRC)
+(  117) # 118 "./crc64_intrinsic.F90"
+(  118) END FUNCTION
+(  119) # 121 "./crc64_intrinsic.F90"
+(  121) INTEGER*8 FUNCTION CRC64_1RD (P) RESULT (ICRC)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:28      page 11
+
+(  122)   
+(  123) # 124 "./crc64_intrinsic.F90"
+(  124) REAL (KIND=JPRD), INTENT (IN) :: P (:)
+(  125) # 126 "./crc64_intrinsic.F90"
+(  126) EXTERNAL :: CRC64
+(  127) INTEGER*8 :: ILEN
+(  128) # 129 "./crc64_intrinsic.F90"
+(  129) ICRC = 0
+(  130) ILEN = SIZE (P) *  KIND (P) 
+(  131) # 132 "./crc64_intrinsic.F90"
+(  132) CALL CRC64 (P, ILEN, ICRC)
+(  133) # 134 "./crc64_intrinsic.F90"
+(  134) END FUNCTION
+(  135) # 137 "./crc64_intrinsic.F90"
+(  137) INTEGER*8 FUNCTION CRC64_1RM (P) RESULT (ICRC)
+(  138)   
+(  139) # 140 "./crc64_intrinsic.F90"
+(  140) REAL (KIND=JPRM), INTENT (IN) :: P (:)
+(  141) # 142 "./crc64_intrinsic.F90"
+(  142) EXTERNAL :: CRC64
+(  143) INTEGER*8 :: ILEN
+(  144) # 145 "./crc64_intrinsic.F90"
+(  145) ICRC = 0
+(  146) ILEN = SIZE (P) *  KIND (P) 
+(  147) # 148 "./crc64_intrinsic.F90"
+(  148) CALL CRC64 (P, ILEN, ICRC)
+(  149) # 150 "./crc64_intrinsic.F90"
+(  150) END FUNCTION
+(  151) # 153 "./crc64_intrinsic.F90"
+(  153) INTEGER*8 FUNCTION CRC64_1IM (P) RESULT (ICRC)
+(  154)   
+(  155) # 156 "./crc64_intrinsic.F90"
+(  156) INTEGER (KIND=JPIM), INTENT (IN) :: P (:)
+(  157) # 158 "./crc64_intrinsic.F90"
+(  158) EXTERNAL :: CRC64
+(  159) INTEGER*8 :: ILEN
+(  160) # 161 "./crc64_intrinsic.F90"
+(  161) ICRC = 0
+(  162) ILEN = SIZE (P) *  KIND (P) 
+(  163) # 164 "./crc64_intrinsic.F90"
+(  164) CALL CRC64 (P, ILEN, ICRC)
+(  165) # 166 "./crc64_intrinsic.F90"
+(  166) END FUNCTION
+(  167) # 169 "./crc64_intrinsic.F90"
+(  169) INTEGER*8 FUNCTION CRC64_1LM (P) RESULT (ICRC)
+(  170)   
+(  171) # 172 "./crc64_intrinsic.F90"
+(  172) LOGICAL (KIND=JPLM), INTENT (IN) :: P (:)
+(  173) # 174 "./crc64_intrinsic.F90"
+(  174) EXTERNAL :: CRC64
+(  175) INTEGER*8 :: ILEN
+(  176) # 177 "./crc64_intrinsic.F90"
+(  177) ICRC = 0
+(  178) ILEN = SIZE (P) *  KIND (P) 
+(  179) # 180 "./crc64_intrinsic.F90"
+(  180) CALL CRC64 (P, ILEN, ICRC)
+(  181) # 182 "./crc64_intrinsic.F90"
+(  182) END FUNCTION
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:28      page 12
+
+(  183) # 185 "./crc64_intrinsic.F90"
+(  185) INTEGER*8 FUNCTION CRC64_1CH (P) RESULT (ICRC)
+(  186)   
+(  187) # 188 "./crc64_intrinsic.F90"
+(  188) CHARACTER (KIND=1, LEN=*), INTENT (IN) :: P (:)
+(  189) # 190 "./crc64_intrinsic.F90"
+(  190) EXTERNAL :: CRC64
+(  191) INTEGER*8 :: ILEN
+(  192) # 193 "./crc64_intrinsic.F90"
+(  193) ICRC = 0
+(  194) ILEN = SIZE (P) *  KIND (P)  * LEN (P)
+(  195) # 196 "./crc64_intrinsic.F90"
+(  196) CALL CRC64 (P, ILEN, ICRC)
+(  197) # 198 "./crc64_intrinsic.F90"
+(  198) END FUNCTION
+(  199) # 201 "./crc64_intrinsic.F90"
+(  201) INTEGER*8 FUNCTION CRC64_2RD (P) RESULT (ICRC)
+(  202)   
+(  203) # 204 "./crc64_intrinsic.F90"
+(  204) REAL (KIND=JPRD), INTENT (IN) :: P (:,:)
+(  205) # 206 "./crc64_intrinsic.F90"
+(  206) EXTERNAL :: CRC64
+(  207) INTEGER*8 :: ILEN
+(  208) # 209 "./crc64_intrinsic.F90"
+(  209) ICRC = 0
+(  210) ILEN = SIZE (P) *  KIND (P) 
+(  211) # 212 "./crc64_intrinsic.F90"
+(  212) CALL CRC64 (P, ILEN, ICRC)
+(  213) # 214 "./crc64_intrinsic.F90"
+(  214) END FUNCTION
+(  215) # 217 "./crc64_intrinsic.F90"
+(  217) INTEGER*8 FUNCTION CRC64_2RM (P) RESULT (ICRC)
+(  218)   
+(  219) # 220 "./crc64_intrinsic.F90"
+(  220) REAL (KIND=JPRM), INTENT (IN) :: P (:,:)
+(  221) # 222 "./crc64_intrinsic.F90"
+(  222) EXTERNAL :: CRC64
+(  223) INTEGER*8 :: ILEN
+(  224) # 225 "./crc64_intrinsic.F90"
+(  225) ICRC = 0
+(  226) ILEN = SIZE (P) *  KIND (P) 
+(  227) # 228 "./crc64_intrinsic.F90"
+(  228) CALL CRC64 (P, ILEN, ICRC)
+(  229) # 230 "./crc64_intrinsic.F90"
+(  230) END FUNCTION
+(  231) # 233 "./crc64_intrinsic.F90"
+(  233) INTEGER*8 FUNCTION CRC64_2IM (P) RESULT (ICRC)
+(  234)   
+(  235) # 236 "./crc64_intrinsic.F90"
+(  236) INTEGER (KIND=JPIM), INTENT (IN) :: P (:,:)
+(  237) # 238 "./crc64_intrinsic.F90"
+(  238) EXTERNAL :: CRC64
+(  239) INTEGER*8 :: ILEN
+(  240) # 241 "./crc64_intrinsic.F90"
+(  241) ICRC = 0
+(  242) ILEN = SIZE (P) *  KIND (P) 
+(  243) # 244 "./crc64_intrinsic.F90"
+(  244) CALL CRC64 (P, ILEN, ICRC)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:28      page 13
+
+(  245) # 246 "./crc64_intrinsic.F90"
+(  246) END FUNCTION
+(  247) # 249 "./crc64_intrinsic.F90"
+(  249) INTEGER*8 FUNCTION CRC64_2LM (P) RESULT (ICRC)
+(  250)   
+(  251) # 252 "./crc64_intrinsic.F90"
+(  252) LOGICAL (KIND=JPLM), INTENT (IN) :: P (:,:)
+(  253) # 254 "./crc64_intrinsic.F90"
+(  254) EXTERNAL :: CRC64
+(  255) INTEGER*8 :: ILEN
+(  256) # 257 "./crc64_intrinsic.F90"
+(  257) ICRC = 0
+(  258) ILEN = SIZE (P) *  KIND (P) 
+(  259) # 260 "./crc64_intrinsic.F90"
+(  260) CALL CRC64 (P, ILEN, ICRC)
+(  261) # 262 "./crc64_intrinsic.F90"
+(  262) END FUNCTION
+(  263) # 265 "./crc64_intrinsic.F90"
+(  265) INTEGER*8 FUNCTION CRC64_2CH (P) RESULT (ICRC)
+(  266)   
+(  267) # 268 "./crc64_intrinsic.F90"
+(  268) CHARACTER (KIND=1, LEN=*), INTENT (IN) :: P (:,:)
+(  269) # 270 "./crc64_intrinsic.F90"
+(  270) EXTERNAL :: CRC64
+(  271) INTEGER*8 :: ILEN
+(  272) # 273 "./crc64_intrinsic.F90"
+(  273) ICRC = 0
+(  274) ILEN = SIZE (P) *  KIND (P)  * LEN (P)
+(  275) # 276 "./crc64_intrinsic.F90"
+(  276) CALL CRC64 (P, ILEN, ICRC)
+(  277) # 278 "./crc64_intrinsic.F90"
+(  278) END FUNCTION
+(  279) # 281 "./crc64_intrinsic.F90"
+(  281) INTEGER*8 FUNCTION CRC64_3RD (P) RESULT (ICRC)
+(  282)   
+(  283) # 284 "./crc64_intrinsic.F90"
+(  284) REAL (KIND=JPRD), INTENT (IN) :: P (:,:,:)
+(  285) # 286 "./crc64_intrinsic.F90"
+(  286) EXTERNAL :: CRC64
+(  287) INTEGER*8 :: ILEN
+(  288) # 289 "./crc64_intrinsic.F90"
+(  289) ICRC = 0
+(  290) ILEN = SIZE (P) *  KIND (P) 
+(  291) # 292 "./crc64_intrinsic.F90"
+(  292) CALL CRC64 (P, ILEN, ICRC)
+(  293) # 294 "./crc64_intrinsic.F90"
+(  294) END FUNCTION
+(  295) # 297 "./crc64_intrinsic.F90"
+(  297) INTEGER*8 FUNCTION CRC64_3RM (P) RESULT (ICRC)
+(  298)   
+(  299) # 300 "./crc64_intrinsic.F90"
+(  300) REAL (KIND=JPRM), INTENT (IN) :: P (:,:,:)
+(  301) # 302 "./crc64_intrinsic.F90"
+(  302) EXTERNAL :: CRC64
+(  303) INTEGER*8 :: ILEN
+(  304) # 305 "./crc64_intrinsic.F90"
+(  305) ICRC = 0
+(  306) ILEN = SIZE (P) *  KIND (P) 
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:28      page 14
+
+(  307) # 308 "./crc64_intrinsic.F90"
+(  308) CALL CRC64 (P, ILEN, ICRC)
+(  309) # 310 "./crc64_intrinsic.F90"
+(  310) END FUNCTION
+(  311) # 313 "./crc64_intrinsic.F90"
+(  313) INTEGER*8 FUNCTION CRC64_3IM (P) RESULT (ICRC)
+(  314)   
+(  315) # 316 "./crc64_intrinsic.F90"
+(  316) INTEGER (KIND=JPIM), INTENT (IN) :: P (:,:,:)
+(  317) # 318 "./crc64_intrinsic.F90"
+(  318) EXTERNAL :: CRC64
+(  319) INTEGER*8 :: ILEN
+(  320) # 321 "./crc64_intrinsic.F90"
+(  321) ICRC = 0
+(  322) ILEN = SIZE (P) *  KIND (P) 
+(  323) # 324 "./crc64_intrinsic.F90"
+(  324) CALL CRC64 (P, ILEN, ICRC)
+(  325) # 326 "./crc64_intrinsic.F90"
+(  326) END FUNCTION
+(  327) # 329 "./crc64_intrinsic.F90"
+(  329) INTEGER*8 FUNCTION CRC64_3LM (P) RESULT (ICRC)
+(  330)   
+(  331) # 332 "./crc64_intrinsic.F90"
+(  332) LOGICAL (KIND=JPLM), INTENT (IN) :: P (:,:,:)
+(  333) # 334 "./crc64_intrinsic.F90"
+(  334) EXTERNAL :: CRC64
+(  335) INTEGER*8 :: ILEN
+(  336) # 337 "./crc64_intrinsic.F90"
+(  337) ICRC = 0
+(  338) ILEN = SIZE (P) *  KIND (P) 
+(  339) # 340 "./crc64_intrinsic.F90"
+(  340) CALL CRC64 (P, ILEN, ICRC)
+(  341) # 342 "./crc64_intrinsic.F90"
+(  342) END FUNCTION
+(  343) # 345 "./crc64_intrinsic.F90"
+(  345) INTEGER*8 FUNCTION CRC64_3CH (P) RESULT (ICRC)
+(  346)   
+(  347) # 348 "./crc64_intrinsic.F90"
+(  348) CHARACTER (KIND=1, LEN=*), INTENT (IN) :: P (:,:,:)
+(  349) # 350 "./crc64_intrinsic.F90"
+(  350) EXTERNAL :: CRC64
+(  351) INTEGER*8 :: ILEN
+(  352) # 353 "./crc64_intrinsic.F90"
+(  353) ICRC = 0
+(  354) ILEN = SIZE (P) *  KIND (P)  * LEN (P)
+(  355) # 356 "./crc64_intrinsic.F90"
+(  356) CALL CRC64 (P, ILEN, ICRC)
+(  357) # 358 "./crc64_intrinsic.F90"
+(  358) END FUNCTION
+(  359) # 361 "./crc64_intrinsic.F90"
+(  361) INTEGER*8 FUNCTION CRC64_4RD (P) RESULT (ICRC)
+(  362)   
+(  363) # 364 "./crc64_intrinsic.F90"
+(  364) REAL (KIND=JPRD), INTENT (IN) :: P (:,:,:,:)
+(  365) # 366 "./crc64_intrinsic.F90"
+(  366) EXTERNAL :: CRC64
+(  367) INTEGER*8 :: ILEN
+(  368) # 369 "./crc64_intrinsic.F90"
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:28      page 15
+
+(  369) ICRC = 0
+(  370) ILEN = SIZE (P) *  KIND (P) 
+(  371) # 372 "./crc64_intrinsic.F90"
+(  372) CALL CRC64 (P, ILEN, ICRC)
+(  373) # 374 "./crc64_intrinsic.F90"
+(  374) END FUNCTION
+(  375) # 377 "./crc64_intrinsic.F90"
+(  377) INTEGER*8 FUNCTION CRC64_4RM (P) RESULT (ICRC)
+(  378)   
+(  379) # 380 "./crc64_intrinsic.F90"
+(  380) REAL (KIND=JPRM), INTENT (IN) :: P (:,:,:,:)
+(  381) # 382 "./crc64_intrinsic.F90"
+(  382) EXTERNAL :: CRC64
+(  383) INTEGER*8 :: ILEN
+(  384) # 385 "./crc64_intrinsic.F90"
+(  385) ICRC = 0
+(  386) ILEN = SIZE (P) *  KIND (P) 
+(  387) # 388 "./crc64_intrinsic.F90"
+(  388) CALL CRC64 (P, ILEN, ICRC)
+(  389) # 390 "./crc64_intrinsic.F90"
+(  390) END FUNCTION
+(  391) # 393 "./crc64_intrinsic.F90"
+(  393) INTEGER*8 FUNCTION CRC64_4IM (P) RESULT (ICRC)
+(  394)   
+(  395) # 396 "./crc64_intrinsic.F90"
+(  396) INTEGER (KIND=JPIM), INTENT (IN) :: P (:,:,:,:)
+(  397) # 398 "./crc64_intrinsic.F90"
+(  398) EXTERNAL :: CRC64
+(  399) INTEGER*8 :: ILEN
+(  400) # 401 "./crc64_intrinsic.F90"
+(  401) ICRC = 0
+(  402) ILEN = SIZE (P) *  KIND (P) 
+(  403) # 404 "./crc64_intrinsic.F90"
+(  404) CALL CRC64 (P, ILEN, ICRC)
+(  405) # 406 "./crc64_intrinsic.F90"
+(  406) END FUNCTION
+(  407) # 409 "./crc64_intrinsic.F90"
+(  409) INTEGER*8 FUNCTION CRC64_4LM (P) RESULT (ICRC)
+(  410)   
+(  411) # 412 "./crc64_intrinsic.F90"
+(  412) LOGICAL (KIND=JPLM), INTENT (IN) :: P (:,:,:,:)
+(  413) # 414 "./crc64_intrinsic.F90"
+(  414) EXTERNAL :: CRC64
+(  415) INTEGER*8 :: ILEN
+(  416) # 417 "./crc64_intrinsic.F90"
+(  417) ICRC = 0
+(  418) ILEN = SIZE (P) *  KIND (P) 
+(  419) # 420 "./crc64_intrinsic.F90"
+(  420) CALL CRC64 (P, ILEN, ICRC)
+(  421) # 422 "./crc64_intrinsic.F90"
+(  422) END FUNCTION
+(  423) # 425 "./crc64_intrinsic.F90"
+(  425) INTEGER*8 FUNCTION CRC64_4CH (P) RESULT (ICRC)
+(  426)   
+(  427) # 428 "./crc64_intrinsic.F90"
+(  428) CHARACTER (KIND=1, LEN=*), INTENT (IN) :: P (:,:,:,:)
+(  429) # 430 "./crc64_intrinsic.F90"
+(  430) EXTERNAL :: CRC64
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:28      page 16
+
+(  431) INTEGER*8 :: ILEN
+(  432) # 433 "./crc64_intrinsic.F90"
+(  433) ICRC = 0
+(  434) ILEN = SIZE (P) *  KIND (P)  * LEN (P)
+(  435) # 436 "./crc64_intrinsic.F90"
+(  436) CALL CRC64 (P, ILEN, ICRC)
+(  437) # 438 "./crc64_intrinsic.F90"
+(  438) END FUNCTION
+(  439) # 442 "./crc64_intrinsic.F90"
+(  442) END MODULE

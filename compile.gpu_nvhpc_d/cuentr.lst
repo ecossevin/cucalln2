@@ -1,0 +1,455 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:04      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./cuentr.F90
+
+(    1) SUBROUTINE CUENTR &
+(    2)  & ( YDCST, YDECUMF, YDSPP_CONFIG,&
+(    3)  & KIDIA,     KFDIA,    KLON,     KLEV,&
+(    4)  & KK,        KCBOT,    KTYPE,&
+(    5)  & LDCUM,     LDWORK,&
+(    6)  & PQSEN,     PAPH,     PGEOH,&
+(    7)  & PMFU,      PGP2DSPP, PDMFEN,   PDMFDE )
+(    8) 
+(    9) !          M.TIEDTKE         E.C.M.W.F.     12/89
+(   10) !          P.BECHTOLD        E.C.M.W.F.     06/07
+(   11) !          P.BECHTOLD        E.C.M.W.F.     03/12
+(   12) 
+(   13) !          PURPOSE.
+(   14) !          --------
+(   15) !          THIS ROUTINE CALCULATES ENTRAINMENT/DETRAINMENT RATES
+(   16) !          FOR UPDRAFTS IN CUMULUS PARAMETERIZATION
+(   17) 
+(   18) !          INTERFACE
+(   19) !          ---------
+(   20) 
+(   21) !          THIS ROUTINE IS CALLED FROM *CUASC*.
+(   22) !          INPUT ARE ENVIRONMENTAL VALUES T,Q ETC
+(   23) !          AND UPDRAFT VALUES T,Q ETC
+(   24) !          IT RETURNS ENTRAINMENT/DETRAINMENT RATES
+(   25) 
+(   26) !          METHOD.
+(   27) !          --------
+(   28) !          TURBULENT ENTRAINMENT IS SIMULATED BY A CONSTANT
+(   29) !          MULTIPLIED BY A VERTICAL SCALING FUNCTION
+(   30) 
+(   31) !     PARAMETER     DESCRIPTION                                   UNITS
+(   32) !     ---------     -----------                                   -----
+(   33) !     INPUT PARAMETERS (INTEGER):
+(   34) 
+(   35) !    *KIDIA*        START POINT
+(   36) !    *KFDIA*        END POINT
+(   37) !    *KLON*         NUMBER OF GRID POINTS PER PACKET
+(   38) !    *KLEV*         NUMBER OF LEVELS
+(   39) !    *KK*           CURRENT LEVEL
+(   40) !    *KCBOT*        CLOUD BASE LEVEL
+(   41) 
+(   42) !    INPUT PARAMETERS (LOGICAL):
+(   43) 
+(   44) !    *LDCUM*        FLAG: .TRUE. FOR CONVECTIVE POINTS
+(   45) 
+(   46) !    INPUT PARAMETERS (REAL):
+(   47) 
+(   48) !    *PQSEN*        SATURATION SPEC. HUMIDITY                   KG/KG
+(   49) !    *PAPH*         PROVISIONAL PRESSURE ON HALF LEVELS          PA
+(   50) !    *PGEOH*        PROVISIONAL GEOPOTENTIAL ON HALF LEVELS      PA
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:04      page 2
+
+(   51) !    *PMFU*         MASSFLUX IN UPDRAFTS                        KG/(M2*S)
+(   52) !    *PGP2DSPP*     Standard stochastic variable (mean=0, SD=1)
+(   53) 
+(   54) !    OUTPUT PARAMETERS (REAL):
+(   55) 
+(   56) !    *PDMFEN*       ENTRAINMENT RATE                            KG/(M2*S)
+(   57) !    *PDMFDE*       DETRAINMENT RATE                            KG/(M2*S)
+(   58) 
+(   59) !          EXTERNALS
+(   60) !          ---------
+(   61) !          NONE
+(   62) !
+(   63) !
+(   64) !    MODIFICATIONS.
+(   65) !    --------------
+(   66) !
+(   67) !    M. Leutbecher & S.-J. Lock (Jan 2016) Introduced SPP scheme (LSPP)
+(   68) !    M. Leutbecher (Oct 2020) SPP abstraction
+(   69) !     R. El Khatib 22-Jun-2022 A contribution to simplify phasing after the refactoring of YOMCLI/YOMCST/YOETHF.
+(   70) !----------------------------------------------------------------------
+(   71) 
+(   72) USE PARKIND1 , ONLY : JPIM     ,JPRB
+(   73) USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+(   74) 
+(   75) USE YOMCST   , ONLY : TCST
+(   76) USE YOECUMF  , ONLY : TECUMF
+(   77) USE SPP_MOD     , ONLY : TSPP_CONFIG
+(   78) USE SPP_GEN_MOD , ONLY : SPP_PERT
+(   79) 
+(   80) IMPLICIT NONE
+(   81) 
+(   82) TYPE(TCST)        ,INTENT(IN)    :: YDCST
+(   83) TYPE(TECUMF)      ,INTENT(IN)    :: YDECUMF
+(   84) TYPE(TSPP_CONFIG) ,INTENT(IN)    :: YDSPP_CONFIG
+(   85) INTEGER(KIND=JPIM),INTENT(IN)    :: KLON 
+(   86) INTEGER(KIND=JPIM),INTENT(IN)    :: KLEV 
+(   87) INTEGER(KIND=JPIM),INTENT(IN)    :: KIDIA 
+(   88) INTEGER(KIND=JPIM),INTENT(IN)    :: KFDIA 
+(   89) INTEGER(KIND=JPIM),INTENT(IN)    :: KK 
+(   90) INTEGER(KIND=JPIM),INTENT(IN)    :: KCBOT(KLON) 
+(   91) INTEGER(KIND=JPIM),INTENT(IN)    :: KTYPE(KLON) 
+(   92) LOGICAL           ,INTENT(IN)    :: LDCUM(KLON) 
+(   93) LOGICAL           ,INTENT(IN)    :: LDWORK 
+(   94) REAL(KIND=JPRB)   ,INTENT(IN)    :: PQSEN(KLON,KLEV) 
+(   95) REAL(KIND=JPRB)   ,INTENT(IN)    :: PAPH(KLON,KLEV+1) 
+(   96) REAL(KIND=JPRB)   ,INTENT(IN)    :: PGEOH(KLON,KLEV+1) 
+(   97) REAL(KIND=JPRB)   ,INTENT(IN)    :: PMFU(KLON,KLEV) 
+(   98) REAL(KIND=JPRB)   ,INTENT(IN)    :: PGP2DSPP(KLON,YDSPP_CONFIG%SM%NRFTOTAL)
+(   99) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PDMFEN(KLON) 
+(  100) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PDMFDE(KLON) 
+(  101) 
+(  102) LOGICAL ::  LLO1
+(  103) 
+(  104) INTEGER(KIND=JPIM) :: JL
+(  105) 
+(  106) ! A bunch of SPP variables that are saved between calls for efficiency reasons
+(  107) LOGICAL            :: LLPERT_DETRPEN     ! SPP perturbation on?
+(  108) INTEGER(KIND=JPIM) :: IPDETRPEN ! SPP random field pointer
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:04      page 3
+
+(  109) INTEGER(KIND=JPIM) :: IPN  ! SPP perturbation pointer
+(  110) TYPE(SPP_PERT)     :: PN1  ! SPP pertn. config. for RTAU
+(  111) 
+(  112) REAL(KIND=JPRB) :: ZDZ, ZENTR(KLON), ZMF, ZRG, ZXDETRPEN
+(  113) REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+(  114) 
+(  115) !----------------------------------------------------------------------
+(  116) 
+(  117) !*    1.           CALCULATE ENTRAINMENT AND DETRAINMENT RATES
+(  118) !                  -------------------------------------------
+(  119) 
+(  120) IF (LHOOK) CALL DR_HOOK('CUENTR',0,ZHOOK_HANDLE)
+(  121) ASSOCIATE(DETRPEN=>YDECUMF%DETRPEN, RG=>YDCST%RG)
+(  122) IF(LDWORK) THEN
+(  123) 
+(  124)   ZRG=1.0_JPRB/RG
+(  125) 
+(  126)   ! prepare SPP perturbations (just once)
+(  127)   IF (YDSPP_CONFIG%LSPP) THEN
+(  128)     IPN = YDSPP_CONFIG%PPTR%DETRPEN
+(  129)     LLPERT_DETRPEN = IPN > 0
+(  130)     IF (LLPERT_DETRPEN) THEN
+(  131)       PN1=YDSPP_CONFIG%SM%PN(IPN)
+(  132)       IPDETRPEN = PN1%MP
+(  133)     ENDIF
+(  134)   ELSE
+(  135)     LLPERT_DETRPEN=.FALSE.
+(  136)   ENDIF
+(  137) 
+(  138)   DO JL=KIDIA,KFDIA
+(  139)     PDMFEN(JL)=0.0_JPRB
+(  140)     PDMFDE(JL)=0.0_JPRB
+(  141)     ZENTR(JL)=0.0
+(  142)   ENDDO
+(  143) 
+(  144) !*    1.1          SPECIFY ENTRAINMENT RATES
+(  145) !                  -------------------------
+(  146) 
+(  147)   DO JL=KIDIA,KFDIA
+(  148)     IF(LDCUM(JL)) THEN
+(  149)       ZDZ=(PGEOH(JL,KK)-PGEOH(JL,KK+1))*ZRG
+(  150)       ZMF=PMFU(JL,KK+1)*ZDZ
+(  151)       LLO1=KK < KCBOT(JL)
+(  152)       IF(LLO1) THEN
+(  153)         IF (YDSPP_CONFIG%LSPP .AND. LLPERT_DETRPEN) THEN
+(  154)           ZXDETRPEN=DETRPEN*EXP(PN1%MU(1)+PN1%XMAG(1)*PGP2DSPP(JL, IPDETRPEN))
+(  155)         ELSE
+(  156)           ZXDETRPEN=DETRPEN
+(  157)         ENDIF
+(  158)         PDMFEN(JL)=ZENTR(JL)*ZMF
+(  159)         PDMFDE(JL)=ZXDETRPEN*ZMF
+(  160)       ENDIF
+(  161)     ENDIF
+(  162)   ENDDO
+(  163) 
+(  164) ENDIF
+(  165) 
+(  166) END ASSOCIATE
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:04      page 4
+
+(  167) IF (LHOOK) CALL DR_HOOK('CUENTR',1,ZHOOK_HANDLE)
+(  168) END SUBROUTINE CUENTR
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:04      page 5
+
+(    1) # 1 "./cuentr.F90"
+(    1) SUBROUTINE CUENTR &
+(    2)  & ( YDCST, YDECUMF, YDSPP_CONFIG,&
+(    3)  & KIDIA,     KFDIA,    KLON,     KLEV,&
+(    4)  & KK,        KCBOT,    KTYPE,&
+(    5)  & LDCUM,     LDWORK,&
+(    6)  & PQSEN,     PAPH,     PGEOH,&
+(    7)  & PMFU,      PGP2DSPP, PDMFEN,   PDMFDE )
+(    8) # 9 "./cuentr.F90"
+(    9) !          M.TIEDTKE         E.C.M.W.F.     12/89
+(   10) !          P.BECHTOLD        E.C.M.W.F.     06/07
+(   11) !          P.BECHTOLD        E.C.M.W.F.     03/12
+(   12) # 13 "./cuentr.F90"
+(   13) !          PURPOSE.
+(   14) !          --------
+(   15) !          THIS ROUTINE CALCULATES ENTRAINMENT/DETRAINMENT RATES
+(   16) !          FOR UPDRAFTS IN CUMULUS PARAMETERIZATION
+(   17) # 18 "./cuentr.F90"
+(   18) !          INTERFACE
+(   19) !          ---------
+(   20) # 21 "./cuentr.F90"
+(   21) !          THIS ROUTINE IS CALLED FROM *CUASC*.
+(   22) !          INPUT ARE ENVIRONMENTAL VALUES T,Q ETC
+(   23) !          AND UPDRAFT VALUES T,Q ETC
+(   24) !          IT RETURNS ENTRAINMENT/DETRAINMENT RATES
+(   25) # 26 "./cuentr.F90"
+(   26) !          METHOD.
+(   27) !          --------
+(   28) !          TURBULENT ENTRAINMENT IS SIMULATED BY A CONSTANT
+(   29) !          MULTIPLIED BY A VERTICAL SCALING FUNCTION
+(   30) # 31 "./cuentr.F90"
+(   31) !     PARAMETER     DESCRIPTION                                   UNITS
+(   32) !     ---------     -----------                                   -----
+(   33) !     INPUT PARAMETERS (INTEGER):
+(   34) # 35 "./cuentr.F90"
+(   35) !    *KIDIA*        START POINT
+(   36) !    *KFDIA*        END POINT
+(   37) !    *KLON*         NUMBER OF GRID POINTS PER PACKET
+(   38) !    *KLEV*         NUMBER OF LEVELS
+(   39) !    *KK*           CURRENT LEVEL
+(   40) !    *KCBOT*        CLOUD BASE LEVEL
+(   41) # 42 "./cuentr.F90"
+(   42) !    INPUT PARAMETERS (LOGICAL):
+(   43) # 44 "./cuentr.F90"
+(   44) !    *LDCUM*        FLAG: .TRUE. FOR CONVECTIVE POINTS
+(   45) # 46 "./cuentr.F90"
+(   46) !    INPUT PARAMETERS (REAL):
+(   47) # 48 "./cuentr.F90"
+(   48) !    *PQSEN*        SATURATION SPEC. HUMIDITY                   KG/KG
+(   49) !    *PAPH*         PROVISIONAL PRESSURE ON HALF LEVELS          PA
+(   50) !    *PGEOH*        PROVISIONAL GEOPOTENTIAL ON HALF LEVELS      PA
+(   51) !    *PMFU*         MASSFLUX IN UPDRAFTS                        KG/(M2*S)
+(   52) !    *PGP2DSPP*     Standard stochastic variable (mean=0, SD=1)
+(   53) # 54 "./cuentr.F90"
+(   54) !    OUTPUT PARAMETERS (REAL):
+(   55) # 56 "./cuentr.F90"
+(   56) !    *PDMFEN*       ENTRAINMENT RATE                            KG/(M2*S)
+(   57) !    *PDMFDE*       DETRAINMENT RATE                            KG/(M2*S)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:04      page 6
+
+(   58) # 59 "./cuentr.F90"
+(   59) !          EXTERNALS
+(   60) !          ---------
+(   61) !          NONE
+(   62) !
+(   63) !
+(   64) !    MODIFICATIONS.
+(   65) !    --------------
+(   66) !
+(   67) !    M. Leutbecher & S.-J. Lock (Jan 2016) Introduced SPP scheme (LSPP)
+(   68) !    M. Leutbecher (Oct 2020) SPP abstraction
+(   69) !     R. El Khatib 22-Jun-2022 A contribution to simplify phasing after the refactoring of YOMCLI/YOMCST/YOETHF.
+(   70) !----------------------------------------------------------------------
+(   71) # 72 "./cuentr.F90"
+(   72) USE PARKIND1 , ONLY : JPIM     ,JPRB
+(   73) USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+(   74) # 75 "./cuentr.F90"
+(   75) USE YOMCST   , ONLY : TCST
+(   76) USE YOECUMF  , ONLY : TECUMF
+(   77) USE SPP_MOD     , ONLY : TSPP_CONFIG
+(   78) USE SPP_GEN_MOD , ONLY : SPP_PERT
+(   79) # 80 "./cuentr.F90"
+(   80) IMPLICIT NONE
+(   81) # 82 "./cuentr.F90"
+(   82) TYPE(TCST)        ,INTENT(IN)    :: YDCST
+(   83) TYPE(TECUMF)      ,INTENT(IN)    :: YDECUMF
+(   84) TYPE(TSPP_CONFIG) ,INTENT(IN)    :: YDSPP_CONFIG
+(   85) INTEGER(KIND=JPIM),INTENT(IN)    :: KLON 
+(   86) INTEGER(KIND=JPIM),INTENT(IN)    :: KLEV 
+(   87) INTEGER(KIND=JPIM),INTENT(IN)    :: KIDIA 
+(   88) INTEGER(KIND=JPIM),INTENT(IN)    :: KFDIA 
+(   89) INTEGER(KIND=JPIM),INTENT(IN)    :: KK 
+(   90) INTEGER(KIND=JPIM),INTENT(IN)    :: KCBOT(KLON) 
+(   91) INTEGER(KIND=JPIM),INTENT(IN)    :: KTYPE(KLON) 
+(   92) LOGICAL           ,INTENT(IN)    :: LDCUM(KLON) 
+(   93) LOGICAL           ,INTENT(IN)    :: LDWORK 
+(   94) REAL(KIND=JPRB)   ,INTENT(IN)    :: PQSEN(KLON,KLEV) 
+(   95) REAL(KIND=JPRB)   ,INTENT(IN)    :: PAPH(KLON,KLEV+1) 
+(   96) REAL(KIND=JPRB)   ,INTENT(IN)    :: PGEOH(KLON,KLEV+1) 
+(   97) REAL(KIND=JPRB)   ,INTENT(IN)    :: PMFU(KLON,KLEV) 
+(   98) REAL(KIND=JPRB)   ,INTENT(IN)    :: PGP2DSPP(KLON,YDSPP_CONFIG%SM%NRFTOTAL)
+(   99) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PDMFEN(KLON) 
+(  100) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PDMFDE(KLON) 
+(  101) # 102 "./cuentr.F90"
+(  102) LOGICAL ::  LLO1
+(  103) # 104 "./cuentr.F90"
+(  104) INTEGER(KIND=JPIM) :: JL
+(  105) # 106 "./cuentr.F90"
+(  106) ! A bunch of SPP variables that are saved between calls for efficiency reasons
+(  107) LOGICAL            :: LLPERT_DETRPEN     ! SPP perturbation on?
+(  108) INTEGER(KIND=JPIM) :: IPDETRPEN ! SPP random field pointer
+(  109) INTEGER(KIND=JPIM) :: IPN  ! SPP perturbation pointer
+(  110) TYPE(SPP_PERT)     :: PN1  ! SPP pertn. config. for RTAU
+(  111) # 112 "./cuentr.F90"
+(  112) REAL(KIND=JPRB) :: ZDZ, ZENTR(KLON), ZMF, ZRG, ZXDETRPEN
+(  113) REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+(  114) # 115 "./cuentr.F90"
+(  115) !----------------------------------------------------------------------
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:04      page 7
+
+(  116) # 117 "./cuentr.F90"
+(  117) !*    1.           CALCULATE ENTRAINMENT AND DETRAINMENT RATES
+(  118) !                  -------------------------------------------
+(  119) # 120 "./cuentr.F90"
+(  120) IF (LHOOK) CALL DR_HOOK('CUENTR',0,ZHOOK_HANDLE)
+(  121) ASSOCIATE(DETRPEN=>YDECUMF%DETRPEN, RG=>YDCST%RG)
+(  122) IF(LDWORK) THEN
+(  123) # 124 "./cuentr.F90"
+(  124)   ZRG=1.0_JPRB/RG
+(  125) # 126 "./cuentr.F90"
+(  126)   ! prepare SPP perturbations (just once)
+(  127)   IF (YDSPP_CONFIG%LSPP) THEN
+(  128)     IPN = YDSPP_CONFIG%PPTR%DETRPEN
+(  129)     LLPERT_DETRPEN = IPN > 0
+(  130)     IF (LLPERT_DETRPEN) THEN
+(  131)       PN1=YDSPP_CONFIG%SM%PN(IPN)
+(  132)       IPDETRPEN = PN1%MP
+(  133)     ENDIF
+(  134)   ELSE
+(  135)     LLPERT_DETRPEN=.FALSE.
+(  136)   ENDIF
+(  137) # 138 "./cuentr.F90"
+(  138)   DO JL=KIDIA,KFDIA
+(  139)     PDMFEN(JL)=0.0_JPRB
+(  140)     PDMFDE(JL)=0.0_JPRB
+(  141)     ZENTR(JL)=0.0
+(  142)   ENDDO
+(  143) # 144 "./cuentr.F90"
+(  144) !*    1.1          SPECIFY ENTRAINMENT RATES
+(  145) !                  -------------------------
+(  146) # 147 "./cuentr.F90"
+(  147)   DO JL=KIDIA,KFDIA
+(  148)     IF(LDCUM(JL)) THEN
+(  149)       ZDZ=(PGEOH(JL,KK)-PGEOH(JL,KK+1))*ZRG
+(  150)       ZMF=PMFU(JL,KK+1)*ZDZ
+(  151)       LLO1=KK < KCBOT(JL)
+(  152)       IF(LLO1) THEN
+(  153)         IF (YDSPP_CONFIG%LSPP .AND. LLPERT_DETRPEN) THEN
+(  154)           ZXDETRPEN=DETRPEN*EXP(PN1%MU(1)+PN1%XMAG(1)*PGP2DSPP(JL, IPDETRPEN))
+(  155)         ELSE
+(  156)           ZXDETRPEN=DETRPEN
+(  157)         ENDIF
+(  158)         PDMFEN(JL)=ZENTR(JL)*ZMF
+(  159)         PDMFDE(JL)=ZXDETRPEN*ZMF
+(  160)       ENDIF
+(  161)     ENDIF
+(  162)   ENDDO
+(  163) # 164 "./cuentr.F90"
+(  164) ENDIF
+(  165) # 166 "./cuentr.F90"
+(  166) END ASSOCIATE
+(  167) IF (LHOOK) CALL DR_HOOK('CUENTR',1,ZHOOK_HANDLE)
+(  168) END SUBROUTINE CUENTR

@@ -1,0 +1,1287 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:27      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./spp_gen_mod.F90
+
+(    1) module spp_gen_mod
+(    2) 
+(    3) USE PARKIND1 , ONLY : JPIM, JPRB
+(    4) 
+(    5) implicit none
+(    6) 
+(    7) integer(kind=jpim), parameter :: jp_lab_len=16      ! string length for perturbation labels
+(    8) integer(kind=jpim), parameter :: jp_ver_len=32      ! string length for version
+(    9) integer(kind=jpim), parameter :: jp_mag  =4         ! max size of xmag
+(   10) integer(kind=jpim), parameter :: jp_cli  =4         ! max size of xclipmin/xclipmax
+(   11) integer(kind=jpim), parameter :: jp_off  =2         ! max size of nseed_off
+(   12) integer(kind=jpim), parameter :: jpmaxperts=128     ! max number of perturbations in the context of namelist inputs
+(   13) character(len=jp_lab_len), parameter :: cp_undefined='????????????????'
+(   14) 
+(   15) type spp_pert
+(   16)   !
+(   17)   !   define variables for an individual perturbation of 1 variable or 1 parameter
+(   18)   !
+(   19)   character(len=jp_lab_len) :: label=cp_undefined
+(   20)   logical                   :: on=.false.       ! on/off
+(   21)   integer(kind=jpim)        :: idistr           ! Determines the distribution; 
+(   22)                                                 !  0: normal, 
+(   23)                                                 !  1: log-normal, 
+(   24)                                                 !  2: uniform
+(   25)   real(kind=jprb), dimension(jp_mag)   :: xmag=0._jprb        ! amplitude
+(   26)   real(kind=jprb), dimension(jp_mag)   :: mu=0._jprb          ! mean of Gaussian
+(   27)   real(kind=jprb)           :: xclipmin=-HUGE(1.0_jprb) ! lower clipping limit
+(   28)   real(kind=jprb)           :: xclipmax= HUGE(1.0_jprb) ! upper clipping limit
+(   29)   real(kind=jprb)           :: xuniform_offset  ! Offset of distribution if idistr = 2
+(   30)   integer(kind=jpim)        :: nmag=1           !   number of used magnitudes
+(   31)   logical                   :: ln1=.true.       ! T implies the mean of the log-normal distribution is 1
+(   32)   integer(kind=jpim),dimension(jp_off) :: nseed_off=0       ! random number seed offsets
+(   33)   integer(kind=jpim)        :: noff=1           !   number of used seed offsets
+(   34) 
+(   35)   integer(kind=jpim)        :: nrf=1            ! number of random fields for this perturbation
+(   36)                                                 !   [e.b. would be 2 for CUDUDV but 1 for RTAU and most others]
+(   37)   integer(kind=jpim)        :: nrf_radgrid=0    ! number of random fields on the radiation grid
+(   38)   logical                   :: radgrid=.false.  ! perturbation requires random field on radiation grid
+(   39)   character(len=jp_lab_len) :: rf_pert_label=cp_undefined ! point to random field of perturbation rf_pert_label
+(   40)   integer(kind=jpim)        :: ic=1             ! Sign of correlation in case rf_pert_label is used
+(   41)   integer(kind=jpim)        :: mp               ! pointer to first random field
+(   42)                                                 !   [correspond to MP* IN TSPP_DATA, e.g. MPCFM ... MPZHSVDAERO]
+(   43)   integer(kind=jpim)        :: mp_radgrid       ! pointer to first random field on radiation grid
+(   44)   real(kind=jprb)           :: tau, sdev, xlcor ! random field characteristics
+(   45) end type spp_pert
+(   46) 
+(   47) type spp_model
+(   48)   !
+(   49)   !    define a model of perturbations
+(   50)   !
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:27      page 2
+
+(   51)   character(len=jp_ver_len)  :: version
+(   52)   integer(kind=jpim)         :: nmax  ! max. number of perturbations for array dimensioning
+(   53)   character(len=jp_lab_len), dimension(:), allocatable :: defined_perts
+(   54)   character(len=jp_lab_len), dimension(:), allocatable :: active_perts
+(   55)   integer(kind=jpim) :: ndef=0 ! number of defined perturbations
+(   56)   integer(kind=jpim) :: nact ! number of active perturbations
+(   57)   integer(kind=jpim) :: nrftotal=0 ! total number of random fields
+(   58)   integer(kind=jpim) :: nrftotal_radgrid=0 ! total number of random fields on the radiation grid
+(   59)   integer(kind=jpim), dimension(:), allocatable :: nseed_off ! seed offsets for random fields 1..nrftotal
+(   60)   type(spp_pert), dimension(:), allocatable :: pndef  ! configurations of defined individual perturbations
+(   61)   type(spp_pert), dimension(:), allocatable :: pn   ! configurations of active individual perturbations
+(   62)   real(kind=jprb)    :: tau    ! global default decorrelation time
+(   63)   real(kind=jprb)    :: xlcor  ! global default correlation length scale
+(   64)   real(kind=jprb)    :: sdev   ! global default standard deviation
+(   65)   integer(kind=jpim) :: kseed_off ! random number seed offset for current perturbation
+(   66) end type spp_model
+(   67) 
+(   68) 
+(   69) contains
+(   70) 
+(   71) subroutine allocate_spp_model( sm, knmax)
+(   72)   !
+(   73)   !   allocate all dynamic arrays in the spp_model variable ydspp
+(   74)   !
+(   75)   type(spp_model), intent(inout) :: sm
+(   76)   integer(kind=jpim), intent(in) :: knmax
+(   77) 
+(   78)   sm%nmax = knmax
+(   79)   allocate(sm%defined_perts( knmax ) )
+(   80)   allocate(sm%active_perts(  knmax ) )
+(   81)   allocate(sm%pndef(         knmax ) )
+(   82)   allocate(sm%pn(            knmax ) )
+(   83)   allocate(sm%nseed_off(     knmax * jp_off ) )
+(   84) 
+(   85) end subroutine allocate_spp_model
+(   86) 
+(   87) subroutine deallocate_spp_model( sm )
+(   88)   !
+(   89)   !   deallocate all arrays in the spp_model variable ydspp
+(   90)   !
+(   91)   type(spp_model), intent(inout) :: sm
+(   92) 
+(   93)   deallocate(sm%defined_perts )
+(   94)   deallocate(sm%active_perts )
+(   95)   deallocate(sm%pndef )
+(   96)   deallocate(sm%pn    )
+(   97)   deallocate(sm%nseed_off)
+(   98) 
+(   99) end subroutine deallocate_spp_model
+(  100) 
+(  101) subroutine update_mu_spp_pertn( pn )
+(  102)   !
+(  103)   !   if distribution is log-normal and ln1==T, compute mean mu(.) of Gaussian distribution that
+(  104)   !     yields mean of log-normal distribution equal to one
+(  105)   !
+(  106)   type(spp_pert), intent(inout) :: pn
+(  107) 
+(  108)   integer(kind=jpim) :: jmag
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:27      page 3
+
+(  109) 
+(  110)   if (pn%ln1.and.(pn%idistr==1)) then
+(  111)     do jmag=1, pn%nmag
+(  112)       pn%mu( jmag ) = -0.5_jprb * ( pn%xmag( jmag ) * pn%sdev )**2
+(  113)     enddo
+(  114)   else
+(  115)     pn%mu= 0._jprb
+(  116)   endif
+(  117) 
+(  118) end subroutine update_mu_spp_pertn
+(  119) 
+(  120) subroutine implement_spp_pertn( sm, cdlabel, pxmag, xclipmin, xclipmax, ic, &
+(  121)                               & kidistr, knseed_off, knrf, ln1, radgrid, cd_rf_pert_label, &
+(  122)                               & xuniform_offset )
+(  123)   !
+(  124)   !   configures a new defined perturbation in spp_model sm component.
+(  125)   !    The subroutine increments sm%ndef and stores the configuration of the perturbation in sm%pndef( sm%ndef )
+(  126)   !
+(  127)   type(spp_model),           intent(inout) :: sm
+(  128)   character(len=*),          intent(in)    :: cdlabel
+(  129)   real(kind=jprb), dimension(:)        , intent(in)    :: pxmag
+(  130)   ! optional arguments
+(  131)   integer(kind=jpim), optional        , intent(in)    :: kidistr
+(  132)   integer(kind=jpim), dimension(:), optional        , intent(in)    :: knseed_off
+(  133)   integer(kind=jpim), optional        , intent(in)    :: knrf
+(  134)   integer(kind=jpim), optional        , intent(in)    :: ic
+(  135)   logical,            optional        , intent(in)    :: ln1
+(  136)   logical,            optional        , intent(in)    :: radgrid
+(  137)   character(len=*),   optional        , intent(in)    :: cd_rf_pert_label
+(  138)   real(kind=jprb),    optional        , intent(in)    :: xuniform_offset
+(  139)   real(kind=jprb),    optional        , intent(in)    :: xclipmin
+(  140)   real(kind=jprb),    optional        , intent(in)    :: xclipmax
+(  141) 
+(  142)   type(spp_pert) :: pn
+(  143) 
+(  144)   pn%label      = cdlabel    ! who I am
+(  145)   pn%on         = .false.    ! default is off
+(  146) 
+(  147)   !
+(  148)   !   inherit global settings for random field
+(  149)   !
+(  150)   pn%tau    = sm%tau
+(  151)   pn%sdev   = sm%sdev
+(  152)   pn%xlcor  = sm%xlcor
+(  153) 
+(  154)   pn%nmag = size(pxmag)
+(  155)   if (pn%nmag > jp_mag) then
+(  156)     call abor1('It is not possible to request more than jp_mag different magnitudes. Change jp_mag in spp_test_mod. ')
+(  157)   endif
+(  158)   pn%xmag(1:pn%nmag)= pxmag(:)
+(  159) 
+(  160)   if (present(ic)) then
+(  161)    pn%ic = ic
+(  162)   endif
+(  163) 
+(  164)   if (present(xclipmin)) then
+(  165)    pn%xclipmin = xclipmin
+(  166)   endif
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:27      page 4
+
+(  167) 
+(  168)   if (present(xclipmax)) then
+(  169)    pn%xclipmax = xclipmax
+(  170)   endif
+(  171) 
+(  172)   if (present(kidistr)) then
+(  173)     pn%idistr = kidistr
+(  174)   else
+(  175)     pn%idistr = 1
+(  176)   endif
+(  177) 
+(  178)   if (present(xuniform_offset)) then
+(  179)     pn%xuniform_offset = xuniform_offset
+(  180)   else
+(  181)     pn%xuniform_offset = 0.5_jprb
+(  182)   endif
+(  183) 
+(  184)   if (present(ln1)) then
+(  185)     pn%ln1 = ln1  ! default set in type declaration
+(  186)   endif
+(  187)   call update_mu_spp_pertn(pn)
+(  188) 
+(  189)   !
+(  190)   !  random field required on radiation grid?
+(  191)   !
+(  192)   if (present(radgrid)) then
+(  193)     pn%radgrid= radgrid
+(  194)   endif
+(  195)   !
+(  196)   !  ML: The number of random fields nrf could be determined from size(nseed_off)
+(  197)   !
+(  198)   if (present(knrf)) then
+(  199)     pn%nrf = knrf
+(  200)   else
+(  201)     pn%nrf = 1
+(  202)   endif
+(  203)   if (pn%radgrid) then
+(  204)     pn%nrf_radgrid = pn%nrf
+(  205)   else
+(  206)     pn%nrf_radgrid = 0
+(  207)   endif
+(  208)   !
+(  209)   !
+(  210)   !
+(  211)   if (present(cd_rf_pert_label)) then
+(  212)     if (present(knrf).or.present(knseed_off)) then
+(  213)       call abor1('Neither knrf nor knseed_off are meaningful arguments when cd_rf_pert_label is present.')
+(  214)     endif
+(  215)     pn%rf_pert_label = cd_rf_pert_label
+(  216)     pn%nrf         = 0
+(  217)     pn%nrf_radgrid = 0
+(  218)   endif
+(  219) 
+(  220)   !
+(  221)   !   potentially use hash function like CRC-32 to generate seed modifier
+(  222)   !
+(  223)   if (present(knseed_off)) then
+(  224)     pn%noff=size(knseed_off)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:27      page 5
+
+(  225)     if (pn%noff > jp_off) then
+(  226)       call abor1('Too many seed offsets; increase jp_off in spp_test_mod.')
+(  227)     endif
+(  228)     if (pn%noff /= pn%nrf ) then
+(  229)       call abor1('The number of random fields must be equal to the number of random seeds.')
+(  230)     endif
+(  231)     pn%nseed_off(1:pn%noff) = knseed_off
+(  232)   else if (present(cd_rf_pert_label)) then
+(  233)     pn%nseed_off = 0
+(  234)   else
+(  235)     pn%nseed_off = sm%kseed_off
+(  236)   endif
+(  237)   !
+(  238)   !   update SPP model
+(  239)   !
+(  240)   if ( (sm%ndef +1) > sm%nmax) then
+(  241)     call abor1( 'nmax is too small.')
+(  242)   endif
+(  243)   sm%ndef = sm%ndef + 1
+(  244)   sm%pndef( sm%ndef ) = pn
+(  245)   sm%defined_perts(sm%ndef) = cdlabel
+(  246)   !
+(  247)   !   seed offsets for next perturbation if called without nseed_off arguments
+(  248)   !
+(  249)   if (sm%kseed_off < 2_jpim **30) then
+(  250)     sm%kseed_off = 2*sm%kseed_off
+(  251)   else
+(  252)     sm%kseed_off = 2_jpim **8 + 2_jpim **9
+(  253)   endif
+(  254) end subroutine implement_spp_pertn
+(  255) 
+(  256) 
+(  257) 
+(  258) 
+(  259) 
+(  260) subroutine get_active_spp_perts( sm, ku_nam, ku_out )
+(  261)   !
+(  262)   !   read namelist input from unit kunit to determine active perturbations and make adjustments to their configuration
+(  263)   !   create list of seeds for all random fields
+(  264)   !
+(  265)   type(spp_model), intent(inout) :: sm
+(  266)   integer(kind=jpim), intent(in) :: ku_nam
+(  267)   integer(kind=jpim), intent(in) :: ku_out
+(  268) 
+(  269)   integer(kind=jpim) :: inreq ! number of requested perturbations
+(  270)   integer(kind=jpim) :: jjpert, kf0, kf1
+(  271) 
+(  272)   character(len=jp_lab_len), dimension(jpmaxperts) :: requested_perts
+(  273) 
+(  274)   namelist /nam_spp_active/ requested_perts
+(  275) 
+(  276)   if (sm%nmax>jpmaxperts) then
+(  277)     write(ku_out,'(A,I5)') 'spp_gen_mod:get_active_spp_perts: increase jpmaxperts to at least ',sm%nmax
+(  278)     call abor1('spp_gen_mod:get_active_spp_perts: array requested_perts is too small.')
+(  279)   endif
+(  280) 
+(  281)   requested_perts= cp_undefined
+(  282)   read(ku_nam,nml=nam_spp_active)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:27      page 6
+
+(  283) 
+(  284)   inreq = count(requested_perts /= cp_undefined )
+(  285)   write(ku_out,*) inreq," perturbations have been requested"
+(  286)   sm%nact = inreq
+(  287) 
+(  288)   !
+(  289)   !   check that requested perturbations are actually implemented
+(  290)   !
+(  291)   do jjpert=1, sm%nact
+(  292)     if ( .not.any(sm%defined_perts == requested_perts(jjpert) ) ) then
+(  293)       ! abort with suitable error message
+(  294)       call abor1( "the requested perturbation "//trim(requested_perts(jjpert))//" is not known in "//trim( sm%version ))
+(  295)     else
+(  296)       sm%active_perts(jjpert)=requested_perts(jjpert)
+(  297)       sm%pn(jjpert) = sm%pndef( get_spp_idx_def(requested_perts(jjpert),sm) )
+(  298)       sm%pn(jjpert)%on  =.true.
+(  299)     endif
+(  300)   enddo
+(  301) end subroutine get_active_spp_perts
+(  302) 
+(  303) 
+(  304) subroutine map_indices_spp_nml( sm, ku_nam, ku_out, kidx_map )
+(  305)   !
+(  306)   !   need to map perturbations in nam_spp_modif to active perturbations in sm
+(  307)   !
+(  308)   type(spp_model), intent(inout) :: sm
+(  309)   integer(kind=jpim), intent(in) :: ku_nam
+(  310)   integer(kind=jpim), intent(in) :: ku_out
+(  311)   integer(kind=jpim), dimension(jpmaxperts), intent(out):: kidx_map
+(  312) 
+(  313)   integer(kind=jpim) :: jjpert
+(  314)   type(spp_pert), dimension(jpmaxperts) :: pnx   ! configurations of active individual perturbations
+(  315) 
+(  316)   namelist /nam_spp_modif/ pnx
+(  317) 
+(  318)   kidx_map = -1
+(  319)   if (sm%nact>jpmaxperts) then
+(  320)     write(ku_out,'(A,I5)') 'spp_gen_mod:modify_spp_perts: increase jpmaxperts to at least ',sm%nact
+(  321)     call abor1('spp_gen_mod:map_indices_spp_nml: array pnx is too small.')
+(  322)   endif
+(  323) 
+(  324)   pnx(:)%label = cp_undefined
+(  325)   read(ku_nam,nml=nam_spp_modif)
+(  326) 
+(  327)   do jjpert=1, sm%nact
+(  328)     if (pnx(jjpert)%label /= cp_undefined) then
+(  329)       kidx_map(jjpert) = get_spp_idx(  pnx(jjpert)%label, sm )
+(  330)     endif
+(  331)   enddo
+(  332) 
+(  333) end subroutine map_indices_spp_nml
+(  334) 
+(  335) 
+(  336) subroutine modify_spp_perts( sm, kidx_map, ku_nam, ku_out )
+(  337)   !
+(  338)   !   Read namelist input from unit kunit to determine active perturbations and make adjustments to their configuration.
+(  339)   !
+(  340)   !   kidx_map is obtained from initial pass through namelist nam_spp_modif and links the perturbations pnx with the perturb
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:27      page 7
+
+(  341)   !
+(  342)   !   create list of seeds for all random fields
+(  343)   !
+(  344)   type(spp_model), intent(inout) :: sm
+(  345)   integer(kind=jpim), dimension(jpmaxperts), intent(in):: kidx_map
+(  346)   integer(kind=jpim), intent(in) :: ku_nam
+(  347)   integer(kind=jpim), intent(in) :: ku_out
+(  348) 
+(  349)   integer(kind=jpim) :: jjpert, kf0, kf1
+(  350) 
+(  351)   integer(kind=jpim) :: i_rf_donor
+(  352) 
+(  353)   type(spp_pert), dimension(jpmaxperts) :: pnx   ! configurations of active individual perturbations
+(  354) 
+(  355)   namelist /nam_spp_modif/ pnx
+(  356) 
+(  357)   if (sm%nact>jpmaxperts) then
+(  358)     write(ku_out,'(A,I5)') 'spp_gen_mod:modify_spp_perts: increase jpmaxperts to at least ',sm%nact
+(  359)     call abor1('spp_gen_mod:modify_spp_perts: array pnx is too small.')
+(  360)   endif
+(  361) 
+(  362)   pnx(:)%label=cp_undefined
+(  363) 
+(  364)   do jjpert=1, jpmaxperts
+(  365)     if (kidx_map(jjpert)>0) then
+(  366)       pnx(jjpert) = sm%pn( kidx_map(jjpert) )
+(  367)     endif
+(  368)   enddo
+(  369) 
+(  370)   !
+(  371)   !   make requested changes to settings
+(  372)   !
+(  373)   read(ku_nam,nml=nam_spp_modif)
+(  374) 
+(  375)   do jjpert=1, jpmaxperts
+(  376)     if (kidx_map(jjpert)>0) then
+(  377)       sm%pn( kidx_map(jjpert) ) = pnx( jjpert)
+(  378)       call update_mu_spp_pertn(sm%pn( kidx_map(jjpert) ))
+(  379)     endif
+(  380)   enddo
+(  381)   !
+(  382)   !   set nrf/nrf_radgrid if fields that are taken from another perturbation
+(  383)   !
+(  384)   do jjpert=1, sm%nact
+(  385)     if (sm%pn(jjpert)%rf_pert_label /= cp_undefined ) then
+(  386)       sm%pn(jjpert)%nrf         = 0
+(  387)       sm%pn(jjpert)%nrf_radgrid = 0
+(  388)       sm%pn(jjpert)%nseed_off   = 0
+(  389)       sm%pn(jjpert)%noff        = 0
+(  390)     endif
+(  391)   enddo
+(  392)   !
+(  393)   !   calculate total number of random fields and
+(  394)   !     pointers mp to random fields for individual perturbations
+(  395)   !
+(  396)   sm%nrftotal=sum( sm%pn(1:sm%nact)%nrf )
+(  397)   sm%nrftotal_radgrid=sum( sm%pn(1:sm%nact)%nrf_radgrid )
+(  398)   do jjpert=1, sm%nact
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:27      page 8
+
+(  399)     if (sm%pn(jjpert)%nrf > 0) then
+(  400)       sm%pn(jjpert)%mp         = 1 + sum( sm%pn(1:jjpert-1)%nrf )
+(  401)       sm%pn(jjpert)%mp_radgrid = 1 + sum( sm%pn(1:jjpert-1)%nrf_radgrid )
+(  402)     else
+(  403)       sm%pn(jjpert)%mp         = -1
+(  404)       sm%pn(jjpert)%mp_radgrid = -1
+(  405)     endif
+(  406)   enddo
+(  407)   !
+(  408)   !   pointers to random fields that are taken from another perturbation
+(  409)   !
+(  410)   do jjpert=1, sm%nact
+(  411)     if (sm%pn(jjpert)%rf_pert_label /= cp_undefined ) then
+(  412)       i_rf_donor = get_spp_idx(  sm%pn(jjpert)%rf_pert_label, sm )
+(  413)       if (i_rf_donor < 0) then
+(  414)         write(ku_out, *) 'jjpert = ',jjpert,', sm%pn(jjpert)%label = ',sm%pn(jjpert)%label
+(  415)         write(ku_out, *) 'sm%pn(jjpert)%rf_pert_label = ',sm%pn(jjpert)%rf_pert_label
+(  416)         call abor1('Cannot find sm%pn(jjpert)%rf_pert_label in active perturbations.')
+(  417)       endif
+(  418)       sm%pn(jjpert)%mp         = sm%pn(i_rf_donor)%mp
+(  419)       sm%pn(jjpert)%mp_radgrid = sm%pn(i_rf_donor)%mp_radgrid
+(  420)     endif
+(  421)   enddo
+(  422)   !
+(  423)   !   create list of seed offsets for the random fields
+(  424)   !
+(  425)   kf1=0
+(  426)   do jjpert=1, sm%nact
+(  427)     if (sm%pn(jjpert)%nrf > 0) then
+(  428)       kf0=kf1+1
+(  429)       kf1=kf0+sm%pn(jjpert)%noff-1 !ML: the number of seeds does not need to match the number of random fields. This could c
+(  430)       sm%nseed_off(kf0:kf1) = sm%pn(jjpert)%nseed_off(1:sm%pn(jjpert)%noff )
+(  431)     endif
+(  432)   enddo
+(  433) end subroutine modify_spp_perts
+(  434) 
+(  435) integer(kind=jpim) function get_spp_idx( cd_label, sm )
+(  436)   !
+(  437)   !   get index from active perturbations for perturbation named cd_label in spp_model sm
+(  438)   !
+(  439)   character(len=*), intent(in)      :: cd_label
+(  440)   type(spp_model)          , intent(in)      :: sm
+(  441) 
+(  442)   integer(kind=jpim) :: ipn
+(  443)   integer(kind=jpim) :: jj
+(  444)   ipn=-1
+(  445)   do jj=1, sm%nact
+(  446)     if (cd_label == sm%pn(jj)%label) then
+(  447)       ipn=jj
+(  448)       exit  ! no further search needed
+(  449)     endif
+(  450)   enddo
+(  451)   if (ipn == -1) then
+(  452)     !
+(  453)     !   this should never happen, abort immediately
+(  454)     !
+(  455)     call abor1( "get_spp_idx: there is no perturbation " //trim(cd_label))
+(  456)   endif
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:27      page 9
+
+(  457)   get_spp_idx=ipn
+(  458) end function get_spp_idx
+(  459) 
+(  460) integer(kind=jpim) function get_spp_idx_def( cd_label, sm )
+(  461)   !
+(  462)   !   get index from defined perturbations for perturbation named cd_label
+(  463)   !
+(  464)   character(len=*), intent(in)      :: cd_label
+(  465)   type(spp_model)          , intent(in)      :: sm
+(  466) 
+(  467)   integer(kind=jpim) :: ipn
+(  468)   integer(kind=jpim) :: jj
+(  469)   ipn=-1
+(  470)   do jj=1, sm%ndef
+(  471)     if (cd_label == sm%pndef(jj)%label) then
+(  472)       ipn=jj
+(  473)       exit  ! no further search needed
+(  474)     endif
+(  475)   enddo
+(  476)   if (ipn == -1) then
+(  477)     call abor1( "get_spp_idx_def: there is no perturbation "//trim(cd_label))
+(  478)   endif
+(  479)   get_spp_idx_def=ipn
+(  480) end function get_spp_idx_def
+(  481) 
+(  482) 
+(  483) logical function active_spp_pn(cd_label, sm )
+(  484)   !
+(  485)   !   return true if cd_label refers to an active_perturbation
+(  486)   !
+(  487)   character(len=*), intent(in)      :: cd_label
+(  488)   type(spp_model)          , intent(in)      :: sm
+(  489) 
+(  490)   active_spp_pn = any( cd_label==sm%active_perts )
+(  491) end function active_spp_pn
+(  492) 
+(  493) 
+(  494) subroutine write_spp_pn_infoline( p, ku)
+(  495)   !
+(  496)   ! write a line with information about perturbation p to unit u
+(  497)   !
+(  498)   type(spp_pert),               intent(in) :: p
+(  499)   integer(kind=jpim), optional, intent(in) :: ku
+(  500) 
+(  501)   integer(kind=jpim) :: iunit
+(  502)   if (present(ku)) then
+(  503)     iunit=ku
+(  504)   else
+(  505)     iunit=6
+(  506)   endif
+(  507)   write( iunit, '(A16,X,4F10.5,X,L3,X,I3,X,I3,X,I3,X,2I11)' ) p%label, p%xmag(:), p%ln1, &
+(  508)        & p%mp, p%mp_radgrid, p%nrf, p%nseed_off(1), p%nseed_off(2)
+(  509) 
+(  510) end subroutine write_spp_pn_infoline
+(  511) 
+(  512) subroutine write_spp_model_table( sm, ku, ldefined )
+(  513)   !
+(  514)   !   write a table with the active perturbations (default behaviour) or
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:27      page 10
+
+(  515)   !   the defined perturbations if ldefined=T
+(  516)   !
+(  517)   type(spp_model), intent(in) :: sm
+(  518)   integer(kind=jpim), optional, intent(in) :: ku
+(  519)   logical, optional, intent(in) :: ldefined
+(  520) 
+(  521)   logical :: lldef
+(  522) 
+(  523)   integer(kind=jpim) :: jjpert, nperts, iunit
+(  524)   if (present(ku)) then
+(  525)     iunit=ku
+(  526)   else
+(  527)     iunit=6
+(  528)   endif
+(  529) 
+(  530)   if ( present(ldefined)) then
+(  531)     lldef=ldefined
+(  532)   else
+(  533)     lldef=.false.
+(  534)   endif
+(  535) 
+(  536)   if (lldef) then
+(  537)     nperts = sm%ndef
+(  538)   else
+(  539)     nperts = sm%nact
+(  540)   endif
+(  541)   write( iunit, '("--------------------------------------------------------------------------------------------")' )
+(  542)   write( iunit, '(A16,X,4A10,X,A3,X,A3,X,A3,X,A3,X,2A11)' ) &
+(  543)        & "Perturbation    ", "Ampl 1", "Ampl 2", "Ampl 3", "Ampl 4", "ln1","Ptr","Prg", "NRF", "Seed 1", "Seed 2"
+(  544) 
+(  545)   write( iunit, '("--------------------------------------------------------------------------------------------")' )
+(  546)   do jjpert=1, nperts
+(  547)     if (lldef) then
+(  548)       call write_spp_pn_infoline( sm%pndef(jjpert), ku=iunit)
+(  549)     else
+(  550)       call write_spp_pn_infoline( sm%pn(jjpert), ku=iunit)
+(  551)     endif
+(  552)   enddo
+(  553)   write( iunit, '("--------------------------------------------------------------------------------------------")' )
+(  554) 
+(  555) end subroutine write_spp_model_table
+(  556) 
+(  557) 
+(  558) 
+(  559) end module spp_gen_mod
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:27      page 11
+
+(    1) # 1 "./spp_gen_mod.F90"
+(    1) module spp_gen_mod
+(    2) # 3 "./spp_gen_mod.F90"
+(    3) USE PARKIND1 , ONLY : JPIM, JPRB
+(    4) # 5 "./spp_gen_mod.F90"
+(    5) implicit none
+(    6) # 7 "./spp_gen_mod.F90"
+(    7) integer(kind=jpim), parameter :: jp_lab_len=16      ! string length for perturbation labels
+(    8) integer(kind=jpim), parameter :: jp_ver_len=32      ! string length for version
+(    9) integer(kind=jpim), parameter :: jp_mag  =4         ! max size of xmag
+(   10) integer(kind=jpim), parameter :: jp_cli  =4         ! max size of xclipmin/xclipmax
+(   11) integer(kind=jpim), parameter :: jp_off  =2         ! max size of nseed_off
+(   12) integer(kind=jpim), parameter :: jpmaxperts=128     ! max number of perturbations in the context of namelist inputs
+(   13) character(len=jp_lab_len), parameter :: cp_undefined='????????????????'
+(   14) # 15 "./spp_gen_mod.F90"
+(   15) type spp_pert
+(   16)   !
+(   17)   !   define variables for an individual perturbation of 1 variable or 1 parameter
+(   18)   !
+(   19)   character(len=jp_lab_len) :: label=cp_undefined
+(   20)   logical                   :: on=.false.       ! on/off
+(   21)   integer(kind=jpim)        :: idistr           ! Determines the distribution; 
+(   22)                                                 !  0: normal, 
+(   23)                                                 !  1: log-normal, 
+(   24)                                                 !  2: uniform
+(   25)   real(kind=jprb), dimension(jp_mag)   :: xmag=0._jprb        ! amplitude
+(   26)   real(kind=jprb), dimension(jp_mag)   :: mu=0._jprb          ! mean of Gaussian
+(   27)   real(kind=jprb)           :: xclipmin=-HUGE(1.0_jprb) ! lower clipping limit
+(   28)   real(kind=jprb)           :: xclipmax= HUGE(1.0_jprb) ! upper clipping limit
+(   29)   real(kind=jprb)           :: xuniform_offset  ! Offset of distribution if idistr = 2
+(   30)   integer(kind=jpim)        :: nmag=1           !   number of used magnitudes
+(   31)   logical                   :: ln1=.true.       ! T implies the mean of the log-normal distribution is 1
+(   32)   integer(kind=jpim),dimension(jp_off) :: nseed_off=0       ! random number seed offsets
+(   33)   integer(kind=jpim)        :: noff=1           !   number of used seed offsets
+(   34) # 35 "./spp_gen_mod.F90"
+(   35)   integer(kind=jpim)        :: nrf=1            ! number of random fields for this perturbation
+(   36)                                                 !   [e.b. would be 2 for CUDUDV but 1 for RTAU and most others]
+(   37)   integer(kind=jpim)        :: nrf_radgrid=0    ! number of random fields on the radiation grid
+(   38)   logical                   :: radgrid=.false.  ! perturbation requires random field on radiation grid
+(   39)   character(len=jp_lab_len) :: rf_pert_label=cp_undefined ! point to random field of perturbation rf_pert_label
+(   40)   integer(kind=jpim)        :: ic=1             ! Sign of correlation in case rf_pert_label is used
+(   41)   integer(kind=jpim)        :: mp               ! pointer to first random field
+(   42)                                                 !   [correspond to MP* IN TSPP_DATA, e.g. MPCFM ... MPZHSVDAERO]
+(   43)   integer(kind=jpim)        :: mp_radgrid       ! pointer to first random field on radiation grid
+(   44)   real(kind=jprb)           :: tau, sdev, xlcor ! random field characteristics
+(   45) end type spp_pert
+(   46) # 47 "./spp_gen_mod.F90"
+(   47) type spp_model
+(   48)   !
+(   49)   !    define a model of perturbations
+(   50)   !
+(   51)   character(len=jp_ver_len)  :: version
+(   52)   integer(kind=jpim)         :: nmax  ! max. number of perturbations for array dimensioning
+(   53)   character(len=jp_lab_len), dimension(:), allocatable :: defined_perts
+(   54)   character(len=jp_lab_len), dimension(:), allocatable :: active_perts
+(   55)   integer(kind=jpim) :: ndef=0 ! number of defined perturbations
+(   56)   integer(kind=jpim) :: nact ! number of active perturbations
+(   57)   integer(kind=jpim) :: nrftotal=0 ! total number of random fields
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:27      page 12
+
+(   58)   integer(kind=jpim) :: nrftotal_radgrid=0 ! total number of random fields on the radiation grid
+(   59)   integer(kind=jpim), dimension(:), allocatable :: nseed_off ! seed offsets for random fields 1..nrftotal
+(   60)   type(spp_pert), dimension(:), allocatable :: pndef  ! configurations of defined individual perturbations
+(   61)   type(spp_pert), dimension(:), allocatable :: pn   ! configurations of active individual perturbations
+(   62)   real(kind=jprb)    :: tau    ! global default decorrelation time
+(   63)   real(kind=jprb)    :: xlcor  ! global default correlation length scale
+(   64)   real(kind=jprb)    :: sdev   ! global default standard deviation
+(   65)   integer(kind=jpim) :: kseed_off ! random number seed offset for current perturbation
+(   66) end type spp_model
+(   67) # 69 "./spp_gen_mod.F90"
+(   69) contains
+(   70) # 71 "./spp_gen_mod.F90"
+(   71) subroutine allocate_spp_model( sm, knmax)
+(   72)   !
+(   73)   !   allocate all dynamic arrays in the spp_model variable ydspp
+(   74)   !
+(   75)   type(spp_model), intent(inout) :: sm
+(   76)   integer(kind=jpim), intent(in) :: knmax
+(   77) # 78 "./spp_gen_mod.F90"
+(   78)   sm%nmax = knmax
+(   79)   allocate(sm%defined_perts( knmax ) )
+(   80)   allocate(sm%active_perts(  knmax ) )
+(   81)   allocate(sm%pndef(         knmax ) )
+(   82)   allocate(sm%pn(            knmax ) )
+(   83)   allocate(sm%nseed_off(     knmax * jp_off ) )
+(   84) # 85 "./spp_gen_mod.F90"
+(   85) end subroutine allocate_spp_model
+(   86) # 87 "./spp_gen_mod.F90"
+(   87) subroutine deallocate_spp_model( sm )
+(   88)   !
+(   89)   !   deallocate all arrays in the spp_model variable ydspp
+(   90)   !
+(   91)   type(spp_model), intent(inout) :: sm
+(   92) # 93 "./spp_gen_mod.F90"
+(   93)   deallocate(sm%defined_perts )
+(   94)   deallocate(sm%active_perts )
+(   95)   deallocate(sm%pndef )
+(   96)   deallocate(sm%pn    )
+(   97)   deallocate(sm%nseed_off)
+(   98) # 99 "./spp_gen_mod.F90"
+(   99) end subroutine deallocate_spp_model
+(  100) # 101 "./spp_gen_mod.F90"
+(  101) subroutine update_mu_spp_pertn( pn )
+(  102)   !
+(  103)   !   if distribution is log-normal and ln1==T, compute mean mu(.) of Gaussian distribution that
+(  104)   !     yields mean of log-normal distribution equal to one
+(  105)   !
+(  106)   type(spp_pert), intent(inout) :: pn
+(  107) # 108 "./spp_gen_mod.F90"
+(  108)   integer(kind=jpim) :: jmag
+(  109) # 110 "./spp_gen_mod.F90"
+(  110)   if (pn%ln1.and.(pn%idistr==1)) then
+(  111)     do jmag=1, pn%nmag
+(  112)       pn%mu( jmag ) = -0.5_jprb * ( pn%xmag( jmag ) * pn%sdev )**2
+(  113)     enddo
+(  114)   else
+(  115)     pn%mu= 0._jprb
+(  116)   endif
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:27      page 13
+
+(  117) # 118 "./spp_gen_mod.F90"
+(  118) end subroutine update_mu_spp_pertn
+(  119) # 120 "./spp_gen_mod.F90"
+(  120) subroutine implement_spp_pertn( sm, cdlabel, pxmag, xclipmin, xclipmax, ic, &
+(  121)                               & kidistr, knseed_off, knrf, ln1, radgrid, cd_rf_pert_label, &
+(  122)                               & xuniform_offset )
+(  123)   !
+(  124)   !   configures a new defined perturbation in spp_model sm component.
+(  125)   !    The subroutine increments sm%ndef and stores the configuration of the perturbation in sm%pndef( sm%ndef )
+(  126)   !
+(  127)   type(spp_model),           intent(inout) :: sm
+(  128)   character(len=*),          intent(in)    :: cdlabel
+(  129)   real(kind=jprb), dimension(:)        , intent(in)    :: pxmag
+(  130)   ! optional arguments
+(  131)   integer(kind=jpim), optional        , intent(in)    :: kidistr
+(  132)   integer(kind=jpim), dimension(:), optional        , intent(in)    :: knseed_off
+(  133)   integer(kind=jpim), optional        , intent(in)    :: knrf
+(  134)   integer(kind=jpim), optional        , intent(in)    :: ic
+(  135)   logical,            optional        , intent(in)    :: ln1
+(  136)   logical,            optional        , intent(in)    :: radgrid
+(  137)   character(len=*),   optional        , intent(in)    :: cd_rf_pert_label
+(  138)   real(kind=jprb),    optional        , intent(in)    :: xuniform_offset
+(  139)   real(kind=jprb),    optional        , intent(in)    :: xclipmin
+(  140)   real(kind=jprb),    optional        , intent(in)    :: xclipmax
+(  141) # 142 "./spp_gen_mod.F90"
+(  142)   type(spp_pert) :: pn
+(  143) # 144 "./spp_gen_mod.F90"
+(  144)   pn%label      = cdlabel    ! who I am
+(  145)   pn%on         = .false.    ! default is off
+(  146) # 147 "./spp_gen_mod.F90"
+(  147)   !
+(  148)   !   inherit global settings for random field
+(  149)   !
+(  150)   pn%tau    = sm%tau
+(  151)   pn%sdev   = sm%sdev
+(  152)   pn%xlcor  = sm%xlcor
+(  153) # 154 "./spp_gen_mod.F90"
+(  154)   pn%nmag = size(pxmag)
+(  155)   if (pn%nmag > jp_mag) then
+(  156)     call abor1('It is not possible to request more than jp_mag different magnitudes. Change jp_mag in spp_test_mod. ')
+(  157)   endif
+(  158)   pn%xmag(1:pn%nmag)= pxmag(:)
+(  159) # 160 "./spp_gen_mod.F90"
+(  160)   if (present(ic)) then
+(  161)    pn%ic = ic
+(  162)   endif
+(  163) # 164 "./spp_gen_mod.F90"
+(  164)   if (present(xclipmin)) then
+(  165)    pn%xclipmin = xclipmin
+(  166)   endif
+(  167) # 168 "./spp_gen_mod.F90"
+(  168)   if (present(xclipmax)) then
+(  169)    pn%xclipmax = xclipmax
+(  170)   endif
+(  171) # 172 "./spp_gen_mod.F90"
+(  172)   if (present(kidistr)) then
+(  173)     pn%idistr = kidistr
+(  174)   else
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:27      page 14
+
+(  175)     pn%idistr = 1
+(  176)   endif
+(  177) # 178 "./spp_gen_mod.F90"
+(  178)   if (present(xuniform_offset)) then
+(  179)     pn%xuniform_offset = xuniform_offset
+(  180)   else
+(  181)     pn%xuniform_offset = 0.5_jprb
+(  182)   endif
+(  183) # 184 "./spp_gen_mod.F90"
+(  184)   if (present(ln1)) then
+(  185)     pn%ln1 = ln1  ! default set in type declaration
+(  186)   endif
+(  187)   call update_mu_spp_pertn(pn)
+(  188) # 189 "./spp_gen_mod.F90"
+(  189)   !
+(  190)   !  random field required on radiation grid?
+(  191)   !
+(  192)   if (present(radgrid)) then
+(  193)     pn%radgrid= radgrid
+(  194)   endif
+(  195)   !
+(  196)   !  ML: The number of random fields nrf could be determined from size(nseed_off)
+(  197)   !
+(  198)   if (present(knrf)) then
+(  199)     pn%nrf = knrf
+(  200)   else
+(  201)     pn%nrf = 1
+(  202)   endif
+(  203)   if (pn%radgrid) then
+(  204)     pn%nrf_radgrid = pn%nrf
+(  205)   else
+(  206)     pn%nrf_radgrid = 0
+(  207)   endif
+(  208)   !
+(  209)   !
+(  210)   !
+(  211)   if (present(cd_rf_pert_label)) then
+(  212)     if (present(knrf).or.present(knseed_off)) then
+(  213)       call abor1('Neither knrf nor knseed_off are meaningful arguments when cd_rf_pert_label is present.')
+(  214)     endif
+(  215)     pn%rf_pert_label = cd_rf_pert_label
+(  216)     pn%nrf         = 0
+(  217)     pn%nrf_radgrid = 0
+(  218)   endif
+(  219) # 220 "./spp_gen_mod.F90"
+(  220)   !
+(  221)   !   potentially use hash function like CRC-32 to generate seed modifier
+(  222)   !
+(  223)   if (present(knseed_off)) then
+(  224)     pn%noff=size(knseed_off)
+(  225)     if (pn%noff > jp_off) then
+(  226)       call abor1('Too many seed offsets; increase jp_off in spp_test_mod.')
+(  227)     endif
+(  228)     if (pn%noff /= pn%nrf ) then
+(  229)       call abor1('The number of random fields must be equal to the number of random seeds.')
+(  230)     endif
+(  231)     pn%nseed_off(1:pn%noff) = knseed_off
+(  232)   else if (present(cd_rf_pert_label)) then
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:27      page 15
+
+(  233)     pn%nseed_off = 0
+(  234)   else
+(  235)     pn%nseed_off = sm%kseed_off
+(  236)   endif
+(  237)   !
+(  238)   !   update SPP model
+(  239)   !
+(  240)   if ( (sm%ndef +1) > sm%nmax) then
+(  241)     call abor1( 'nmax is too small.')
+(  242)   endif
+(  243)   sm%ndef = sm%ndef + 1
+(  244)   sm%pndef( sm%ndef ) = pn
+(  245)   sm%defined_perts(sm%ndef) = cdlabel
+(  246)   !
+(  247)   !   seed offsets for next perturbation if called without nseed_off arguments
+(  248)   !
+(  249)   if (sm%kseed_off < 2_jpim **30) then
+(  250)     sm%kseed_off = 2*sm%kseed_off
+(  251)   else
+(  252)     sm%kseed_off = 2_jpim **8 + 2_jpim **9
+(  253)   endif
+(  254) end subroutine implement_spp_pertn
+(  255) # 260 "./spp_gen_mod.F90"
+(  260) subroutine get_active_spp_perts( sm, ku_nam, ku_out )
+(  261)   !
+(  262)   !   read namelist input from unit kunit to determine active perturbations and make adjustments to their configuration
+(  263)   !   create list of seeds for all random fields
+(  264)   !
+(  265)   type(spp_model), intent(inout) :: sm
+(  266)   integer(kind=jpim), intent(in) :: ku_nam
+(  267)   integer(kind=jpim), intent(in) :: ku_out
+(  268) # 269 "./spp_gen_mod.F90"
+(  269)   integer(kind=jpim) :: inreq ! number of requested perturbations
+(  270)   integer(kind=jpim) :: jjpert, kf0, kf1
+(  271) # 272 "./spp_gen_mod.F90"
+(  272)   character(len=jp_lab_len), dimension(jpmaxperts) :: requested_perts
+(  273) # 274 "./spp_gen_mod.F90"
+(  274)   namelist /nam_spp_active/ requested_perts
+(  275) # 276 "./spp_gen_mod.F90"
+(  276)   if (sm%nmax>jpmaxperts) then
+(  277)     write(ku_out,'(A,I5)') 'spp_gen_mod:get_active_spp_perts: increase jpmaxperts to at least ',sm%nmax
+(  278)     call abor1('spp_gen_mod:get_active_spp_perts: array requested_perts is too small.')
+(  279)   endif
+(  280) # 281 "./spp_gen_mod.F90"
+(  281)   requested_perts= cp_undefined
+(  282)   read(ku_nam,nml=nam_spp_active)
+(  283) # 284 "./spp_gen_mod.F90"
+(  284)   inreq = count(requested_perts /= cp_undefined )
+(  285)   write(ku_out,*) inreq," perturbations have been requested"
+(  286)   sm%nact = inreq
+(  287) # 288 "./spp_gen_mod.F90"
+(  288)   !
+(  289)   !   check that requested perturbations are actually implemented
+(  290)   !
+(  291)   do jjpert=1, sm%nact
+(  292)     if ( .not.any(sm%defined_perts == requested_perts(jjpert) ) ) then
+(  293)       ! abort with suitable error message
+(  294)       call abor1( "the requested perturbation "//trim(requested_perts(jjpert))//" is not known in "//trim( sm%version ))
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:27      page 16
+
+(  295)     else
+(  296)       sm%active_perts(jjpert)=requested_perts(jjpert)
+(  297)       sm%pn(jjpert) = sm%pndef( get_spp_idx_def(requested_perts(jjpert),sm) )
+(  298)       sm%pn(jjpert)%on  =.true.
+(  299)     endif
+(  300)   enddo
+(  301) end subroutine get_active_spp_perts
+(  302) # 304 "./spp_gen_mod.F90"
+(  304) subroutine map_indices_spp_nml( sm, ku_nam, ku_out, kidx_map )
+(  305)   !
+(  306)   !   need to map perturbations in nam_spp_modif to active perturbations in sm
+(  307)   !
+(  308)   type(spp_model), intent(inout) :: sm
+(  309)   integer(kind=jpim), intent(in) :: ku_nam
+(  310)   integer(kind=jpim), intent(in) :: ku_out
+(  311)   integer(kind=jpim), dimension(jpmaxperts), intent(out):: kidx_map
+(  312) # 313 "./spp_gen_mod.F90"
+(  313)   integer(kind=jpim) :: jjpert
+(  314)   type(spp_pert), dimension(jpmaxperts) :: pnx   ! configurations of active individual perturbations
+(  315) # 316 "./spp_gen_mod.F90"
+(  316)   namelist /nam_spp_modif/ pnx
+(  317) # 318 "./spp_gen_mod.F90"
+(  318)   kidx_map = -1
+(  319)   if (sm%nact>jpmaxperts) then
+(  320)     write(ku_out,'(A,I5)') 'spp_gen_mod:modify_spp_perts: increase jpmaxperts to at least ',sm%nact
+(  321)     call abor1('spp_gen_mod:map_indices_spp_nml: array pnx is too small.')
+(  322)   endif
+(  323) # 324 "./spp_gen_mod.F90"
+(  324)   pnx(:)%label = cp_undefined
+(  325)   read(ku_nam,nml=nam_spp_modif)
+(  326) # 327 "./spp_gen_mod.F90"
+(  327)   do jjpert=1, sm%nact
+(  328)     if (pnx(jjpert)%label /= cp_undefined) then
+(  329)       kidx_map(jjpert) = get_spp_idx(  pnx(jjpert)%label, sm )
+(  330)     endif
+(  331)   enddo
+(  332) # 333 "./spp_gen_mod.F90"
+(  333) end subroutine map_indices_spp_nml
+(  334) # 336 "./spp_gen_mod.F90"
+(  336) subroutine modify_spp_perts( sm, kidx_map, ku_nam, ku_out )
+(  337)   !
+(  338)   !   Read namelist input from unit kunit to determine active perturbations and make adjustments to their configuration.
+(  339)   !
+(  340)   !   kidx_map is obtained from initial pass through namelist nam_spp_modif and links the perturbations pnx with the perturbations sm%pn
+(  341)   !
+(  342)   !   create list of seeds for all random fields
+(  343)   !
+(  344)   type(spp_model), intent(inout) :: sm
+(  345)   integer(kind=jpim), dimension(jpmaxperts), intent(in):: kidx_map
+(  346)   integer(kind=jpim), intent(in) :: ku_nam
+(  347)   integer(kind=jpim), intent(in) :: ku_out
+(  348) # 349 "./spp_gen_mod.F90"
+(  349)   integer(kind=jpim) :: jjpert, kf0, kf1
+(  350) # 351 "./spp_gen_mod.F90"
+(  351)   integer(kind=jpim) :: i_rf_donor
+(  352) # 353 "./spp_gen_mod.F90"
+(  353)   type(spp_pert), dimension(jpmaxperts) :: pnx   ! configurations of active individual perturbations
+(  354) # 355 "./spp_gen_mod.F90"
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:27      page 17
+
+(  355)   namelist /nam_spp_modif/ pnx
+(  356) # 357 "./spp_gen_mod.F90"
+(  357)   if (sm%nact>jpmaxperts) then
+(  358)     write(ku_out,'(A,I5)') 'spp_gen_mod:modify_spp_perts: increase jpmaxperts to at least ',sm%nact
+(  359)     call abor1('spp_gen_mod:modify_spp_perts: array pnx is too small.')
+(  360)   endif
+(  361) # 362 "./spp_gen_mod.F90"
+(  362)   pnx(:)%label=cp_undefined
+(  363) # 364 "./spp_gen_mod.F90"
+(  364)   do jjpert=1, jpmaxperts
+(  365)     if (kidx_map(jjpert)>0) then
+(  366)       pnx(jjpert) = sm%pn( kidx_map(jjpert) )
+(  367)     endif
+(  368)   enddo
+(  369) # 370 "./spp_gen_mod.F90"
+(  370)   !
+(  371)   !   make requested changes to settings
+(  372)   !
+(  373)   read(ku_nam,nml=nam_spp_modif)
+(  374) # 375 "./spp_gen_mod.F90"
+(  375)   do jjpert=1, jpmaxperts
+(  376)     if (kidx_map(jjpert)>0) then
+(  377)       sm%pn( kidx_map(jjpert) ) = pnx( jjpert)
+(  378)       call update_mu_spp_pertn(sm%pn( kidx_map(jjpert) ))
+(  379)     endif
+(  380)   enddo
+(  381)   !
+(  382)   !   set nrf/nrf_radgrid if fields that are taken from another perturbation
+(  383)   !
+(  384)   do jjpert=1, sm%nact
+(  385)     if (sm%pn(jjpert)%rf_pert_label /= cp_undefined ) then
+(  386)       sm%pn(jjpert)%nrf         = 0
+(  387)       sm%pn(jjpert)%nrf_radgrid = 0
+(  388)       sm%pn(jjpert)%nseed_off   = 0
+(  389)       sm%pn(jjpert)%noff        = 0
+(  390)     endif
+(  391)   enddo
+(  392)   !
+(  393)   !   calculate total number of random fields and
+(  394)   !     pointers mp to random fields for individual perturbations
+(  395)   !
+(  396)   sm%nrftotal=sum( sm%pn(1:sm%nact)%nrf )
+(  397)   sm%nrftotal_radgrid=sum( sm%pn(1:sm%nact)%nrf_radgrid )
+(  398)   do jjpert=1, sm%nact
+(  399)     if (sm%pn(jjpert)%nrf > 0) then
+(  400)       sm%pn(jjpert)%mp         = 1 + sum( sm%pn(1:jjpert-1)%nrf )
+(  401)       sm%pn(jjpert)%mp_radgrid = 1 + sum( sm%pn(1:jjpert-1)%nrf_radgrid )
+(  402)     else
+(  403)       sm%pn(jjpert)%mp         = -1
+(  404)       sm%pn(jjpert)%mp_radgrid = -1
+(  405)     endif
+(  406)   enddo
+(  407)   !
+(  408)   !   pointers to random fields that are taken from another perturbation
+(  409)   !
+(  410)   do jjpert=1, sm%nact
+(  411)     if (sm%pn(jjpert)%rf_pert_label /= cp_undefined ) then
+(  412)       i_rf_donor = get_spp_idx(  sm%pn(jjpert)%rf_pert_label, sm )
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:27      page 18
+
+(  413)       if (i_rf_donor < 0) then
+(  414)         write(ku_out, *) 'jjpert = ',jjpert,', sm%pn(jjpert)%label = ',sm%pn(jjpert)%label
+(  415)         write(ku_out, *) 'sm%pn(jjpert)%rf_pert_label = ',sm%pn(jjpert)%rf_pert_label
+(  416)         call abor1('Cannot find sm%pn(jjpert)%rf_pert_label in active perturbations.')
+(  417)       endif
+(  418)       sm%pn(jjpert)%mp         = sm%pn(i_rf_donor)%mp
+(  419)       sm%pn(jjpert)%mp_radgrid = sm%pn(i_rf_donor)%mp_radgrid
+(  420)     endif
+(  421)   enddo
+(  422)   !
+(  423)   !   create list of seed offsets for the random fields
+(  424)   !
+(  425)   kf1=0
+(  426)   do jjpert=1, sm%nact
+(  427)     if (sm%pn(jjpert)%nrf > 0) then
+(  428)       kf0=kf1+1
+(  429)       kf1=kf0+sm%pn(jjpert)%noff-1 !ML: the number of seeds does not need to match the number of random fields. This could cause problems. How to resolve this?
+(  430)       sm%nseed_off(kf0:kf1) = sm%pn(jjpert)%nseed_off(1:sm%pn(jjpert)%noff )
+(  431)     endif
+(  432)   enddo
+(  433) end subroutine modify_spp_perts
+(  434) # 435 "./spp_gen_mod.F90"
+(  435) integer(kind=jpim) function get_spp_idx( cd_label, sm )
+(  436)   !
+(  437)   !   get index from active perturbations for perturbation named cd_label in spp_model sm
+(  438)   !
+(  439)   character(len=*), intent(in)      :: cd_label
+(  440)   type(spp_model)          , intent(in)      :: sm
+(  441) # 442 "./spp_gen_mod.F90"
+(  442)   integer(kind=jpim) :: ipn
+(  443)   integer(kind=jpim) :: jj
+(  444)   ipn=-1
+(  445)   do jj=1, sm%nact
+(  446)     if (cd_label == sm%pn(jj)%label) then
+(  447)       ipn=jj
+(  448)       exit  ! no further search needed
+(  449)     endif
+(  450)   enddo
+(  451)   if (ipn == -1) then
+(  452)     !
+(  453)     !   this should never happen, abort immediately
+(  454)     !
+(  455)     call abor1( "get_spp_idx: there is no perturbation " //trim(cd_label))
+(  456)   endif
+(  457)   get_spp_idx=ipn
+(  458) end function get_spp_idx
+(  459) # 460 "./spp_gen_mod.F90"
+(  460) integer(kind=jpim) function get_spp_idx_def( cd_label, sm )
+(  461)   !
+(  462)   !   get index from defined perturbations for perturbation named cd_label
+(  463)   !
+(  464)   character(len=*), intent(in)      :: cd_label
+(  465)   type(spp_model)          , intent(in)      :: sm
+(  466) # 467 "./spp_gen_mod.F90"
+(  467)   integer(kind=jpim) :: ipn
+(  468)   integer(kind=jpim) :: jj
+(  469)   ipn=-1
+(  470)   do jj=1, sm%ndef
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:27      page 19
+
+(  471)     if (cd_label == sm%pndef(jj)%label) then
+(  472)       ipn=jj
+(  473)       exit  ! no further search needed
+(  474)     endif
+(  475)   enddo
+(  476)   if (ipn == -1) then
+(  477)     call abor1( "get_spp_idx_def: there is no perturbation "//trim(cd_label))
+(  478)   endif
+(  479)   get_spp_idx_def=ipn
+(  480) end function get_spp_idx_def
+(  481) # 483 "./spp_gen_mod.F90"
+(  483) logical function active_spp_pn(cd_label, sm )
+(  484)   !
+(  485)   !   return true if cd_label refers to an active_perturbation
+(  486)   !
+(  487)   character(len=*), intent(in)      :: cd_label
+(  488)   type(spp_model)          , intent(in)      :: sm
+(  489) # 490 "./spp_gen_mod.F90"
+(  490)   active_spp_pn = any( cd_label==sm%active_perts )
+(  491) end function active_spp_pn
+(  492) # 494 "./spp_gen_mod.F90"
+(  494) subroutine write_spp_pn_infoline( p, ku)
+(  495)   !
+(  496)   ! write a line with information about perturbation p to unit u
+(  497)   !
+(  498)   type(spp_pert),               intent(in) :: p
+(  499)   integer(kind=jpim), optional, intent(in) :: ku
+(  500) # 501 "./spp_gen_mod.F90"
+(  501)   integer(kind=jpim) :: iunit
+(  502)   if (present(ku)) then
+(  503)     iunit=ku
+(  504)   else
+(  505)     iunit=6
+(  506)   endif
+(  507)   write( iunit, '(A16,X,4F10.5,X,L3,X,I3,X,I3,X,I3,X,2I11)' ) p%label, p%xmag(:), p%ln1, &
+(  508)        & p%mp, p%mp_radgrid, p%nrf, p%nseed_off(1), p%nseed_off(2)
+(  509) # 510 "./spp_gen_mod.F90"
+(  510) end subroutine write_spp_pn_infoline
+(  511) # 512 "./spp_gen_mod.F90"
+(  512) subroutine write_spp_model_table( sm, ku, ldefined )
+(  513)   !
+(  514)   !   write a table with the active perturbations (default behaviour) or
+(  515)   !   the defined perturbations if ldefined=T
+(  516)   !
+(  517)   type(spp_model), intent(in) :: sm
+(  518)   integer(kind=jpim), optional, intent(in) :: ku
+(  519)   logical, optional, intent(in) :: ldefined
+(  520) # 521 "./spp_gen_mod.F90"
+(  521)   logical :: lldef
+(  522) # 523 "./spp_gen_mod.F90"
+(  523)   integer(kind=jpim) :: jjpert, nperts, iunit
+(  524)   if (present(ku)) then
+(  525)     iunit=ku
+(  526)   else
+(  527)     iunit=6
+(  528)   endif
+(  529) # 530 "./spp_gen_mod.F90"
+(  530)   if ( present(ldefined)) then
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:27      page 20
+
+(  531)     lldef=ldefined
+(  532)   else
+(  533)     lldef=.false.
+(  534)   endif
+(  535) # 536 "./spp_gen_mod.F90"
+(  536)   if (lldef) then
+(  537)     nperts = sm%ndef
+(  538)   else
+(  539)     nperts = sm%nact
+(  540)   endif
+(  541)   write( iunit, '("--------------------------------------------------------------------------------------------")' )
+(  542)   write( iunit, '(A16,X,4A10,X,A3,X,A3,X,A3,X,A3,X,2A11)' ) &
+(  543)        & "Perturbation    ", "Ampl 1", "Ampl 2", "Ampl 3", "Ampl 4", "ln1","Ptr","Prg", "NRF", "Seed 1", "Seed 2"
+(  544) # 545 "./spp_gen_mod.F90"
+(  545)   write( iunit, '("--------------------------------------------------------------------------------------------")' )
+(  546)   do jjpert=1, nperts
+(  547)     if (lldef) then
+(  548)       call write_spp_pn_infoline( sm%pndef(jjpert), ku=iunit)
+(  549)     else
+(  550)       call write_spp_pn_infoline( sm%pn(jjpert), ku=iunit)
+(  551)     endif
+(  552)   enddo
+(  553)   write( iunit, '("--------------------------------------------------------------------------------------------")' )
+(  554) # 555 "./spp_gen_mod.F90"
+(  555) end subroutine write_spp_model_table
+(  556) # 559 "./spp_gen_mod.F90"
+(  559) end module spp_gen_mod

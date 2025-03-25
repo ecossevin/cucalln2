@@ -1,0 +1,1021 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:27      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./spp_def_mod.F90
+
+(    1) module spp_def_mod
+(    2)   use parkind1, only: jpim, jprb
+(    3)   use spp_gen_mod
+(    4) 
+(    5)   type spp_pert_pointer
+(    6)     !
+(    7)     !   perturbation pointer type
+(    8)     !
+(    9)     !   A value of -1 implies that the perturbation is off, otherwise
+(   10)     !     it points to the spp_pert perturbation in the spp_model
+(   11)     !
+(   12) 
+(   13)     ! IFS
+(   14) 
+(   15)     integer(kind=jpim) :: cfm        = -1
+(   16)     integer(kind=jpim) :: cfm1       = -1
+(   17)     integer(kind=jpim) :: cfm2       = -1
+(   18)     integer(kind=jpim) :: cfm3       = -1
+(   19)     integer(kind=jpim) :: rkap       = -1
+(   20)     integer(kind=jpim) :: rkap1      = -1
+(   21)     integer(kind=jpim) :: rkap2      = -1
+(   22)     integer(kind=jpim) :: rkap3      = -1
+(   23)     integer(kind=jpim) :: tofdc      = -1
+(   24)     integer(kind=jpim) :: hsdt       = -1
+(   25)     integer(kind=jpim) :: vdexc      = -1
+(   26)     integer(kind=jpim) :: entrorg    = -1
+(   27)     integer(kind=jpim) :: entshalp   = -1
+(   28)     integer(kind=jpim) :: entstpc1   = -1
+(   29)     integer(kind=jpim) :: detrpen    = -1
+(   30)     integer(kind=jpim) :: rprcon     = -1
+(   31)     integer(kind=jpim) :: rtau       = -1
+(   32)     integer(kind=jpim) :: cududv     = -1
+(   33)     integer(kind=jpim) :: cududvs    = -1
+(   34)     integer(kind=jpim) :: ramid      = -1
+(   35)     integer(kind=jpim) :: rcldiff    = -1
+(   36)     integer(kind=jpim) :: rclcrit    = -1
+(   37)     integer(kind=jpim) :: rlcritsnow = -1
+(   38)     integer(kind=jpim) :: rainevap   = -1
+(   39)     integer(kind=jpim) :: snowsublim = -1
+(   40)     integer(kind=jpim) :: cloudinhom = -1
+(   41)     integer(kind=jpim) :: qsatvervel = -1
+(   42)     integer(kind=jpim) :: zdecorr    = -1
+(   43)     integer(kind=jpim) :: zsigqcw    = -1
+(   44)     integer(kind=jpim) :: zradeffl   = -1
+(   45)     integer(kind=jpim) :: zradeffi   = -1
+(   46)     integer(kind=jpim) :: phr        = -1
+(   47)     integer(kind=jpim) :: zhs_vdaero = -1
+(   48)     integer(kind=jpim) :: delta_aero = -1
+(   49) 
+(   50)     ! HARMONIE-AROME
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:27      page 2
+
+(   51)     integer(kind=jpim) :: psigqsat   = -1
+(   52)     integer(kind=jpim) :: clddpth    = -1
+(   53)     integer(kind=jpim) :: clddpthdp  = -1
+(   54)     integer(kind=jpim) :: ice_cld_wgt= -1
+(   55)     integer(kind=jpim) :: icenu      = -1
+(   56)     integer(kind=jpim) :: kgn_acon   = -1
+(   57)     integer(kind=jpim) :: kgn_sbgr   = -1
+(   58)     integer(kind=jpim) :: radgr      = -1
+(   59)     integer(kind=jpim) :: radsn      = -1
+(   60)     integer(kind=jpim) :: rfac_twoc  = -1
+(   61)     integer(kind=jpim) :: rzc_h      = -1
+(   62)     integer(kind=jpim) :: rzl_inf    = -1
+(   63)     integer(kind=jpim) :: rswinhf    = -1
+(   64)     integer(kind=jpim) :: rlwinhf    = -1
+(   65)     integer(kind=jpim) :: alpha      = -1
+(   66)     integer(kind=jpim) :: rznuc      = -1
+(   67)     integer(kind=jpim) :: rzmfdry    = -1
+(   68)     integer(kind=jpim) :: rzmbclosure= -1
+(   69)     integer(kind=jpim) :: slwind     = -1
+(   70) 
+(   71)   contains
+(   72)     procedure :: set => set_spp_pert_pointer
+(   73) 
+(   74)   end type spp_pert_pointer
+(   75) 
+(   76) 
+(   77) contains
+(   78) 
+(   79)   subroutine set_spp_pert_pointer( this, cd_pert, kptr )
+(   80)     !
+(   81)     !   set this%<cd_pert> = kptr
+(   82)     !
+(   83) #include "abor1.intfb.h"
+(   84)     class(spp_pert_pointer)   :: this
+(   85)     character(len=jp_lab_len), intent(in) :: cd_pert   ! name of perturbation
+(   86)     integer(kind=jpim),        intent(in) :: kptr      ! pointer to perturbation
+(   87) 
+(   88)     select case(cd_pert)
+(   89) 
+(   90) !     IFS 
+(   91) 
+(   92)       case ('CFM')
+(   93)         this%cfm         = kptr
+(   94)       case ('CFM1')
+(   95)         this%cfm1        = kptr
+(   96)       case ('CFM2')
+(   97)         this%cfm2        = kptr
+(   98)       case ('CFM3')
+(   99)         this%cfm3        = kptr
+(  100)       case ('RKAP')
+(  101)         this%rkap        = kptr
+(  102)       case ('RKAP1')
+(  103)         this%rkap1       = kptr
+(  104)       case ('RKAP2')
+(  105)         this%rkap2       = kptr
+(  106)       case ('RKAP3')
+(  107)         this%rkap3       = kptr
+(  108)       case ('TOFDC')
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:27      page 3
+
+(  109)         this%tofdc       = kptr
+(  110)       case ('HSDT')
+(  111)         this%hsdt        = kptr
+(  112)       case ('VDEXC')
+(  113)         this%vdexc       = kptr
+(  114)       case ('ENTRORG')
+(  115)         this%entrorg     = kptr
+(  116)       case ('ENTSHALP')
+(  117)         this%entshalp    = kptr
+(  118)       case ('ENTSTPC1')
+(  119)         this%entstpc1    = kptr
+(  120)       case ('DETRPEN')
+(  121)         this%detrpen     = kptr
+(  122)       case ('RPRCON')
+(  123)         this%rprcon      = kptr
+(  124)       case ('RTAU')
+(  125)         this%rtau        = kptr
+(  126)       case ('CUDUDV')
+(  127)         this%cududv      = kptr
+(  128)       case ('CUDUDVS')
+(  129)         this%cududvs     = kptr
+(  130)       case ('RAMID')
+(  131)         this%ramid       = kptr
+(  132)       case ('RCLDIFF')
+(  133)         this%rcldiff     = kptr
+(  134)       case ('RCLCRIT')
+(  135)         this%rclcrit     = kptr
+(  136)       case ('RLCRITSNOW')
+(  137)         this%rlcritsnow  = kptr
+(  138)       case ('CLOUDINHOM')
+(  139)         this%cloudinhom  = kptr
+(  140)       case ('RAINEVAP')
+(  141)         this%rainevap    = kptr
+(  142)       case ('SNOWSUBLIM')
+(  143)         this%snowsublim  = kptr
+(  144)       case ('QSATVERVEL')
+(  145)         this%qsatvervel  = kptr
+(  146)       case ('ZDECORR')
+(  147)         this%zdecorr     = kptr
+(  148)       case ('ZSIGQCW')
+(  149)         this%zsigqcw     = kptr
+(  150)       case ('ZRADEFFL')
+(  151)         this%zradeffl    = kptr
+(  152)       case ('ZRADEFFI')
+(  153)         this%zradeffi    = kptr
+(  154)       case ('PHR')
+(  155)         this%phr         = kptr
+(  156)       case ('ZHS_VDAERO')
+(  157)         this%zhs_vdaero  = kptr
+(  158)       case ('DELTA_AERO')
+(  159)         this%delta_aero  = kptr
+(  160) 
+(  161) !     HARMONIE-AROME 
+(  162)       case ('PSIGQSAT')
+(  163)         this%psigqsat    = kptr
+(  164)       case ('CLDDPTH')
+(  165)         this%clddpth     = kptr
+(  166)       case ('CLDDPTHDP')
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:27      page 4
+
+(  167)         this%clddpthdp   = kptr
+(  168)       case ('ICE_CLD_WGT')
+(  169)         this%ice_cld_wgt = kptr
+(  170)       case ('ICENU')
+(  171)         this%icenu       = kptr
+(  172)       case ('KGN_ACON')
+(  173)         this%kgn_acon    = kptr
+(  174)       case ('KGN_SBGR')
+(  175)         this%kgn_sbgr    = kptr
+(  176)       case ('RADGR')
+(  177)         this%radgr       = kptr
+(  178)       case ('RADSN')
+(  179)         this%radsn       = kptr
+(  180)       case ('RFAC_TWOC')
+(  181)         this%rfac_twoc   = kptr
+(  182)       case ('RZC_H')
+(  183)         this%rzc_h       = kptr
+(  184)       case ('RZL_INF')
+(  185)         this%rzl_inf     = kptr
+(  186)       case ('RSWINHF')
+(  187)         this%rswinhf     = kptr
+(  188)       case ('RLWINHF')
+(  189)         this%rlwinhf     = kptr
+(  190)       case ('ALPHA')
+(  191)         this%alpha       = kptr
+(  192)       case ('RZNUC')
+(  193)         this%rznuc       = kptr
+(  194)       case ('RZMFDRY')
+(  195)         this%rzmfdry     = kptr
+(  196)       case ('RZMBCLOSURE')
+(  197)         this%rzmbclosure = kptr
+(  198)       case ('SLWIND')
+(  199)         this%slwind      = kptr
+(  200) 
+(  201)       case default
+(  202)         call abor1("spp_pert_pointer%set: the perturbation label is unknown.")
+(  203)     end select
+(  204) 
+(  205)   end subroutine set_spp_pert_pointer
+(  206) 
+(  207) 
+(  208) subroutine define_spp_arpege( sm, nulout )
+(  209) 
+(  210) #include "abor1.intfb.h"
+(  211)   type(spp_model), intent(inout) :: sm
+(  212)   integer(kind=jpim),intent(in)  :: nulout
+(  213)   integer(kind=jpim) :: indef
+(  214) 
+(  215)   sm%version = "SPP for ARPEGE physics, v0.1"
+(  216)   write(nulout,*) "****************************************"
+(  217)   write(nulout,*) "define "//sm%version
+(  218)   write(nulout,*) "****************************************"
+(  219) 
+(  220)   !
+(  221)   !   set global default values for SPP configuration
+(  222)   !
+(  223)   sm%tau=259.2E3_jprb ! 72h;  decorrelation time (s)
+(  224)   sm%sdev=1.0_jprb
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:27      page 5
+
+(  225)   sm%xlcor = 2000.E3_jprb  ! 2000km; (m)
+(  226) 
+(  227)   sm%kseed_off = 2**8
+(  228)   ! . . .
+(  229) 
+(  230)   !
+(  231)   !   allocate arrays
+(  232)   !
+(  233)   call allocate_spp_model( sm, 20 )
+(  234)   sm%defined_perts = cp_undefined
+(  235) 
+(  236)   !
+(  237)   !  implement perturbations
+(  238)   !  to be filled
+(  239)   !
+(  240) 
+(  241)   indef = count(sm%defined_perts /= cp_undefined )
+(  242)   if (indef /= sm%ndef ) then
+(  243)     call abor1('Inconsistency in terms of the number of defined perturbations.')
+(  244)   endif
+(  245)   write(nulout,*) "There are ",sm%ndef," possible perturbations"
+(  246)   !
+(  247)   !   inherit global settings
+(  248)   !
+(  249)   sm%pndef(1:sm%ndef)%tau    = sm%tau
+(  250)   sm%pndef(1:sm%ndef)%sdev   = sm%sdev
+(  251)   sm%pndef(1:sm%ndef)%xlcor  = sm%xlcor
+(  252) 
+(  253) 
+(  254) end subroutine define_spp_arpege
+(  255) 
+(  256) subroutine define_spp_ifs( sm, nulout  )
+(  257)   !
+(  258)   !   For a science reference see
+(  259)   !       Ollinaho et al. (2017), https://doi.org/10.1002/qj.3926
+(  260)   !       Lang et al. (2021) https://doi.org/10.1002/qj.3978
+(  261) 
+(  262) #include "abor1.intfb.h"
+(  263) 
+(  264)   type(spp_model), intent(inout) :: sm
+(  265)   integer(kind=jpim),intent(in)  :: nulout
+(  266)   integer(kind=jpim) :: indef
+(  267) 
+(  268)   sm%version = "SPP for IFS physics"
+(  269)   write(nulout,*) "****************************************"
+(  270)   write(nulout,*) "define "//sm%version
+(  271)   write(nulout,*) "****************************************"
+(  272) 
+(  273)   !
+(  274)   !   set global default values for SPP configuration
+(  275)   !
+(  276)   sm%tau=259.2E3_jprb ! 72h;  decorrelation time (s)
+(  277)   sm%sdev=1.0_jprb
+(  278)   sm%xlcor = 1000.E3_jprb  ! 2000km; (m)
+(  279) 
+(  280)   sm%kseed_off = 2**8
+(  281)   !
+(  282)   !   allocate arrays
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:27      page 6
+
+(  283)   !
+(  284)   call allocate_spp_model( sm, 36 )
+(  285)   sm%defined_perts = cp_undefined
+(  286)   !
+(  287)   !  implement perturbations
+(  288)   !
+(  289)   !
+(  290)   call implement_spp_pertn( sm, 'CFM'       , [0.78_jprb,0.33_jprb] , knseed_off =[0], ln1=.true.) ! amplitudes for [land, o
+(  291)   call implement_spp_pertn( sm, 'CFM1'      , [0.65_jprb,0.26_jprb] , cd_rf_pert_label='CFM' , ln1=.true.)
+(  292)   call implement_spp_pertn( sm, 'CFM2'      , [0.78_jprb,0.33_jprb] , cd_rf_pert_label='CFM' , ln1=.false.)
+(  293)   call implement_spp_pertn( sm, 'CFM3'      , [0.78_jprb,0.33_jprb] , cd_rf_pert_label='CFM' , ln1=.false.)
+(  294)   call implement_spp_pertn( sm, 'RKAP'      , [0.26_jprb] , knseed_off =[2**30 + 2**15], ln1=.false.)
+(  295)   call implement_spp_pertn( sm, 'RKAP1'     , [0.065_jprb], cd_rf_pert_label='RKAP', ln1=.true.)
+(  296)   call implement_spp_pertn( sm, 'RKAP2'     , [0.26_jprb] , cd_rf_pert_label='RKAP', ln1=.false.)
+(  297)   call implement_spp_pertn( sm, 'RKAP3'     , [0.26_jprb] , cd_rf_pert_label='RKAP', ln1=.false.)
+(  298)   call implement_spp_pertn( sm, 'TOFDC'     , [0.78_jprb] , knseed_off = [2** 8], ln1=.true. )
+(  299)   call implement_spp_pertn( sm, 'HSDT'      , [0.52_jprb] , knseed_off = [2** 9], ln1=.true. )
+(  300)   call implement_spp_pertn( sm, 'VDEXC'     , [1.04_jprb] , knseed_off = [2**10], ln1=.true. )
+(  301)   call implement_spp_pertn( sm, 'ENTRORG'   , [0.39_jprb] , knseed_off = [2**11] , ln1=.true.)
+(  302)   call implement_spp_pertn( sm, 'ENTSHALP'  , [0.39_jprb] , knseed_off = [2**12] , ln1=.true.)
+(  303)   call implement_spp_pertn( sm, 'ENTSTPC1'  , [0.39_jprb] , knseed_off = [2**30 + 2**12], ln1=.true.)
+(  304)   call implement_spp_pertn( sm, 'DETRPEN'   , [0.39_jprb] , knseed_off = [2**13] , ln1=.true.)
+(  305)   call implement_spp_pertn( sm, 'RPRCON'    , [0.52_jprb] , knseed_off = [2**14] , ln1=.true.)
+(  306)   call implement_spp_pertn( sm, 'RTAU'      , [0.78_jprb] , knseed_off = [2**15] , ln1=.true.)
+(  307)   call implement_spp_pertn( sm, 'CUDUDV'    , [0.122_jprb, 0.122_jprb] , knseed_off = [2**23] , kidistr=0)
+(  308)   call implement_spp_pertn( sm, 'CUDUDVS'   , [0.133_jprb, 0.133_jprb] , knseed_off = [2**24] , kidistr=0)
+(  309)   call implement_spp_pertn( sm, 'RAMID'     , [0.13_jprb] , knseed_off = [2**16] , ln1=.true.)
+(  310)   call implement_spp_pertn( sm, 'RCLDIFF'   , [1.04_jprb] , knseed_off = [2**17] , ln1=.true.)
+(  311)   call implement_spp_pertn( sm, 'RCLCRIT'   , [1.04_jprb, 1.04_jprb] , knseed_off = [2**18] , ln1=.true.) ! land, sea
+(  312)   call implement_spp_pertn( sm, 'RLCRITSNOW', [0.78_jprb] , knseed_off = [2**19] , ln1=.true.)
+(  313)   call implement_spp_pertn( sm, 'RAINEVAP'  , [0.65_jprb] , knseed_off = [2**30] , ln1=.true.)
+(  314)   call implement_spp_pertn( sm, 'SNOWSUBLIM', [0.65_jprb] , knseed_off = [2**30 + 2**8] , ln1=.true.)
+(  315)   call implement_spp_pertn( sm, 'CLOUDINHOM', [0.3_jprb,0.3_jprb] , knseed_off = [2**30 + 2**10, 2**30 + 2**11]&
+(  316)        , ln1=.true., knrf=2) ! autoconversion, accretion
+(  317)   call implement_spp_pertn( sm, 'QSATVERVEL', [0.39_jprb] , knseed_off = [2**30 + 2**9] , ln1=.true.)
+(  318)   call implement_spp_pertn( sm, 'ZDECORR'   , [0.78_jprb] , knseed_off = [2**20] , ln1=.true., radgrid=.true.)
+(  319)   call implement_spp_pertn( sm, 'ZSIGQCW'   , [0.52_jprb] , knseed_off = [2**21] , ln1=.true., radgrid=.true.)
+(  320)   call implement_spp_pertn( sm, 'ZRADEFFL'  , [0.78_jprb] , knseed_off = [2**22] , ln1=.true., radgrid=.true.) ! liquid phas
+(  321)   call implement_spp_pertn( sm, 'ZRADEFFI'  , [0.78_jprb] , ln1=.true., radgrid=.true., cd_rf_pert_label='ZRADEFFL') ! ice p
+(  322)   call implement_spp_pertn( sm, 'PHR'       , [0.044_jprb,0.064_jprb, 0.064_jprb, 0.034_jprb], &
+(  323)        & knseed_off = [2**28,2**29] , knrf=2, ln1=.false.)  !four different values for LW_ST/ LW_TR/  SW_ST/ SW_TR
+(  324)   call implement_spp_pertn( sm, 'ZHS_VDAERO', [1.04_jprb] , knseed_off = [2**25] , ln1=.true., radgrid=.true.)
+(  325)   call implement_spp_pertn( sm, 'DELTA_AERO', [0.78_jprb] , knseed_off = [2**26] , ln1=.true., radgrid=.true.)
+(  326) 
+(  327)   indef = count(sm%defined_perts /= cp_undefined )
+(  328)   if (indef /= sm%ndef ) then
+(  329)     call abor1('Inconsistency in terms of the number of defined perturbations.')
+(  330)   endif
+(  331)   write(nulout,*) "There are ",sm%ndef," possible perturbations"
+(  332) end subroutine define_spp_ifs
+(  333) 
+(  334) subroutine define_spp_lam( sm, nulout  )
+(  335)   type(spp_model), intent(inout) :: sm
+(  336)   integer(kind=jpim),intent(in)  :: nulout
+(  337)   integer(kind=jpim) :: indef
+(  338) 
+(  339)   sm%version = "SPP for HARMONIE-AROME physics, v1.0"
+(  340)   write(nulout,*) "****************************************"
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:27      page 7
+
+(  341)   write(nulout,*) "define "//sm%version
+(  342)   write(nulout,*) "****************************************"
+(  343) 
+(  344)   !
+(  345)   !   set global default values for SPP configuration
+(  346)   !
+(  347)   sm%tau=43200._jprb      ! 12h;  decorrelation time (s)
+(  348)   sm%sdev=1.0_jprb        !
+(  349)   sm%xlcor = 200.E3_jprb  ! 200km
+(  350) 
+(  351)   sm%kseed_off = 2**8
+(  352)   ! . . .
+(  353) 
+(  354)   !
+(  355)   !   allocate arrays
+(  356)   !
+(  357)   call allocate_spp_model( sm, 19 )
+(  358)   sm%defined_perts = cp_undefined
+(  359) 
+(  360)   !
+(  361)   !  implement perturbations
+(  362)   !
+(  363)   !
+(  364)   call implement_spp_pertn( sm, 'PSIGQSAT'    , [0.6_jprb], knseed_off = [0] ) 
+(  365)   call implement_spp_pertn( sm, 'CLDDPTH'     , [0.1_jprb], knseed_off = [2**1] ) 
+(  366)   call implement_spp_pertn( sm, 'CLDDPTHDP'   , [0.6_jprb], knseed_off = [2**2] ) 
+(  367)   call implement_spp_pertn( sm, 'ICE_CLD_WGT' , [1.2_jprb], knseed_off = [2**3], &
+(  368)                           & xclipmin=0.0_jprb, xclipmax=5.0_jprb ) 
+(  369)   call implement_spp_pertn( sm, 'ICENU'       , [0.1_jprb], knseed_off = [2**4] ) 
+(  370)   call implement_spp_pertn( sm, 'KGN_ACON'    , [0.1_jprb], knseed_off = [2**5] ) 
+(  371)   call implement_spp_pertn( sm, 'KGN_SBGR'    , [0.1_jprb], knseed_off = [2**6], &
+(  372)                           & xclipmin=0.0_jprb, xclipmax=1._jprb ) 
+(  373)   call implement_spp_pertn( sm, 'RADGR'       , [0.1_jprb], knseed_off = [2**7], &
+(  374)                           & xclipmin=0.0_jprb, xclipmax=2._jprb ) 
+(  375)   call implement_spp_pertn( sm, 'RADSN'       , [0.1_jprb], knseed_off = [2**8], &
+(  376)                           & xclipmin=0.0_jprb, xclipmax=2._jprb ) 
+(  377)   call implement_spp_pertn( sm, 'RFAC_TWOC'   , [0.1_jprb], knseed_off = [2**9] ) 
+(  378)   call implement_spp_pertn( sm, 'RZC_H'       , [1.05_jprb], knseed_off = [2**10], &
+(  379)                           & kidistr=2, xuniform_offset=0.475_jprb, &
+(  380)                           & xclipmin=0.0_jprb, xclipmax=5.0_jprb ) 
+(  381)   call implement_spp_pertn( sm, 'RZL_INF'     , [0.45_jprb], knseed_off = [2**12] ) 
+(  382)   call implement_spp_pertn( sm, 'RSWINHF'     , [0.1_jprb], knseed_off = [2**13] ) 
+(  383)   call implement_spp_pertn( sm, 'RLWINHF'     , [0.1_jprb], knseed_off = [2**14] ) 
+(  384)   call implement_spp_pertn( sm, 'ALPHA'       , [0.1_jprb], knseed_off = [2**15] ) 
+(  385)   call implement_spp_pertn( sm, 'RZNUC'       , [0.1_jprb], knseed_off = [2**16] ) 
+(  386)   call implement_spp_pertn( sm, 'RZMFDRY'     , [0.1_jprb], knseed_off = [2**17] ) 
+(  387)   call implement_spp_pertn( sm, 'RZMBCLOSURE' , [0.1_jprb], knseed_off = [2**18] ) 
+(  388)   call implement_spp_pertn( sm, 'SLWIND'      , [0.05_jprb], knseed_off = [2**19], &
+(  389)                           & kidistr=2, &
+(  390)                           & xclipmin=-0.1_jprb, xclipmax=0.1_jprb ) 
+(  391) 
+(  392)   indef = count(sm%defined_perts /= cp_undefined )
+(  393)   if (indef /= sm%ndef ) then
+(  394)     call abor1('Inconsistency in terms of the number of defined perturbations.')
+(  395)   endif
+(  396)   write(nulout,*) "There are ",sm%ndef," possible perturbations"
+(  397)   !
+(  398)   !   inherit global settings
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:27      page 8
+
+(  399)   !
+(  400)   sm%pndef(1:sm%ndef)%tau    = sm%tau
+(  401)   sm%pndef(1:sm%ndef)%sdev   = sm%sdev
+(  402)   sm%pndef(1:sm%ndef)%xlcor  = sm%xlcor
+(  403) 
+(  404) 
+(  405) end subroutine define_spp_lam
+(  406) 
+(  407) 
+(  408) end module spp_def_mod
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:27      page 9
+
+(    1) # 1 "./spp_def_mod.F90"
+(    1) module spp_def_mod
+(    2)   use parkind1, only: jpim, jprb
+(    3)   use spp_gen_mod
+(    4) # 5 "./spp_def_mod.F90"
+(    5)   type spp_pert_pointer
+(    6)     !
+(    7)     !   perturbation pointer type
+(    8)     !
+(    9)     !   A value of -1 implies that the perturbation is off, otherwise
+(   10)     !     it points to the spp_pert perturbation in the spp_model
+(   11)     !
+(   12) # 13 "./spp_def_mod.F90"
+(   13)     ! IFS
+(   14) # 15 "./spp_def_mod.F90"
+(   15)     integer(kind=jpim) :: cfm        = -1
+(   16)     integer(kind=jpim) :: cfm1       = -1
+(   17)     integer(kind=jpim) :: cfm2       = -1
+(   18)     integer(kind=jpim) :: cfm3       = -1
+(   19)     integer(kind=jpim) :: rkap       = -1
+(   20)     integer(kind=jpim) :: rkap1      = -1
+(   21)     integer(kind=jpim) :: rkap2      = -1
+(   22)     integer(kind=jpim) :: rkap3      = -1
+(   23)     integer(kind=jpim) :: tofdc      = -1
+(   24)     integer(kind=jpim) :: hsdt       = -1
+(   25)     integer(kind=jpim) :: vdexc      = -1
+(   26)     integer(kind=jpim) :: entrorg    = -1
+(   27)     integer(kind=jpim) :: entshalp   = -1
+(   28)     integer(kind=jpim) :: entstpc1   = -1
+(   29)     integer(kind=jpim) :: detrpen    = -1
+(   30)     integer(kind=jpim) :: rprcon     = -1
+(   31)     integer(kind=jpim) :: rtau       = -1
+(   32)     integer(kind=jpim) :: cududv     = -1
+(   33)     integer(kind=jpim) :: cududvs    = -1
+(   34)     integer(kind=jpim) :: ramid      = -1
+(   35)     integer(kind=jpim) :: rcldiff    = -1
+(   36)     integer(kind=jpim) :: rclcrit    = -1
+(   37)     integer(kind=jpim) :: rlcritsnow = -1
+(   38)     integer(kind=jpim) :: rainevap   = -1
+(   39)     integer(kind=jpim) :: snowsublim = -1
+(   40)     integer(kind=jpim) :: cloudinhom = -1
+(   41)     integer(kind=jpim) :: qsatvervel = -1
+(   42)     integer(kind=jpim) :: zdecorr    = -1
+(   43)     integer(kind=jpim) :: zsigqcw    = -1
+(   44)     integer(kind=jpim) :: zradeffl   = -1
+(   45)     integer(kind=jpim) :: zradeffi   = -1
+(   46)     integer(kind=jpim) :: phr        = -1
+(   47)     integer(kind=jpim) :: zhs_vdaero = -1
+(   48)     integer(kind=jpim) :: delta_aero = -1
+(   49) # 50 "./spp_def_mod.F90"
+(   50)     ! HARMONIE-AROME
+(   51)     integer(kind=jpim) :: psigqsat   = -1
+(   52)     integer(kind=jpim) :: clddpth    = -1
+(   53)     integer(kind=jpim) :: clddpthdp  = -1
+(   54)     integer(kind=jpim) :: ice_cld_wgt= -1
+(   55)     integer(kind=jpim) :: icenu      = -1
+(   56)     integer(kind=jpim) :: kgn_acon   = -1
+(   57)     integer(kind=jpim) :: kgn_sbgr   = -1
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:27      page 10
+
+(   58)     integer(kind=jpim) :: radgr      = -1
+(   59)     integer(kind=jpim) :: radsn      = -1
+(   60)     integer(kind=jpim) :: rfac_twoc  = -1
+(   61)     integer(kind=jpim) :: rzc_h      = -1
+(   62)     integer(kind=jpim) :: rzl_inf    = -1
+(   63)     integer(kind=jpim) :: rswinhf    = -1
+(   64)     integer(kind=jpim) :: rlwinhf    = -1
+(   65)     integer(kind=jpim) :: alpha      = -1
+(   66)     integer(kind=jpim) :: rznuc      = -1
+(   67)     integer(kind=jpim) :: rzmfdry    = -1
+(   68)     integer(kind=jpim) :: rzmbclosure= -1
+(   69)     integer(kind=jpim) :: slwind     = -1
+(   70) # 71 "./spp_def_mod.F90"
+(   71)   contains
+(   72)     procedure :: set => set_spp_pert_pointer
+(   73) # 74 "./spp_def_mod.F90"
+(   74)   end type spp_pert_pointer
+(   75) # 77 "./spp_def_mod.F90"
+(   77) contains
+(   78) # 79 "./spp_def_mod.F90"
+(   79)   subroutine set_spp_pert_pointer( this, cd_pert, kptr )
+(   80)     !
+(   81)     !   set this%<cd_pert> = kptr
+(   82)     !
+(   83) # 83 "./spp_def_mod.F90"
+(   83) # 1 "./abor1.intfb.h"
+(    1) INTERFACE
+(    2) SUBROUTINE ABOR1 (CDMESS)
+(    3) !$acc routine (ABOR1) seq
+(    4) CHARACTER (LEN=*) :: CDMESS
+(    5) END SUBROUTINE
+(    6) # 7 "./abor1.intfb.h"
+(    7) END INTERFACE
+(    8) # 84 "./spp_def_mod.F90"
+(   84) # 84 "./spp_def_mod.F90"
+(   84)     class(spp_pert_pointer)   :: this
+(   85)     character(len=jp_lab_len), intent(in) :: cd_pert   ! name of perturbation
+(   86)     integer(kind=jpim),        intent(in) :: kptr      ! pointer to perturbation
+(   87) # 88 "./spp_def_mod.F90"
+(   88)     select case(cd_pert)
+(   89) # 90 "./spp_def_mod.F90"
+(   90) !     IFS 
+(   91) # 92 "./spp_def_mod.F90"
+(   92)       case ('CFM')
+(   93)         this%cfm         = kptr
+(   94)       case ('CFM1')
+(   95)         this%cfm1        = kptr
+(   96)       case ('CFM2')
+(   97)         this%cfm2        = kptr
+(   98)       case ('CFM3')
+(   99)         this%cfm3        = kptr
+(  100)       case ('RKAP')
+(  101)         this%rkap        = kptr
+(  102)       case ('RKAP1')
+(  103)         this%rkap1       = kptr
+(  104)       case ('RKAP2')
+(  105)         this%rkap2       = kptr
+(  106)       case ('RKAP3')
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:27      page 11
+
+(  107)         this%rkap3       = kptr
+(  108)       case ('TOFDC')
+(  109)         this%tofdc       = kptr
+(  110)       case ('HSDT')
+(  111)         this%hsdt        = kptr
+(  112)       case ('VDEXC')
+(  113)         this%vdexc       = kptr
+(  114)       case ('ENTRORG')
+(  115)         this%entrorg     = kptr
+(  116)       case ('ENTSHALP')
+(  117)         this%entshalp    = kptr
+(  118)       case ('ENTSTPC1')
+(  119)         this%entstpc1    = kptr
+(  120)       case ('DETRPEN')
+(  121)         this%detrpen     = kptr
+(  122)       case ('RPRCON')
+(  123)         this%rprcon      = kptr
+(  124)       case ('RTAU')
+(  125)         this%rtau        = kptr
+(  126)       case ('CUDUDV')
+(  127)         this%cududv      = kptr
+(  128)       case ('CUDUDVS')
+(  129)         this%cududvs     = kptr
+(  130)       case ('RAMID')
+(  131)         this%ramid       = kptr
+(  132)       case ('RCLDIFF')
+(  133)         this%rcldiff     = kptr
+(  134)       case ('RCLCRIT')
+(  135)         this%rclcrit     = kptr
+(  136)       case ('RLCRITSNOW')
+(  137)         this%rlcritsnow  = kptr
+(  138)       case ('CLOUDINHOM')
+(  139)         this%cloudinhom  = kptr
+(  140)       case ('RAINEVAP')
+(  141)         this%rainevap    = kptr
+(  142)       case ('SNOWSUBLIM')
+(  143)         this%snowsublim  = kptr
+(  144)       case ('QSATVERVEL')
+(  145)         this%qsatvervel  = kptr
+(  146)       case ('ZDECORR')
+(  147)         this%zdecorr     = kptr
+(  148)       case ('ZSIGQCW')
+(  149)         this%zsigqcw     = kptr
+(  150)       case ('ZRADEFFL')
+(  151)         this%zradeffl    = kptr
+(  152)       case ('ZRADEFFI')
+(  153)         this%zradeffi    = kptr
+(  154)       case ('PHR')
+(  155)         this%phr         = kptr
+(  156)       case ('ZHS_VDAERO')
+(  157)         this%zhs_vdaero  = kptr
+(  158)       case ('DELTA_AERO')
+(  159)         this%delta_aero  = kptr
+(  160) # 161 "./spp_def_mod.F90"
+(  161) !     HARMONIE-AROME 
+(  162)       case ('PSIGQSAT')
+(  163)         this%psigqsat    = kptr
+(  164)       case ('CLDDPTH')
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:27      page 12
+
+(  165)         this%clddpth     = kptr
+(  166)       case ('CLDDPTHDP')
+(  167)         this%clddpthdp   = kptr
+(  168)       case ('ICE_CLD_WGT')
+(  169)         this%ice_cld_wgt = kptr
+(  170)       case ('ICENU')
+(  171)         this%icenu       = kptr
+(  172)       case ('KGN_ACON')
+(  173)         this%kgn_acon    = kptr
+(  174)       case ('KGN_SBGR')
+(  175)         this%kgn_sbgr    = kptr
+(  176)       case ('RADGR')
+(  177)         this%radgr       = kptr
+(  178)       case ('RADSN')
+(  179)         this%radsn       = kptr
+(  180)       case ('RFAC_TWOC')
+(  181)         this%rfac_twoc   = kptr
+(  182)       case ('RZC_H')
+(  183)         this%rzc_h       = kptr
+(  184)       case ('RZL_INF')
+(  185)         this%rzl_inf     = kptr
+(  186)       case ('RSWINHF')
+(  187)         this%rswinhf     = kptr
+(  188)       case ('RLWINHF')
+(  189)         this%rlwinhf     = kptr
+(  190)       case ('ALPHA')
+(  191)         this%alpha       = kptr
+(  192)       case ('RZNUC')
+(  193)         this%rznuc       = kptr
+(  194)       case ('RZMFDRY')
+(  195)         this%rzmfdry     = kptr
+(  196)       case ('RZMBCLOSURE')
+(  197)         this%rzmbclosure = kptr
+(  198)       case ('SLWIND')
+(  199)         this%slwind      = kptr
+(  200) # 201 "./spp_def_mod.F90"
+(  201)       case default
+(  202)         call abor1("spp_pert_pointer%set: the perturbation label is unknown.")
+(  203)     end select
+(  204) # 205 "./spp_def_mod.F90"
+(  205)   end subroutine set_spp_pert_pointer
+(  206) # 208 "./spp_def_mod.F90"
+(  208) subroutine define_spp_arpege( sm, nulout )
+(  209) # 210 "./spp_def_mod.F90"
+(  210) # 1 "./abor1.intfb.h"
+(    1) INTERFACE
+(    2) SUBROUTINE ABOR1 (CDMESS)
+(    3) !$acc routine (ABOR1) seq
+(    4) CHARACTER (LEN=*) :: CDMESS
+(    5) END SUBROUTINE
+(    6) # 7 "./abor1.intfb.h"
+(    7) END INTERFACE
+(    8) # 211 "./spp_def_mod.F90"
+(  211) # 211 "./spp_def_mod.F90"
+(  211)   type(spp_model), intent(inout) :: sm
+(  212)   integer(kind=jpim),intent(in)  :: nulout
+(  213)   integer(kind=jpim) :: indef
+(  214) # 215 "./spp_def_mod.F90"
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:27      page 13
+
+(  215)   sm%version = "SPP for ARPEGE physics, v0.1"
+(  216)   write(nulout,*) "****************************************"
+(  217)   write(nulout,*) "define "//sm%version
+(  218)   write(nulout,*) "****************************************"
+(  219) # 220 "./spp_def_mod.F90"
+(  220)   !
+(  221)   !   set global default values for SPP configuration
+(  222)   !
+(  223)   sm%tau=259.2E3_jprb ! 72h;  decorrelation time (s)
+(  224)   sm%sdev=1.0_jprb
+(  225)   sm%xlcor = 2000.E3_jprb  ! 2000km; (m)
+(  226) # 227 "./spp_def_mod.F90"
+(  227)   sm%kseed_off = 2**8
+(  228)   ! . . .
+(  229) # 230 "./spp_def_mod.F90"
+(  230)   !
+(  231)   !   allocate arrays
+(  232)   !
+(  233)   call allocate_spp_model( sm, 20 )
+(  234)   sm%defined_perts = cp_undefined
+(  235) # 236 "./spp_def_mod.F90"
+(  236)   !
+(  237)   !  implement perturbations
+(  238)   !  to be filled
+(  239)   !
+(  240) # 241 "./spp_def_mod.F90"
+(  241)   indef = count(sm%defined_perts /= cp_undefined )
+(  242)   if (indef /= sm%ndef ) then
+(  243)     call abor1('Inconsistency in terms of the number of defined perturbations.')
+(  244)   endif
+(  245)   write(nulout,*) "There are ",sm%ndef," possible perturbations"
+(  246)   !
+(  247)   !   inherit global settings
+(  248)   !
+(  249)   sm%pndef(1:sm%ndef)%tau    = sm%tau
+(  250)   sm%pndef(1:sm%ndef)%sdev   = sm%sdev
+(  251)   sm%pndef(1:sm%ndef)%xlcor  = sm%xlcor
+(  252) # 254 "./spp_def_mod.F90"
+(  254) end subroutine define_spp_arpege
+(  255) # 256 "./spp_def_mod.F90"
+(  256) subroutine define_spp_ifs( sm, nulout  )
+(  257)   !
+(  258)   !   For a science reference see
+(  259)   !       Ollinaho et al. (2017), https://doi.org/10.1002/qj.3926
+(  260)   !       Lang et al. (2021) https://doi.org/10.1002/qj.3978
+(  261) # 262 "./spp_def_mod.F90"
+(  262) # 1 "./abor1.intfb.h"
+(    1) INTERFACE
+(    2) SUBROUTINE ABOR1 (CDMESS)
+(    3) !$acc routine (ABOR1) seq
+(    4) CHARACTER (LEN=*) :: CDMESS
+(    5) END SUBROUTINE
+(    6) # 7 "./abor1.intfb.h"
+(    7) END INTERFACE
+(    8) # 263 "./spp_def_mod.F90"
+(  263) # 264 "./spp_def_mod.F90"
+(  264)   type(spp_model), intent(inout) :: sm
+(  265)   integer(kind=jpim),intent(in)  :: nulout
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:27      page 14
+
+(  266)   integer(kind=jpim) :: indef
+(  267) # 268 "./spp_def_mod.F90"
+(  268)   sm%version = "SPP for IFS physics"
+(  269)   write(nulout,*) "****************************************"
+(  270)   write(nulout,*) "define "//sm%version
+(  271)   write(nulout,*) "****************************************"
+(  272) # 273 "./spp_def_mod.F90"
+(  273)   !
+(  274)   !   set global default values for SPP configuration
+(  275)   !
+(  276)   sm%tau=259.2E3_jprb ! 72h;  decorrelation time (s)
+(  277)   sm%sdev=1.0_jprb
+(  278)   sm%xlcor = 1000.E3_jprb  ! 2000km; (m)
+(  279) # 280 "./spp_def_mod.F90"
+(  280)   sm%kseed_off = 2**8
+(  281)   !
+(  282)   !   allocate arrays
+(  283)   !
+(  284)   call allocate_spp_model( sm, 36 )
+(  285)   sm%defined_perts = cp_undefined
+(  286)   !
+(  287)   !  implement perturbations
+(  288)   !
+(  289)   !
+(  290)   call implement_spp_pertn( sm, 'CFM'       , [0.78_jprb,0.33_jprb] , knseed_off =[0], ln1=.true.) ! amplitudes for [land, ocean]
+(  291)   call implement_spp_pertn( sm, 'CFM1'      , [0.65_jprb,0.26_jprb] , cd_rf_pert_label='CFM' , ln1=.true.)
+(  292)   call implement_spp_pertn( sm, 'CFM2'      , [0.78_jprb,0.33_jprb] , cd_rf_pert_label='CFM' , ln1=.false.)
+(  293)   call implement_spp_pertn( sm, 'CFM3'      , [0.78_jprb,0.33_jprb] , cd_rf_pert_label='CFM' , ln1=.false.)
+(  294)   call implement_spp_pertn( sm, 'RKAP'      , [0.26_jprb] , knseed_off =[2**30 + 2**15], ln1=.false.)
+(  295)   call implement_spp_pertn( sm, 'RKAP1'     , [0.065_jprb], cd_rf_pert_label='RKAP', ln1=.true.)
+(  296)   call implement_spp_pertn( sm, 'RKAP2'     , [0.26_jprb] , cd_rf_pert_label='RKAP', ln1=.false.)
+(  297)   call implement_spp_pertn( sm, 'RKAP3'     , [0.26_jprb] , cd_rf_pert_label='RKAP', ln1=.false.)
+(  298)   call implement_spp_pertn( sm, 'TOFDC'     , [0.78_jprb] , knseed_off = [2** 8], ln1=.true. )
+(  299)   call implement_spp_pertn( sm, 'HSDT'      , [0.52_jprb] , knseed_off = [2** 9], ln1=.true. )
+(  300)   call implement_spp_pertn( sm, 'VDEXC'     , [1.04_jprb] , knseed_off = [2**10], ln1=.true. )
+(  301)   call implement_spp_pertn( sm, 'ENTRORG'   , [0.39_jprb] , knseed_off = [2**11] , ln1=.true.)
+(  302)   call implement_spp_pertn( sm, 'ENTSHALP'  , [0.39_jprb] , knseed_off = [2**12] , ln1=.true.)
+(  303)   call implement_spp_pertn( sm, 'ENTSTPC1'  , [0.39_jprb] , knseed_off = [2**30 + 2**12], ln1=.true.)
+(  304)   call implement_spp_pertn( sm, 'DETRPEN'   , [0.39_jprb] , knseed_off = [2**13] , ln1=.true.)
+(  305)   call implement_spp_pertn( sm, 'RPRCON'    , [0.52_jprb] , knseed_off = [2**14] , ln1=.true.)
+(  306)   call implement_spp_pertn( sm, 'RTAU'      , [0.78_jprb] , knseed_off = [2**15] , ln1=.true.)
+(  307)   call implement_spp_pertn( sm, 'CUDUDV'    , [0.122_jprb, 0.122_jprb] , knseed_off = [2**23] , kidistr=0)
+(  308)   call implement_spp_pertn( sm, 'CUDUDVS'   , [0.133_jprb, 0.133_jprb] , knseed_off = [2**24] , kidistr=0)
+(  309)   call implement_spp_pertn( sm, 'RAMID'     , [0.13_jprb] , knseed_off = [2**16] , ln1=.true.)
+(  310)   call implement_spp_pertn( sm, 'RCLDIFF'   , [1.04_jprb] , knseed_off = [2**17] , ln1=.true.)
+(  311)   call implement_spp_pertn( sm, 'RCLCRIT'   , [1.04_jprb, 1.04_jprb] , knseed_off = [2**18] , ln1=.true.) ! land, sea
+(  312)   call implement_spp_pertn( sm, 'RLCRITSNOW', [0.78_jprb] , knseed_off = [2**19] , ln1=.true.)
+(  313)   call implement_spp_pertn( sm, 'RAINEVAP'  , [0.65_jprb] , knseed_off = [2**30] , ln1=.true.)
+(  314)   call implement_spp_pertn( sm, 'SNOWSUBLIM', [0.65_jprb] , knseed_off = [2**30 + 2**8] , ln1=.true.)
+(  315)   call implement_spp_pertn( sm, 'CLOUDINHOM', [0.3_jprb,0.3_jprb] , knseed_off = [2**30 + 2**10, 2**30 + 2**11]&
+(  316)        , ln1=.true., knrf=2) ! autoconversion, accretion
+(  317)   call implement_spp_pertn( sm, 'QSATVERVEL', [0.39_jprb] , knseed_off = [2**30 + 2**9] , ln1=.true.)
+(  318)   call implement_spp_pertn( sm, 'ZDECORR'   , [0.78_jprb] , knseed_off = [2**20] , ln1=.true., radgrid=.true.)
+(  319)   call implement_spp_pertn( sm, 'ZSIGQCW'   , [0.52_jprb] , knseed_off = [2**21] , ln1=.true., radgrid=.true.)
+(  320)   call implement_spp_pertn( sm, 'ZRADEFFL'  , [0.78_jprb] , knseed_off = [2**22] , ln1=.true., radgrid=.true.) ! liquid phase
+(  321)   call implement_spp_pertn( sm, 'ZRADEFFI'  , [0.78_jprb] , ln1=.true., radgrid=.true., cd_rf_pert_label='ZRADEFFL') ! ice phase
+(  322)   call implement_spp_pertn( sm, 'PHR'       , [0.044_jprb,0.064_jprb, 0.064_jprb, 0.034_jprb], &
+(  323)        & knseed_off = [2**28,2**29] , knrf=2, ln1=.false.)  !four different values for LW_ST/ LW_TR/  SW_ST/ SW_TR
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:27      page 15
+
+(  324)   call implement_spp_pertn( sm, 'ZHS_VDAERO', [1.04_jprb] , knseed_off = [2**25] , ln1=.true., radgrid=.true.)
+(  325)   call implement_spp_pertn( sm, 'DELTA_AERO', [0.78_jprb] , knseed_off = [2**26] , ln1=.true., radgrid=.true.)
+(  326) # 327 "./spp_def_mod.F90"
+(  327)   indef = count(sm%defined_perts /= cp_undefined )
+(  328)   if (indef /= sm%ndef ) then
+(  329)     call abor1('Inconsistency in terms of the number of defined perturbations.')
+(  330)   endif
+(  331)   write(nulout,*) "There are ",sm%ndef," possible perturbations"
+(  332) end subroutine define_spp_ifs
+(  333) # 334 "./spp_def_mod.F90"
+(  334) subroutine define_spp_lam( sm, nulout  )
+(  335)   type(spp_model), intent(inout) :: sm
+(  336)   integer(kind=jpim),intent(in)  :: nulout
+(  337)   integer(kind=jpim) :: indef
+(  338) # 339 "./spp_def_mod.F90"
+(  339)   sm%version = "SPP for HARMONIE-AROME physics, v1.0"
+(  340)   write(nulout,*) "****************************************"
+(  341)   write(nulout,*) "define "//sm%version
+(  342)   write(nulout,*) "****************************************"
+(  343) # 344 "./spp_def_mod.F90"
+(  344)   !
+(  345)   !   set global default values for SPP configuration
+(  346)   !
+(  347)   sm%tau=43200._jprb      ! 12h;  decorrelation time (s)
+(  348)   sm%sdev=1.0_jprb        !
+(  349)   sm%xlcor = 200.E3_jprb  ! 200km
+(  350) # 351 "./spp_def_mod.F90"
+(  351)   sm%kseed_off = 2**8
+(  352)   ! . . .
+(  353) # 354 "./spp_def_mod.F90"
+(  354)   !
+(  355)   !   allocate arrays
+(  356)   !
+(  357)   call allocate_spp_model( sm, 19 )
+(  358)   sm%defined_perts = cp_undefined
+(  359) # 360 "./spp_def_mod.F90"
+(  360)   !
+(  361)   !  implement perturbations
+(  362)   !
+(  363)   !
+(  364)   call implement_spp_pertn( sm, 'PSIGQSAT'    , [0.6_jprb], knseed_off = [0] ) 
+(  365)   call implement_spp_pertn( sm, 'CLDDPTH'     , [0.1_jprb], knseed_off = [2**1] ) 
+(  366)   call implement_spp_pertn( sm, 'CLDDPTHDP'   , [0.6_jprb], knseed_off = [2**2] ) 
+(  367)   call implement_spp_pertn( sm, 'ICE_CLD_WGT' , [1.2_jprb], knseed_off = [2**3], &
+(  368)                           & xclipmin=0.0_jprb, xclipmax=5.0_jprb ) 
+(  369)   call implement_spp_pertn( sm, 'ICENU'       , [0.1_jprb], knseed_off = [2**4] ) 
+(  370)   call implement_spp_pertn( sm, 'KGN_ACON'    , [0.1_jprb], knseed_off = [2**5] ) 
+(  371)   call implement_spp_pertn( sm, 'KGN_SBGR'    , [0.1_jprb], knseed_off = [2**6], &
+(  372)                           & xclipmin=0.0_jprb, xclipmax=1._jprb ) 
+(  373)   call implement_spp_pertn( sm, 'RADGR'       , [0.1_jprb], knseed_off = [2**7], &
+(  374)                           & xclipmin=0.0_jprb, xclipmax=2._jprb ) 
+(  375)   call implement_spp_pertn( sm, 'RADSN'       , [0.1_jprb], knseed_off = [2**8], &
+(  376)                           & xclipmin=0.0_jprb, xclipmax=2._jprb ) 
+(  377)   call implement_spp_pertn( sm, 'RFAC_TWOC'   , [0.1_jprb], knseed_off = [2**9] ) 
+(  378)   call implement_spp_pertn( sm, 'RZC_H'       , [1.05_jprb], knseed_off = [2**10], &
+(  379)                           & kidistr=2, xuniform_offset=0.475_jprb, &
+(  380)                           & xclipmin=0.0_jprb, xclipmax=5.0_jprb ) 
+(  381)   call implement_spp_pertn( sm, 'RZL_INF'     , [0.45_jprb], knseed_off = [2**12] ) 
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:27      page 16
+
+(  382)   call implement_spp_pertn( sm, 'RSWINHF'     , [0.1_jprb], knseed_off = [2**13] ) 
+(  383)   call implement_spp_pertn( sm, 'RLWINHF'     , [0.1_jprb], knseed_off = [2**14] ) 
+(  384)   call implement_spp_pertn( sm, 'ALPHA'       , [0.1_jprb], knseed_off = [2**15] ) 
+(  385)   call implement_spp_pertn( sm, 'RZNUC'       , [0.1_jprb], knseed_off = [2**16] ) 
+(  386)   call implement_spp_pertn( sm, 'RZMFDRY'     , [0.1_jprb], knseed_off = [2**17] ) 
+(  387)   call implement_spp_pertn( sm, 'RZMBCLOSURE' , [0.1_jprb], knseed_off = [2**18] ) 
+(  388)   call implement_spp_pertn( sm, 'SLWIND'      , [0.05_jprb], knseed_off = [2**19], &
+(  389)                           & kidistr=2, &
+(  390)                           & xclipmin=-0.1_jprb, xclipmax=0.1_jprb ) 
+(  391) # 392 "./spp_def_mod.F90"
+(  392)   indef = count(sm%defined_perts /= cp_undefined )
+(  393)   if (indef /= sm%ndef ) then
+(  394)     call abor1('Inconsistency in terms of the number of defined perturbations.')
+(  395)   endif
+(  396)   write(nulout,*) "There are ",sm%ndef," possible perturbations"
+(  397)   !
+(  398)   !   inherit global settings
+(  399)   !
+(  400)   sm%pndef(1:sm%ndef)%tau    = sm%tau
+(  401)   sm%pndef(1:sm%ndef)%sdev   = sm%sdev
+(  402)   sm%pndef(1:sm%ndef)%xlcor  = sm%xlcor
+(  403) # 405 "./spp_def_mod.F90"
+(  405) end subroutine define_spp_lam
+(  406) # 408 "./spp_def_mod.F90"
+(  408) end module spp_def_mod

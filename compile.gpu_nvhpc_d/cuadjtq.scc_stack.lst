@@ -1,0 +1,1511 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./cuadjtq.scc_stack.F90
+
+(    1) ! (C) Copyright 1988- ECMWF.
+(    2) !
+(    3) ! This software is licensed under the terms of the Apache Licence Version 2.0
+(    4) ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+(    5) !
+(    6) ! In applying this licence, ECMWF does not waive the privileges and immunities
+(    7) ! granted to it by virtue of its status as an intergovernmental organisation
+(    8) ! nor does it submit to any jurisdiction.
+(    9) MODULE CUADJTQ_LOKI_MOD
+(   10)   CONTAINS
+(   11)   SUBROUTINE CUADJTQ_LOKI (YDTHF, YDCST, YDEPHLI, KIDIA, KFDIA, KLON, KLEV, KK, PSP, PT, PQ, LDFLAG, KCALL, LDOFLAG, YDSTACK
+(   12)     
+(   13)     !          PURPOSE.
+(   14)     !          --------
+(   15)     !          TO PRODUCE T,Q AND L VALUES FOR CLOUD ASCENT
+(   16)     
+(   17)     !          INTERFACE
+(   18)     !          ---------
+(   19)     !          THIS ROUTINE IS CALLED FROM SUBROUTINES:
+(   20)     !              *COND*     (T AND Q AT CONDENSATION LEVEL)
+(   21)     !              *CUBASE*   (T AND Q AT CONDENSATION LEVEL)
+(   22)     !              *CUASC*    (T AND Q AT CLOUD LEVELS)
+(   23)     !              *CUINI*    (ENVIRONMENTAL T AND QS VALUES AT HALF LEVELS)
+(   24)     !              *CUSTRAT*  (T AND Q AT CONDENSATION LEVEL)
+(   25)     !          INPUT ARE UNADJUSTED T AND Q VALUES,
+(   26)     !          IT RETURNS ADJUSTED VALUES OF T AND Q
+(   27)     
+(   28)     !     PARAMETER     DESCRIPTION                                   UNITS
+(   29)     !     ---------     -----------                                   -----
+(   30)     !     INPUT PARAMETERS (INTEGER):
+(   31)     
+(   32)     !    *KIDIA*        START POINT
+(   33)     !    *KFDIA*        END POINT
+(   34)     !    *KLON*         NUMBER OF GRID POINTS PER PACKET
+(   35)     !    *KLEV*         NUMBER OF LEVELS
+(   36)     !    *KK*           LEVEL
+(   37)     !    *KCALL*        DEFINES CALCULATION AS
+(   38)     !                      KCALL=0  ENV. T AND QS IN*CUINI*
+(   39)     !                      KCALL=1  CONDENSATION IN UPDRAFTS  (E.G. CUBASE, CUASC)
+(   40)     !                      KCALL=2  EVAPORATION IN DOWNDRAFTS (E.G. CUDLFS,CUDDRAF)
+(   41)     
+(   42)     !     INPUT PARAMETERS (LOGICAL):
+(   43)     
+(   44)     !    *LDLAND*       LAND-SEA MASK (.TRUE. FOR LAND POINTS)
+(   45)     
+(   46)     !     INPUT PARAMETERS (REAL):
+(   47)     
+(   48)     !    *PSP*          PRESSURE                                        PA
+(   49)     
+(   50)     !     UPDATED PARAMETERS (REAL):
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 2
+
+(   51)     
+(   52)     !    *PT*           TEMPERATURE                                     K
+(   53)     !    *PQ*           SPECIFIC HUMIDITY                             KG/KG
+(   54)     
+(   55)     !          EXTERNALS
+(   56)     !          ---------
+(   57)     !          3 LOOKUP TABLES ( TLUCUA, TLUCUB, TLUCUC )
+(   58)     !          FOR CONDENSATION CALCULATIONS.
+(   59)     !          THE TABLES ARE INITIALISED IN *SUPHEC*.
+(   60)     
+(   61)     !     AUTHOR.
+(   62)     !     -------
+(   63)     !      M.TIEDTKE         E.C.M.W.F.     12/89
+(   64)     
+(   65)     !     MODIFICATIONS.
+(   66)     !     --------------
+(   67)     !      J.HAGUE               03-01-13   MASS Vector Functions
+(   68)     !      J.HAGUE               03-07-07   More MASS V.F.
+(   69)     !      M.Hamrud              01-Oct-2003 CY28 Cleaning
+(   70)     !      J.Hague & D.Salmond   22-Nov-2005 Optimisations
+(   71)     !     R. El Khatib 22-Jun-2022 A contribution to simplify phasing after the refactoring of YOMCLI/YOMCST/YOETHF.
+(   72)     !----------------------------------------------------------------------
+(   73)     
+(   74)     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY: REAL64
+(   75)     USE, intrinsic :: ISO_C_BINDING, ONLY: C_SIZEOF
+(   76)     USE PARKIND1, ONLY: JPIM, JPRB
+(   77)     USE YOMHOOK, ONLY: LHOOK, JPHOOK
+(   78)     
+(   79)     USE YOMCST, ONLY: TCST
+(   80)     USE YOETHF, ONLY: TTHF
+(   81)     USE YOEPHLI, ONLY: TEPHLI
+(   82)     
+(   83)     IMPLICIT NONE
+(   84)     
+(   85)     TYPE(TTHF), INTENT(IN) :: YDTHF
+(   86)     TYPE(TCST), INTENT(IN) :: YDCST
+(   87)     TYPE(TEPHLI), INTENT(IN) :: YDEPHLI
+(   88)     INTEGER(KIND=JPIM), INTENT(IN) :: KIDIA
+(   89)     INTEGER(KIND=JPIM), INTENT(IN) :: KFDIA
+(   90)     INTEGER(KIND=JPIM), INTENT(IN) :: KLON
+(   91)     INTEGER(KIND=JPIM), INTENT(IN) :: KLEV
+(   92)     INTEGER(KIND=JPIM), INTENT(IN) :: KK
+(   93)     REAL(KIND=JPRB), INTENT(IN) :: PSP(KLON)
+(   94)     REAL(KIND=JPRB), INTENT(INOUT) :: PT(KLON, KLEV)
+(   95)     REAL(KIND=JPRB), INTENT(INOUT) :: PQ(KLON, KLEV)
+(   96)     LOGICAL, INTENT(IN) :: LDFLAG(KLON)
+(   97)     INTEGER(KIND=JPIM), INTENT(IN) :: KCALL
+(   98)     LOGICAL, OPTIONAL, INTENT(IN) :: LDOFLAG(KLON)
+(   99)     
+(  100)     INTEGER(KIND=JPIM) :: JL
+(  101)     
+(  102)     REAL(KIND=JPRB) :: Z1S, CUADJTQ_Z2S, CUADJTQ_ZCOND, CUADJTQ_ZCOND1, CUADJTQ_ZCOR, ZFOEEWI, ZFOEEWL, CUADJTQ_ZOEALFA,  &
+(  103)     & CUADJTQ_ZQMAX, CUADJTQ_ZQSAT, CUADJTQ_ZTARG, CUADJTQ_ZQP
+(  104)     REAL(KIND=JPRB) :: ZL, ZI, ZF
+(  105)     
+(  106)     LOGICAL :: CUADJTQ_LLFLAG
+(  107)     
+(  108) #include "abor1.intfb.h"
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 3
+
+(  109)     
+(  110)     !DIR$ VFUNCTION EXPHF
+(  111) #include "fcttre.func.h"
+(  112) #include "cuadjtq.func.h"
+(  113)     
+(  114)     !     STATEMENT FUNCTIONS
+(  115)     
+(  116)     REAL(KIND=JPHOOK) :: CUADJTQ_ZHOOK_HANDLE
+(  117) !$acc routine vector
+(  118)     INTEGER(KIND=8) :: YLSTACK_L
+(  119)     INTEGER(KIND=8), INTENT(INOUT) :: YDSTACK_L
+(  120)     YLSTACK_L = YDSTACK_L
+(  121) !$acc data present( PSP, PT, PQ, LDFLAG, LDOFLAG, YDTHF, YDCST, YDEPHLI )
+(  122)     
+(  123)     !----------------------------------------------------------------------
+(  124)     
+(  125)     !     1.           DEFINE CONSTANTS
+(  126)     !                  ----------------
+(  127)     
+(  128)     
+(  129)     !IF (LHOOK) CALL DR_HOOK('CUADJTQ',0,ZHOOK_HANDLE)
+(  130)     
+(  131)     
+(  132)     CUADJTQ_ZQMAX = 0.5_JPRB
+(  133)     
+(  134)     !*********************************************
+(  135)     
+(  136) !$acc loop vector
+(  137)     DO JL=KIDIA,KFDIA
+(  138)       IF (.not.YDEPHLI%LPHYLIN) THEN
+(  139)         !*********************************************
+(  140)         
+(  141)         !     2.           CALCULATE CONDENSATION AND ADJUST T AND Q ACCORDINGLY
+(  142)         !                  -----------------------------------------------------
+(  143)         
+(  144)         IF (KCALL == 1 .or. KCALL == 6) THEN
+(  145)           
+(  146)           !   mixed phase saturation
+(  147)           
+(  148)           CUADJTQ_LLFLAG = LDFLAG(JL)
+(  149)           IF (KCALL == 6) THEN
+(  150)             IF (PRESENT(LDOFLAG)) THEN
+(  151)               CUADJTQ_LLFLAG = CUADJTQ_LLFLAG .and. .not.LDOFLAG(JL)
+(  152)             END IF
+(  153)           END IF
+(  154)           
+(  155)           IF (CUADJTQ_LLFLAG) THEN
+(  156)             CUADJTQ_ZQP = 1.0_JPRB / PSP(JL)
+(  157)             ZL = 1.0_JPRB / (PT(JL, KK) - YDTHF%R4LES)
+(  158)             ZI = 1.0_JPRB / (PT(JL, KK) - YDTHF%R4IES)
+(  159)             !       ZQSAT=FOEEWMCU(PT(JL,KK))*ZQP
+(  160)             CUADJTQ_ZQSAT = YDTHF%R2ES*(FOEALFCU(PT(JL, KK))*EXP(YDTHF%R3LES*(PT(JL, KK) - YDCST%RTT)*ZL) + (1.0_JPRB -  &
+(  161)             & FOEALFCU(PT(JL, KK)))*EXP(YDTHF%R3IES*(PT(JL, KK) - YDCST%RTT)*ZI))
+(  162)             CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZQP
+(  163)             CUADJTQ_ZQSAT = MIN(0.5_JPRB, CUADJTQ_ZQSAT)
+(  164)             CUADJTQ_ZCOR = 1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT
+(  165)             ZF = FOEALFCU(PT(JL, KK))*YDTHF%R5ALVCP*ZL**2 + (1.0_JPRB - FOEALFCU(PT(JL, KK)))*YDTHF%R5ALSCP*ZI**2
+(  166)             CUADJTQ_ZCOND = (PQ(JL, KK)*CUADJTQ_ZCOR**2 - CUADJTQ_ZQSAT*CUADJTQ_ZCOR) / (CUADJTQ_ZCOR**2 + CUADJTQ_ZQSAT*ZF)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 4
+
+(  167)             CUADJTQ_ZCOND = MAX(CUADJTQ_ZCOND, 0.0_JPRB)
+(  168)             PT(JL, KK) = PT(JL, KK) + FOELDCPMCU(PT(JL, KK))*CUADJTQ_ZCOND
+(  169)             PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND
+(  170)             ZL = 1.0_JPRB / (PT(JL, KK) - YDTHF%R4LES)
+(  171)             ZI = 1.0_JPRB / (PT(JL, KK) - YDTHF%R4IES)
+(  172)             !       ZQSAT=FOEEWMCU(PT(JL,KK))*ZQP
+(  173)             CUADJTQ_ZQSAT = YDTHF%R2ES*(FOEALFCU(PT(JL, KK))*EXP(YDTHF%R3LES*(PT(JL, KK) - YDCST%RTT)*ZL) + (1.0_JPRB -  &
+(  174)             & FOEALFCU(PT(JL, KK)))*EXP(YDTHF%R3IES*(PT(JL, KK) - YDCST%RTT)*ZI))
+(  175)             CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZQP
+(  176)             CUADJTQ_ZQSAT = FMINJ(0.5_JPRB, CUADJTQ_ZQSAT)
+(  177)             CUADJTQ_ZCOR = 1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT
+(  178)             ZF = FOEALFCU(PT(JL, KK))*YDTHF%R5ALVCP*ZL**2 + (1.0_JPRB - FOEALFCU(PT(JL, KK)))*YDTHF%R5ALSCP*ZI**2
+(  179)             CUADJTQ_ZCOND1 = (PQ(JL, KK)*CUADJTQ_ZCOR**2 - CUADJTQ_ZQSAT*CUADJTQ_ZCOR) / (CUADJTQ_ZCOR**2 + CUADJTQ_ZQSAT*ZF
+(  180)             IF (CUADJTQ_ZCOND == 0.0_JPRB) CUADJTQ_ZCOND1 = 0.0_JPRB
+(  181)             PT(JL, KK) = PT(JL, KK) + FOELDCPMCU(PT(JL, KK))*CUADJTQ_ZCOND1
+(  182)             PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND1
+(  183)           END IF
+(  184)           
+(  185)           IF (KCALL == 6) THEN
+(  186)             
+(  187)             IF (LDFLAG(JL) .and. LDOFLAG(JL)) THEN
+(  188)               CUADJTQ_ZQP = 1.0_JPRB / PSP(JL)
+(  189)               ZL = 1.0_JPRB / (PT(JL, KK) - YDTHF%R4LES)
+(  190)               CUADJTQ_ZQSAT = YDTHF%R2ES*EXP(YDTHF%R3LES*(PT(JL, KK) - YDCST%RTT)*ZL)
+(  191)               CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZQP
+(  192)               CUADJTQ_ZQSAT = MIN(0.5_JPRB, CUADJTQ_ZQSAT)
+(  193)               CUADJTQ_ZCOR = 1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT
+(  194)               ZF = YDTHF%R5ALVCP*ZL**2
+(  195)               CUADJTQ_ZCOND = (PQ(JL, KK)*CUADJTQ_ZCOR**2 - CUADJTQ_ZQSAT*CUADJTQ_ZCOR) / (CUADJTQ_ZCOR**2 + CUADJTQ_ZQSAT*Z
+(  196)               CUADJTQ_ZCOND = MAX(CUADJTQ_ZCOND, 0.0_JPRB)
+(  197)               PT(JL, KK) = PT(JL, KK) + YDTHF%RALVDCP*CUADJTQ_ZCOND
+(  198)               PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND
+(  199)               ZL = 1.0_JPRB / (PT(JL, KK) - YDTHF%R4LES)
+(  200)               CUADJTQ_ZQSAT = YDTHF%R2ES*EXP(YDTHF%R3LES*(PT(JL, KK) - YDCST%RTT)*ZL)
+(  201)               CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZQP
+(  202)               CUADJTQ_ZQSAT = FMINJ(0.5_JPRB, CUADJTQ_ZQSAT)
+(  203)               CUADJTQ_ZCOR = 1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT
+(  204)               ZF = YDTHF%R5ALVCP*ZL**2
+(  205)               CUADJTQ_ZCOND1 = (PQ(JL, KK)*CUADJTQ_ZCOR**2 - CUADJTQ_ZQSAT*CUADJTQ_ZCOR) / (CUADJTQ_ZCOR**2 + CUADJTQ_ZQSAT*
+(  206)               IF (CUADJTQ_ZCOND == 0.0_JPRB) CUADJTQ_ZCOND1 = 0.0_JPRB
+(  207)               PT(JL, KK) = PT(JL, KK) + YDTHF%RALVDCP*CUADJTQ_ZCOND1
+(  208)               PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND1
+(  209)             END IF
+(  210)             
+(  211)           END IF
+(  212)           
+(  213)         END IF
+(  214)         
+(  215)         IF (KCALL == 2) THEN
+(  216)           
+(  217)           !DIR$    IVDEP
+(  218)           !OCL NOVREC
+(  219)           IF (LDFLAG(JL)) THEN
+(  220)             CUADJTQ_ZQP = 1.0_JPRB / PSP(JL)
+(  221)             CUADJTQ_ZQSAT = FOEEWMCU(PT(JL, KK))*CUADJTQ_ZQP
+(  222)             CUADJTQ_ZQSAT = MIN(0.5_JPRB, CUADJTQ_ZQSAT)
+(  223)             CUADJTQ_ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT)
+(  224)             CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZCOR
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 5
+
+(  225)             CUADJTQ_ZCOND = (PQ(JL, KK) - CUADJTQ_ZQSAT) / (1.0_JPRB + CUADJTQ_ZQSAT*CUADJTQ_ZCOR*FOEDEMCU(PT(JL, KK)))
+(  226)             CUADJTQ_ZCOND = MIN(CUADJTQ_ZCOND, 0.0_JPRB)
+(  227)             PT(JL, KK) = PT(JL, KK) + FOELDCPMCU(PT(JL, KK))*CUADJTQ_ZCOND
+(  228)             PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND
+(  229)             CUADJTQ_ZQSAT = FOEEWMCU(PT(JL, KK))*CUADJTQ_ZQP
+(  230)             CUADJTQ_ZQSAT = MIN(0.5_JPRB, CUADJTQ_ZQSAT)
+(  231)             CUADJTQ_ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT)
+(  232)             CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZCOR
+(  233)             CUADJTQ_ZCOND1 = (PQ(JL, KK) - CUADJTQ_ZQSAT) / (1.0_JPRB + CUADJTQ_ZQSAT*CUADJTQ_ZCOR*FOEDEMCU(PT(JL, KK)))
+(  234)             IF (CUADJTQ_ZCOND == 0.0_JPRB) CUADJTQ_ZCOND1 = MIN(CUADJTQ_ZCOND1, 0.0_JPRB)
+(  235)             PT(JL, KK) = PT(JL, KK) + FOELDCPMCU(PT(JL, KK))*CUADJTQ_ZCOND1
+(  236)             PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND1
+(  237)           END IF
+(  238)           
+(  239)         END IF
+(  240)         
+(  241)         IF (KCALL == 0) THEN
+(  242)           
+(  243)           !DIR$    IVDEP
+(  244)           !OCL NOVREC
+(  245)           
+(  246)           !DIR$ LOOP_INFO EST_TRIPS(16)
+(  247)           CUADJTQ_ZQP = 1.0_JPRB / PSP(JL)
+(  248)           CUADJTQ_ZQSAT = FOEEWM(PT(JL, KK))*CUADJTQ_ZQP
+(  249)           CUADJTQ_ZQSAT = MIN(0.5_JPRB, CUADJTQ_ZQSAT)
+(  250)           CUADJTQ_ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT)
+(  251)           CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZCOR
+(  252)           CUADJTQ_ZCOND1 = (PQ(JL, KK) - CUADJTQ_ZQSAT) / (1.0_JPRB + CUADJTQ_ZQSAT*CUADJTQ_ZCOR*FOEDEM(PT(JL, KK)))
+(  253)           PT(JL, KK) = PT(JL, KK) + FOELDCPM(PT(JL, KK))*CUADJTQ_ZCOND1
+(  254)           PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND1
+(  255)           CUADJTQ_ZQSAT = FOEEWM(PT(JL, KK))*CUADJTQ_ZQP
+(  256)           CUADJTQ_ZQSAT = MIN(0.5_JPRB, CUADJTQ_ZQSAT)
+(  257)           CUADJTQ_ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT)
+(  258)           CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZCOR
+(  259)           CUADJTQ_ZCOND1 = (PQ(JL, KK) - CUADJTQ_ZQSAT) / (1.0_JPRB + CUADJTQ_ZQSAT*CUADJTQ_ZCOR*FOEDEM(PT(JL, KK)))
+(  260)           PT(JL, KK) = PT(JL, KK) + FOELDCPM(PT(JL, KK))*CUADJTQ_ZCOND1
+(  261)           PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND1
+(  262)           
+(  263)         END IF
+(  264)         
+(  265)         IF (KCALL == 4) THEN
+(  266)           
+(  267)           IF (LDFLAG(JL)) THEN
+(  268)             CUADJTQ_ZQP = 1.0_JPRB / PSP(JL)
+(  269)             CUADJTQ_ZQSAT = FOEEWM(PT(JL, KK))*CUADJTQ_ZQP
+(  270)             CUADJTQ_ZQSAT = MIN(0.5_JPRB, CUADJTQ_ZQSAT)
+(  271)             CUADJTQ_ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT)
+(  272)             CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZCOR
+(  273)             CUADJTQ_ZCOND = (PQ(JL, KK) - CUADJTQ_ZQSAT) / (1.0_JPRB + CUADJTQ_ZQSAT*CUADJTQ_ZCOR*FOEDEM(PT(JL, KK)))
+(  274)             PT(JL, KK) = PT(JL, KK) + FOELDCPM(PT(JL, KK))*CUADJTQ_ZCOND
+(  275)             PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND
+(  276)             CUADJTQ_ZQSAT = FOEEWM(PT(JL, KK))*CUADJTQ_ZQP
+(  277)             CUADJTQ_ZQSAT = MIN(0.5_JPRB, CUADJTQ_ZQSAT)
+(  278)             CUADJTQ_ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT)
+(  279)             CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZCOR
+(  280)             CUADJTQ_ZCOND1 = (PQ(JL, KK) - CUADJTQ_ZQSAT) / (1.0_JPRB + CUADJTQ_ZQSAT*CUADJTQ_ZCOR*FOEDEM(PT(JL, KK)))
+(  281)             PT(JL, KK) = PT(JL, KK) + FOELDCPM(PT(JL, KK))*CUADJTQ_ZCOND1
+(  282)             PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND1
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 6
+
+(  283)           END IF
+(  284)           
+(  285)         END IF
+(  286)         
+(  287)         IF (KCALL == 5) THEN
+(  288)           ! Same as 4 but with LDFLAG all true
+(  289)           
+(  290)           !OCL NOVREC
+(  291)           !DIR$    IVDEP
+(  292)           !DIR$ LOOP_INFO EST_TRIPS(16)
+(  293)           CUADJTQ_ZQP = 1.0_JPRB / PSP(JL)
+(  294)           CUADJTQ_ZQSAT = FOEEWM(PT(JL, KK))*CUADJTQ_ZQP
+(  295)           CUADJTQ_ZQSAT = MIN(0.5_JPRB, CUADJTQ_ZQSAT)
+(  296)           CUADJTQ_ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT)
+(  297)           CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZCOR
+(  298)           CUADJTQ_ZCOND = (PQ(JL, KK) - CUADJTQ_ZQSAT) / (1.0_JPRB + CUADJTQ_ZQSAT*CUADJTQ_ZCOR*FOEDEM(PT(JL, KK)))
+(  299)           PT(JL, KK) = PT(JL, KK) + FOELDCPM(PT(JL, KK))*CUADJTQ_ZCOND
+(  300)           PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND
+(  301)           CUADJTQ_ZQSAT = FOEEWM(PT(JL, KK))*CUADJTQ_ZQP
+(  302)           CUADJTQ_ZQSAT = MIN(0.5_JPRB, CUADJTQ_ZQSAT)
+(  303)           CUADJTQ_ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT)
+(  304)           CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZCOR
+(  305)           CUADJTQ_ZCOND1 = (PQ(JL, KK) - CUADJTQ_ZQSAT) / (1.0_JPRB + CUADJTQ_ZQSAT*CUADJTQ_ZCOR*FOEDEM(PT(JL, KK)))
+(  306)           PT(JL, KK) = PT(JL, KK) + FOELDCPM(PT(JL, KK))*CUADJTQ_ZCOND1
+(  307)           PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND1
+(  308)         END IF
+(  309)         
+(  310)         IF (KCALL == 3) THEN
+(  311)           !DIR$ LOOP_INFO EST_TRIPS(16)
+(  312)           CUADJTQ_ZQP = 1.0_JPRB / PSP(JL)
+(  313)           CUADJTQ_ZQSAT = FOEEWMCU(PT(JL, KK))*CUADJTQ_ZQP
+(  314)           CUADJTQ_ZQSAT = MIN(0.5_JPRB, CUADJTQ_ZQSAT)
+(  315)           CUADJTQ_ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT)
+(  316)           CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZCOR
+(  317)           CUADJTQ_ZCOND1 = (PQ(JL, KK) - CUADJTQ_ZQSAT) / (1.0_JPRB + CUADJTQ_ZQSAT*CUADJTQ_ZCOR*FOEDEMCU(PT(JL, KK)))
+(  318)           PT(JL, KK) = PT(JL, KK) + FOELDCPMCU(PT(JL, KK))*CUADJTQ_ZCOND1
+(  319)           PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND1
+(  320)           CUADJTQ_ZQSAT = FOEEWMCU(PT(JL, KK))*CUADJTQ_ZQP
+(  321)           CUADJTQ_ZQSAT = MIN(0.5_JPRB, CUADJTQ_ZQSAT)
+(  322)           CUADJTQ_ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT)
+(  323)           CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZCOR
+(  324)           CUADJTQ_ZCOND1 = (PQ(JL, KK) - CUADJTQ_ZQSAT) / (1.0_JPRB + CUADJTQ_ZQSAT*CUADJTQ_ZCOR*FOEDEMCU(PT(JL, KK)))
+(  325)           PT(JL, KK) = PT(JL, KK) + FOELDCPMCU(PT(JL, KK))*CUADJTQ_ZCOND1
+(  326)           PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND1
+(  327)           
+(  328)         END IF
+(  329)         !*********************************************
+(  330)       ELSE
+(  331)         !*********************************************
+(  332)         
+(  333)         !     2.           CALCULATE CONDENSATION AND ADJUST T AND Q ACCORDINGLY
+(  334)         !                  -----------------------------------------------------
+(  335)         
+(  336)         IF (KCALL == 1) THEN
+(  337)           
+(  338)           !DIR$    IVDEP
+(  339)           !OCL NOVREC
+(  340)           !DIR$ LOOP_INFO EST_TRIPS(16)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 7
+
+(  341)           IF (LDFLAG(JL)) THEN
+(  342)             CUADJTQ_ZQP = 1.0_JPRB / PSP(JL)
+(  343)             CUADJTQ_ZTARG = PT(JL, KK)
+(  344)             CUADJTQ_ZOEALFA = 0.5_JPRB*(TANH(YDEPHLI%RLPAL1*(CUADJTQ_ZTARG - YDEPHLI%RLPTRC)) + 1.0_JPRB)
+(  345)             ZFOEEWL = YDTHF%R2ES*EXP(YDTHF%R3LES*(CUADJTQ_ZTARG - YDCST%RTT) / (CUADJTQ_ZTARG - YDTHF%R4LES))
+(  346)             ZFOEEWI = YDTHF%R2ES*EXP(YDTHF%R3IES*(CUADJTQ_ZTARG - YDCST%RTT) / (CUADJTQ_ZTARG - YDTHF%R4IES))
+(  347)             CUADJTQ_ZQSAT = CUADJTQ_ZQP*(CUADJTQ_ZOEALFA*ZFOEEWL + (1.0_JPRB - CUADJTQ_ZOEALFA)*ZFOEEWI)
+(  348)             Z1S = TANH(YDEPHLI%RLPAL2*(CUADJTQ_ZQSAT - CUADJTQ_ZQMAX))
+(  349)             CUADJTQ_ZQSAT = 0.5_JPRB*((1.0_JPRB - Z1S)*CUADJTQ_ZQSAT + (1.0_JPRB + Z1S)*CUADJTQ_ZQMAX)
+(  350)             
+(  351)             CUADJTQ_ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT)
+(  352)             CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZCOR
+(  353)             
+(  354)             CUADJTQ_Z2S = CUADJTQ_ZOEALFA*YDTHF%R5ALVCP*(1.0_JPRB / (CUADJTQ_ZTARG - YDTHF%R4LES)**2) + (1.0_JPRB -  &
+(  355)             & CUADJTQ_ZOEALFA)*YDTHF%R5ALSCP*(1.0_JPRB / (CUADJTQ_ZTARG - YDTHF%R4IES)**2)
+(  356)             CUADJTQ_ZCOND = (PQ(JL, KK) - CUADJTQ_ZQSAT) / (1.0_JPRB + CUADJTQ_ZQSAT*CUADJTQ_ZCOR*CUADJTQ_Z2S)
+(  357)             
+(  358)             CUADJTQ_ZCOND = MAX(CUADJTQ_ZCOND, 0.0_JPRB)
+(  359)             
+(  360)             IF (CUADJTQ_ZCOND /= 0.0_JPRB) THEN
+(  361)               
+(  362)               PT(JL, KK) =  &
+(  363)               & PT(JL, KK) + (CUADJTQ_ZOEALFA*YDTHF%RALVDCP + (1.0_JPRB - CUADJTQ_ZOEALFA)*YDTHF%RALSDCP)*CUADJTQ_ZCOND
+(  364)               PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND
+(  365)               CUADJTQ_ZTARG = PT(JL, KK)
+(  366)               CUADJTQ_ZOEALFA = 0.5_JPRB*(TANH(YDEPHLI%RLPAL1*(CUADJTQ_ZTARG - YDEPHLI%RLPTRC)) + 1.0_JPRB)
+(  367)               ZFOEEWL = YDTHF%R2ES*EXP(YDTHF%R3LES*(CUADJTQ_ZTARG - YDCST%RTT) / (CUADJTQ_ZTARG - YDTHF%R4LES))
+(  368)               ZFOEEWI = YDTHF%R2ES*EXP(YDTHF%R3IES*(CUADJTQ_ZTARG - YDCST%RTT) / (CUADJTQ_ZTARG - YDTHF%R4IES))
+(  369)               CUADJTQ_ZQSAT = CUADJTQ_ZQP*(CUADJTQ_ZOEALFA*ZFOEEWL + (1.0_JPRB - CUADJTQ_ZOEALFA)*ZFOEEWI)
+(  370)               Z1S = TANH(YDEPHLI%RLPAL2*(CUADJTQ_ZQSAT - CUADJTQ_ZQMAX))
+(  371)               CUADJTQ_ZQSAT = 0.5_JPRB*((1.0_JPRB - Z1S)*CUADJTQ_ZQSAT + (1.0_JPRB + Z1S)*CUADJTQ_ZQMAX)
+(  372)               
+(  373)               CUADJTQ_ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT)
+(  374)               CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZCOR
+(  375)               
+(  376)               CUADJTQ_Z2S = CUADJTQ_ZOEALFA*YDTHF%R5ALVCP*(1.0_JPRB / (CUADJTQ_ZTARG - YDTHF%R4LES)**2) + (1.0_JPRB -  &
+(  377)               & CUADJTQ_ZOEALFA)*YDTHF%R5ALSCP*(1.0_JPRB / (CUADJTQ_ZTARG - YDTHF%R4IES)**2)
+(  378)               CUADJTQ_ZCOND1 = (PQ(JL, KK) - CUADJTQ_ZQSAT) / (1.0_JPRB + CUADJTQ_ZQSAT*CUADJTQ_ZCOR*CUADJTQ_Z2S)
+(  379)               
+(  380)               PT(JL, KK) =  &
+(  381)               & PT(JL, KK) + (CUADJTQ_ZOEALFA*YDTHF%RALVDCP + (1.0_JPRB - CUADJTQ_ZOEALFA)*YDTHF%RALSDCP)*CUADJTQ_ZCOND1
+(  382)               
+(  383)               PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND1
+(  384)             END IF
+(  385)           END IF
+(  386)           
+(  387)         END IF
+(  388)         
+(  389)         IF (KCALL == 2) THEN
+(  390)           
+(  391)           !DIR$    IVDEP
+(  392)           !OCL NOVREC
+(  393)           IF (LDFLAG(JL)) THEN
+(  394)             CUADJTQ_ZQP = 1.0_JPRB / PSP(JL)
+(  395)             
+(  396)             CUADJTQ_ZTARG = PT(JL, KK)
+(  397)             CUADJTQ_ZOEALFA = 0.5_JPRB*(TANH(YDEPHLI%RLPAL1*(CUADJTQ_ZTARG - YDEPHLI%RLPTRC)) + 1.0_JPRB)
+(  398)             ZFOEEWL = YDTHF%R2ES*EXP(YDTHF%R3LES*(CUADJTQ_ZTARG - YDCST%RTT) / (CUADJTQ_ZTARG - YDTHF%R4LES))
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 8
+
+(  399)             ZFOEEWI = YDTHF%R2ES*EXP(YDTHF%R3IES*(CUADJTQ_ZTARG - YDCST%RTT) / (CUADJTQ_ZTARG - YDTHF%R4IES))
+(  400)             CUADJTQ_ZQSAT = CUADJTQ_ZQP*(CUADJTQ_ZOEALFA*ZFOEEWL + (1.0_JPRB - CUADJTQ_ZOEALFA)*ZFOEEWI)
+(  401)             Z1S = TANH(YDEPHLI%RLPAL2*(CUADJTQ_ZQSAT - CUADJTQ_ZQMAX))
+(  402)             CUADJTQ_ZQSAT = 0.5_JPRB*((1.0_JPRB - Z1S)*CUADJTQ_ZQSAT + (1.0_JPRB + Z1S)*CUADJTQ_ZQMAX)
+(  403)             
+(  404)             CUADJTQ_ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT)
+(  405)             CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZCOR
+(  406)             
+(  407)             CUADJTQ_Z2S = CUADJTQ_ZOEALFA*YDTHF%R5ALVCP*(1.0_JPRB / (CUADJTQ_ZTARG - YDTHF%R4LES)**2) + (1.0_JPRB -  &
+(  408)             & CUADJTQ_ZOEALFA)*YDTHF%R5ALSCP*(1.0_JPRB / (CUADJTQ_ZTARG - YDTHF%R4IES)**2)
+(  409)             CUADJTQ_ZCOND = (PQ(JL, KK) - CUADJTQ_ZQSAT) / (1.0_JPRB + CUADJTQ_ZQSAT*CUADJTQ_ZCOR*CUADJTQ_Z2S)
+(  410)             
+(  411)             CUADJTQ_ZCOND = MIN(CUADJTQ_ZCOND, 0.0_JPRB)
+(  412)             
+(  413)             IF (CUADJTQ_ZCOND /= 0.0_JPRB) THEN
+(  414)               
+(  415)               PT(JL, KK) =  &
+(  416)               & PT(JL, KK) + (CUADJTQ_ZOEALFA*YDTHF%RALVDCP + (1.0_JPRB - CUADJTQ_ZOEALFA)*YDTHF%RALSDCP)*CUADJTQ_ZCOND
+(  417)               PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND
+(  418)               CUADJTQ_ZTARG = PT(JL, KK)
+(  419)               CUADJTQ_ZOEALFA = 0.5_JPRB*(TANH(YDEPHLI%RLPAL1*(CUADJTQ_ZTARG - YDEPHLI%RLPTRC)) + 1.0_JPRB)
+(  420)               ZFOEEWL = YDTHF%R2ES*EXP(YDTHF%R3LES*(CUADJTQ_ZTARG - YDCST%RTT) / (CUADJTQ_ZTARG - YDTHF%R4LES))
+(  421)               ZFOEEWI = YDTHF%R2ES*EXP(YDTHF%R3IES*(CUADJTQ_ZTARG - YDCST%RTT) / (CUADJTQ_ZTARG - YDTHF%R4IES))
+(  422)               CUADJTQ_ZQSAT = CUADJTQ_ZQP*(CUADJTQ_ZOEALFA*ZFOEEWL + (1.0_JPRB - CUADJTQ_ZOEALFA)*ZFOEEWI)
+(  423)               Z1S = TANH(YDEPHLI%RLPAL2*(CUADJTQ_ZQSAT - CUADJTQ_ZQMAX))
+(  424)               CUADJTQ_ZQSAT = 0.5_JPRB*((1.0_JPRB - Z1S)*CUADJTQ_ZQSAT + (1.0_JPRB + Z1S)*CUADJTQ_ZQMAX)
+(  425)               
+(  426)               CUADJTQ_ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT)
+(  427)               CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZCOR
+(  428)               
+(  429)               CUADJTQ_Z2S = CUADJTQ_ZOEALFA*YDTHF%R5ALVCP*(1.0_JPRB / (CUADJTQ_ZTARG - YDTHF%R4LES)**2) + (1.0_JPRB -  &
+(  430)               & CUADJTQ_ZOEALFA)*YDTHF%R5ALSCP*(1.0_JPRB / (CUADJTQ_ZTARG - YDTHF%R4IES)**2)
+(  431)               CUADJTQ_ZCOND1 = (PQ(JL, KK) - CUADJTQ_ZQSAT) / (1.0_JPRB + CUADJTQ_ZQSAT*CUADJTQ_ZCOR*CUADJTQ_Z2S)
+(  432)               
+(  433)               PT(JL, KK) =  &
+(  434)               & PT(JL, KK) + (CUADJTQ_ZOEALFA*YDTHF%RALVDCP + (1.0_JPRB - CUADJTQ_ZOEALFA)*YDTHF%RALSDCP)*CUADJTQ_ZCOND1
+(  435)               
+(  436)               PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND1
+(  437)             END IF
+(  438)           END IF
+(  439)           
+(  440)         END IF
+(  441)         
+(  442)         IF (KCALL == 0) THEN
+(  443)           
+(  444)           !DIR$    IVDEP
+(  445)           !OCL NOVREC
+(  446)           CUADJTQ_ZQP = 1.0_JPRB / PSP(JL)
+(  447)           
+(  448)           CUADJTQ_ZTARG = PT(JL, KK)
+(  449)           CUADJTQ_ZOEALFA = 0.5_JPRB*(TANH(YDEPHLI%RLPAL1*(CUADJTQ_ZTARG - YDEPHLI%RLPTRC)) + 1.0_JPRB)
+(  450)           ZFOEEWL = YDTHF%R2ES*EXP(YDTHF%R3LES*(CUADJTQ_ZTARG - YDCST%RTT) / (CUADJTQ_ZTARG - YDTHF%R4LES))
+(  451)           ZFOEEWI = YDTHF%R2ES*EXP(YDTHF%R3IES*(CUADJTQ_ZTARG - YDCST%RTT) / (CUADJTQ_ZTARG - YDTHF%R4IES))
+(  452)           CUADJTQ_ZQSAT = CUADJTQ_ZQP*(CUADJTQ_ZOEALFA*ZFOEEWL + (1.0_JPRB - CUADJTQ_ZOEALFA)*ZFOEEWI)
+(  453)           Z1S = TANH(YDEPHLI%RLPAL2*(CUADJTQ_ZQSAT - CUADJTQ_ZQMAX))
+(  454)           CUADJTQ_ZQSAT = 0.5_JPRB*((1.0_JPRB - Z1S)*CUADJTQ_ZQSAT + (1.0_JPRB + Z1S)*CUADJTQ_ZQMAX)
+(  455)           
+(  456)           CUADJTQ_ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 9
+
+(  457)           CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZCOR
+(  458)           
+(  459)           CUADJTQ_Z2S = CUADJTQ_ZOEALFA*YDTHF%R5ALVCP*(1.0_JPRB / (CUADJTQ_ZTARG - YDTHF%R4LES)**2) + (1.0_JPRB - CUADJTQ_ZO
+(  460)           & )*YDTHF%R5ALSCP*(1.0_JPRB / (CUADJTQ_ZTARG - YDTHF%R4IES)**2)
+(  461)           CUADJTQ_ZCOND1 = (PQ(JL, KK) - CUADJTQ_ZQSAT) / (1.0_JPRB + CUADJTQ_ZQSAT*CUADJTQ_ZCOR*CUADJTQ_Z2S)
+(  462)           
+(  463)           PT(JL, KK) = PT(JL, KK) + (CUADJTQ_ZOEALFA*YDTHF%RALVDCP + (1.0_JPRB - CUADJTQ_ZOEALFA)*YDTHF%RALSDCP)*CUADJTQ_ZCO
+(  464)           
+(  465)           PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND1
+(  466)           
+(  467)           CUADJTQ_ZTARG = PT(JL, KK)
+(  468)           CUADJTQ_ZOEALFA = 0.5_JPRB*(TANH(YDEPHLI%RLPAL1*(CUADJTQ_ZTARG - YDEPHLI%RLPTRC)) + 1.0_JPRB)
+(  469)           ZFOEEWL = YDTHF%R2ES*EXP(YDTHF%R3LES*(CUADJTQ_ZTARG - YDCST%RTT) / (CUADJTQ_ZTARG - YDTHF%R4LES))
+(  470)           ZFOEEWI = YDTHF%R2ES*EXP(YDTHF%R3IES*(CUADJTQ_ZTARG - YDCST%RTT) / (CUADJTQ_ZTARG - YDTHF%R4IES))
+(  471)           CUADJTQ_ZQSAT = CUADJTQ_ZQP*(CUADJTQ_ZOEALFA*ZFOEEWL + (1.0_JPRB - CUADJTQ_ZOEALFA)*ZFOEEWI)
+(  472)           Z1S = TANH(YDEPHLI%RLPAL2*(CUADJTQ_ZQSAT - CUADJTQ_ZQMAX))
+(  473)           CUADJTQ_ZQSAT = 0.5_JPRB*((1.0_JPRB - Z1S)*CUADJTQ_ZQSAT + (1.0_JPRB + Z1S)*CUADJTQ_ZQMAX)
+(  474)           
+(  475)           CUADJTQ_ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT)
+(  476)           CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZCOR
+(  477)           
+(  478)           CUADJTQ_Z2S = CUADJTQ_ZOEALFA*YDTHF%R5ALVCP*(1.0_JPRB / (CUADJTQ_ZTARG - YDTHF%R4LES)**2) + (1.0_JPRB - CUADJTQ_ZO
+(  479)           & )*YDTHF%R5ALSCP*(1.0_JPRB / (CUADJTQ_ZTARG - YDTHF%R4IES)**2)
+(  480)           CUADJTQ_ZCOND1 = (PQ(JL, KK) - CUADJTQ_ZQSAT) / (1.0_JPRB + CUADJTQ_ZQSAT*CUADJTQ_ZCOR*CUADJTQ_Z2S)
+(  481)           
+(  482)           PT(JL, KK) = PT(JL, KK) + (CUADJTQ_ZOEALFA*YDTHF%RALVDCP + (1.0_JPRB - CUADJTQ_ZOEALFA)*YDTHF%RALSDCP)*CUADJTQ_ZCO
+(  483)           
+(  484)           PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND1
+(  485)           
+(  486)         END IF
+(  487)         
+(  488)         IF (KCALL == 4) THEN
+(  489)           
+(  490)           !DIR$    IVDEP
+(  491)           !OCL NOVREC
+(  492)           IF (LDFLAG(JL)) THEN
+(  493)             CUADJTQ_ZQP = 1.0_JPRB / PSP(JL)
+(  494)             
+(  495)             CUADJTQ_ZTARG = PT(JL, KK)
+(  496)             CUADJTQ_ZOEALFA = 0.5_JPRB*(TANH(YDEPHLI%RLPAL1*(CUADJTQ_ZTARG - YDEPHLI%RLPTRC)) + 1.0_JPRB)
+(  497)             ZFOEEWL = YDTHF%R2ES*EXP(YDTHF%R3LES*(CUADJTQ_ZTARG - YDCST%RTT) / (CUADJTQ_ZTARG - YDTHF%R4LES))
+(  498)             ZFOEEWI = YDTHF%R2ES*EXP(YDTHF%R3IES*(CUADJTQ_ZTARG - YDCST%RTT) / (CUADJTQ_ZTARG - YDTHF%R4IES))
+(  499)             CUADJTQ_ZQSAT = CUADJTQ_ZQP*(CUADJTQ_ZOEALFA*ZFOEEWL + (1.0_JPRB - CUADJTQ_ZOEALFA)*ZFOEEWI)
+(  500)             Z1S = TANH(YDEPHLI%RLPAL2*(CUADJTQ_ZQSAT - CUADJTQ_ZQMAX))
+(  501)             CUADJTQ_ZQSAT = 0.5_JPRB*((1.0_JPRB - Z1S)*CUADJTQ_ZQSAT + (1.0_JPRB + Z1S)*CUADJTQ_ZQMAX)
+(  502)             
+(  503)             CUADJTQ_ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT)
+(  504)             CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZCOR
+(  505)             
+(  506)             CUADJTQ_Z2S = CUADJTQ_ZOEALFA*YDTHF%R5ALVCP*(1.0_JPRB / (CUADJTQ_ZTARG - YDTHF%R4LES)**2) + (1.0_JPRB -  &
+(  507)             & CUADJTQ_ZOEALFA)*YDTHF%R5ALSCP*(1.0_JPRB / (CUADJTQ_ZTARG - YDTHF%R4IES)**2)
+(  508)             CUADJTQ_ZCOND = (PQ(JL, KK) - CUADJTQ_ZQSAT) / (1.0_JPRB + CUADJTQ_ZQSAT*CUADJTQ_ZCOR*CUADJTQ_Z2S)
+(  509)             
+(  510)             PT(JL, KK) = PT(JL, KK) + (CUADJTQ_ZOEALFA*YDTHF%RALVDCP + (1.0_JPRB - CUADJTQ_ZOEALFA)*YDTHF%RALSDCP)*CUADJTQ_Z
+(  511)             
+(  512)             PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND
+(  513)             
+(  514)             CUADJTQ_ZTARG = PT(JL, KK)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 10
+
+(  515)             CUADJTQ_ZOEALFA = 0.5_JPRB*(TANH(YDEPHLI%RLPAL1*(CUADJTQ_ZTARG - YDEPHLI%RLPTRC)) + 1.0_JPRB)
+(  516)             ZFOEEWL = YDTHF%R2ES*EXP(YDTHF%R3LES*(CUADJTQ_ZTARG - YDCST%RTT) / (CUADJTQ_ZTARG - YDTHF%R4LES))
+(  517)             ZFOEEWI = YDTHF%R2ES*EXP(YDTHF%R3IES*(CUADJTQ_ZTARG - YDCST%RTT) / (CUADJTQ_ZTARG - YDTHF%R4IES))
+(  518)             CUADJTQ_ZQSAT = CUADJTQ_ZQP*(CUADJTQ_ZOEALFA*ZFOEEWL + (1.0_JPRB - CUADJTQ_ZOEALFA)*ZFOEEWI)
+(  519)             Z1S = TANH(YDEPHLI%RLPAL2*(CUADJTQ_ZQSAT - CUADJTQ_ZQMAX))
+(  520)             CUADJTQ_ZQSAT = 0.5_JPRB*((1.0_JPRB - Z1S)*CUADJTQ_ZQSAT + (1.0_JPRB + Z1S)*CUADJTQ_ZQMAX)
+(  521)             
+(  522)             CUADJTQ_ZQSAT = MIN(CUADJTQ_ZQMAX, CUADJTQ_ZQSAT)
+(  523)             CUADJTQ_ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT)
+(  524)             CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZCOR
+(  525)             
+(  526)             CUADJTQ_Z2S = CUADJTQ_ZOEALFA*YDTHF%R5ALVCP*(1.0_JPRB / (CUADJTQ_ZTARG - YDTHF%R4LES)**2) + (1.0_JPRB -  &
+(  527)             & CUADJTQ_ZOEALFA)*YDTHF%R5ALSCP*(1.0_JPRB / (CUADJTQ_ZTARG - YDTHF%R4IES)**2)
+(  528)             CUADJTQ_ZCOND1 = (PQ(JL, KK) - CUADJTQ_ZQSAT) / (1.0_JPRB + CUADJTQ_ZQSAT*CUADJTQ_ZCOR*CUADJTQ_Z2S)
+(  529)             
+(  530)             PT(JL, KK) = PT(JL, KK) + (CUADJTQ_ZOEALFA*YDTHF%RALVDCP + (1.0_JPRB - CUADJTQ_ZOEALFA)*YDTHF%RALSDCP)*CUADJTQ_Z
+(  531)             
+(  532)             PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND1
+(  533)           END IF
+(  534)           
+(  535)         END IF
+(  536)         
+(  537)         !*********************************************
+(  538)       END IF
+(  539)     END DO
+(  540)     
+(  541)     !*********************************************
+(  542)     
+(  543)     
+(  544)     !IF (LHOOK) CALL DR_HOOK('CUADJTQ',1,ZHOOK_HANDLE)
+(  545)     
+(  546)     
+(  547) !$acc end data
+(  548)   END SUBROUTINE CUADJTQ_LOKI
+(  549) END MODULE CUADJTQ_LOKI_MOD
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 11
+
+(    1) # 1 "./cuadjtq.scc_stack.F90"
+(    1) ! (C) Copyright 1988- ECMWF.
+(    2) !
+(    3) ! This software is licensed under the terms of the Apache Licence Version 2.0
+(    4) ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+(    5) !
+(    6) ! In applying this licence, ECMWF does not waive the privileges and immunities
+(    7) ! granted to it by virtue of its status as an intergovernmental organisation
+(    8) ! nor does it submit to any jurisdiction.
+(    9) MODULE CUADJTQ_LOKI_MOD
+(   10)   CONTAINS
+(   11)   SUBROUTINE CUADJTQ_LOKI (YDTHF, YDCST, YDEPHLI, KIDIA, KFDIA, KLON, KLEV, KK, PSP, PT, PQ, LDFLAG, KCALL, LDOFLAG, YDSTACK_L)
+(   12)     
+(   13)     !          PURPOSE.
+(   14)     !          --------
+(   15)     !          TO PRODUCE T,Q AND L VALUES FOR CLOUD ASCENT
+(   16)     
+(   17)     !          INTERFACE
+(   18)     !          ---------
+(   19)     !          THIS ROUTINE IS CALLED FROM SUBROUTINES:
+(   20)     !              *COND*     (T AND Q AT CONDENSATION LEVEL)
+(   21)     !              *CUBASE*   (T AND Q AT CONDENSATION LEVEL)
+(   22)     !              *CUASC*    (T AND Q AT CLOUD LEVELS)
+(   23)     !              *CUINI*    (ENVIRONMENTAL T AND QS VALUES AT HALF LEVELS)
+(   24)     !              *CUSTRAT*  (T AND Q AT CONDENSATION LEVEL)
+(   25)     !          INPUT ARE UNADJUSTED T AND Q VALUES,
+(   26)     !          IT RETURNS ADJUSTED VALUES OF T AND Q
+(   27)     
+(   28)     !     PARAMETER     DESCRIPTION                                   UNITS
+(   29)     !     ---------     -----------                                   -----
+(   30)     !     INPUT PARAMETERS (INTEGER):
+(   31)     
+(   32)     !    *KIDIA*        START POINT
+(   33)     !    *KFDIA*        END POINT
+(   34)     !    *KLON*         NUMBER OF GRID POINTS PER PACKET
+(   35)     !    *KLEV*         NUMBER OF LEVELS
+(   36)     !    *KK*           LEVEL
+(   37)     !    *KCALL*        DEFINES CALCULATION AS
+(   38)     !                      KCALL=0  ENV. T AND QS IN*CUINI*
+(   39)     !                      KCALL=1  CONDENSATION IN UPDRAFTS  (E.G. CUBASE, CUASC)
+(   40)     !                      KCALL=2  EVAPORATION IN DOWNDRAFTS (E.G. CUDLFS,CUDDRAF)
+(   41)     
+(   42)     !     INPUT PARAMETERS (LOGICAL):
+(   43)     
+(   44)     !    *LDLAND*       LAND-SEA MASK (.TRUE. FOR LAND POINTS)
+(   45)     
+(   46)     !     INPUT PARAMETERS (REAL):
+(   47)     
+(   48)     !    *PSP*          PRESSURE                                        PA
+(   49)     
+(   50)     !     UPDATED PARAMETERS (REAL):
+(   51)     
+(   52)     !    *PT*           TEMPERATURE                                     K
+(   53)     !    *PQ*           SPECIFIC HUMIDITY                             KG/KG
+(   54)     
+(   55)     !          EXTERNALS
+(   56)     !          ---------
+(   57)     !          3 LOOKUP TABLES ( TLUCUA, TLUCUB, TLUCUC )
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 12
+
+(   58)     !          FOR CONDENSATION CALCULATIONS.
+(   59)     !          THE TABLES ARE INITIALISED IN *SUPHEC*.
+(   60)     
+(   61)     !     AUTHOR.
+(   62)     !     -------
+(   63)     !      M.TIEDTKE         E.C.M.W.F.     12/89
+(   64)     
+(   65)     !     MODIFICATIONS.
+(   66)     !     --------------
+(   67)     !      J.HAGUE               03-01-13   MASS Vector Functions
+(   68)     !      J.HAGUE               03-07-07   More MASS V.F.
+(   69)     !      M.Hamrud              01-Oct-2003 CY28 Cleaning
+(   70)     !      J.Hague & D.Salmond   22-Nov-2005 Optimisations
+(   71)     !     R. El Khatib 22-Jun-2022 A contribution to simplify phasing after the refactoring of YOMCLI/YOMCST/YOETHF.
+(   72)     !----------------------------------------------------------------------
+(   73)     
+(   74)     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY: REAL64
+(   75)     USE, intrinsic :: ISO_C_BINDING, ONLY: C_SIZEOF
+(   76)     USE PARKIND1, ONLY: JPIM, JPRB
+(   77)     USE YOMHOOK, ONLY: LHOOK, JPHOOK
+(   78)     
+(   79)     USE YOMCST, ONLY: TCST
+(   80)     USE YOETHF, ONLY: TTHF
+(   81)     USE YOEPHLI, ONLY: TEPHLI
+(   82)     
+(   83)     IMPLICIT NONE
+(   84)     
+(   85)     TYPE(TTHF), INTENT(IN) :: YDTHF
+(   86)     TYPE(TCST), INTENT(IN) :: YDCST
+(   87)     TYPE(TEPHLI), INTENT(IN) :: YDEPHLI
+(   88)     INTEGER(KIND=JPIM), INTENT(IN) :: KIDIA
+(   89)     INTEGER(KIND=JPIM), INTENT(IN) :: KFDIA
+(   90)     INTEGER(KIND=JPIM), INTENT(IN) :: KLON
+(   91)     INTEGER(KIND=JPIM), INTENT(IN) :: KLEV
+(   92)     INTEGER(KIND=JPIM), INTENT(IN) :: KK
+(   93)     REAL(KIND=JPRB), INTENT(IN) :: PSP(KLON)
+(   94)     REAL(KIND=JPRB), INTENT(INOUT) :: PT(KLON, KLEV)
+(   95)     REAL(KIND=JPRB), INTENT(INOUT) :: PQ(KLON, KLEV)
+(   96)     LOGICAL, INTENT(IN) :: LDFLAG(KLON)
+(   97)     INTEGER(KIND=JPIM), INTENT(IN) :: KCALL
+(   98)     LOGICAL, OPTIONAL, INTENT(IN) :: LDOFLAG(KLON)
+(   99)     
+(  100)     INTEGER(KIND=JPIM) :: JL
+(  101)     
+(  102)     REAL(KIND=JPRB) :: Z1S, CUADJTQ_Z2S, CUADJTQ_ZCOND, CUADJTQ_ZCOND1, CUADJTQ_ZCOR, ZFOEEWI, ZFOEEWL, CUADJTQ_ZOEALFA,  &
+(  103)     & CUADJTQ_ZQMAX, CUADJTQ_ZQSAT, CUADJTQ_ZTARG, CUADJTQ_ZQP
+(  104)     REAL(KIND=JPRB) :: ZL, ZI, ZF
+(  105)     
+(  106)     LOGICAL :: CUADJTQ_LLFLAG
+(  107)     
+(  108) # 108 "./cuadjtq.scc_stack.F90"
+(  108) # 1 "./abor1.intfb.h"
+(    1) INTERFACE
+(    2) SUBROUTINE ABOR1 (CDMESS)
+(    3) !$acc routine (ABOR1) seq
+(    4) CHARACTER (LEN=*) :: CDMESS
+(    5) END SUBROUTINE
+(    6) # 7 "./abor1.intfb.h"
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 13
+
+(    7) END INTERFACE
+(    8) # 109 "./cuadjtq.scc_stack.F90"
+(  109) # 109 "./cuadjtq.scc_stack.F90"
+(  109)     
+(  110)     !DIR$ VFUNCTION EXPHF
+(  111) # 111 "./cuadjtq.scc_stack.F90"
+(  111) # 1 "./fcttre.func.h"
+(    1) ! (C) Copyright 1988- ECMWF.
+(    2) !
+(    3) ! This software is licensed under the terms of the Apache Licence Version 2.0
+(    4) ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+(    5) !
+(    6) ! In applying this licence, ECMWF does not waive the privileges and immunities
+(    7) ! granted to it by virtue of its status as an intergovernmental organisation
+(    8) ! nor does it submit to any jurisdiction.
+(    9) # 10 "./fcttre.func.h"
+(   10) !*
+(   11) !     ------------------------------------------------------------------
+(   12) # 13 "./fcttre.func.h"
+(   13) !     This COMDECK includes the Thermodynamical functions for the cy39
+(   14) !       ECMWF Physics package.
+(   15) !       Consistent with YOMCST Basic physics constants, assuming the
+(   16) !       partial pressure of water vapour is given by a first order
+(   17) !       Taylor expansion of Qs(T) w.r.t. to Temperature, using constants
+(   18) !       in YOETHF
+(   19) !       Two sets of functions are available. In the first set only the
+(   20) !       cases water or ice are distinguished by temperature.  This set 
+(   21) !       consists of the functions FOEDELTA,FOEEW,FOEDE and FOELH.
+(   22) !       The second set considers, besides the two cases water and ice 
+(   23) !       also a mix of both for the temperature range YDTHF%RTICE < T < YDTHF%RTWAT.
+(   24) !       This set contains FOEALFA,FOEEWM,FOEDEM,FOELDCPM and FOELHM.
+(   25) !       FKOOP modifies the ice saturation mixing ratio for homogeneous 
+(   26) !       nucleation. FOE_DEWM_DT provides an approximate first derivative
+(   27) !       of FOEEWM.
+(   28) # 29 "./fcttre.func.h"
+(   29) !       Depending on the consideration of mixed phases either the first 
+(   30) !       set (e.g. surface, post-processing) or the second set 
+(   31) !       (e.g. clouds, condensation, convection) should be used.
+(   32) # 33 "./fcttre.func.h"
+(   33) !     ------------------------------------------------------------------
+(   34) !     *****************************************************************
+(   35) # 36 "./fcttre.func.h"
+(   36) !                NO CONSIDERATION OF MIXED PHASES
+(   37) # 38 "./fcttre.func.h"
+(   38) !     *****************************************************************
+(   39) REAL(KIND=JPRB) :: FOEDELTA
+(   40) REAL(KIND=JPRB) :: PTARE
+(   41) FOEDELTA (PTARE) = MAX (0.0_JPRB,SIGN(1.0_JPRB,PTARE-YDCST%RTT))
+(   42) # 43 "./fcttre.func.h"
+(   43) !                  FOEDELTA = 1    water
+(   44) !                  FOEDELTA = 0    ice
+(   45) # 46 "./fcttre.func.h"
+(   46) !     THERMODYNAMICAL FUNCTIONS .
+(   47) # 48 "./fcttre.func.h"
+(   48) !     Pressure of water vapour at saturation
+(   49) !        INPUT : PTARE = TEMPERATURE
+(   50) REAL(KIND=JPRB) :: FOEEW,FOEDE,FOEDESU,FOELH,FOELDCP
+(   51) FOEEW ( PTARE ) = YDTHF%R2ES*EXP (&
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 14
+
+(   52)   &(YDTHF%R3LES*FOEDELTA(PTARE)+YDTHF%R3IES*(1.0_JPRB-FOEDELTA(PTARE)))*(PTARE-YDCST%RTT)&
+(   53) &/ (PTARE-(YDTHF%R4LES*FOEDELTA(PTARE)+YDTHF%R4IES*(1.0_JPRB-FOEDELTA(PTARE)))))
+(   54) # 55 "./fcttre.func.h"
+(   55) FOEDE ( PTARE ) = &
+(   56)   &(FOEDELTA(PTARE)*YDTHF%R5ALVCP+(1.0_JPRB-FOEDELTA(PTARE))*YDTHF%R5ALSCP)&
+(   57) &/ (PTARE-(YDTHF%R4LES*FOEDELTA(PTARE)+YDTHF%R4IES*(1.0_JPRB-FOEDELTA(PTARE))))**2
+(   58) # 59 "./fcttre.func.h"
+(   59) FOEDESU ( PTARE ) = &
+(   60)   &(FOEDELTA(PTARE)*YDTHF%R5LES+(1.0_JPRB-FOEDELTA(PTARE))*YDTHF%R5IES)&
+(   61) &/ (PTARE-(YDTHF%R4LES*FOEDELTA(PTARE)+YDTHF%R4IES*(1.0_JPRB-FOEDELTA(PTARE))))**2
+(   62) # 63 "./fcttre.func.h"
+(   63) FOELH ( PTARE ) =&
+(   64)          &FOEDELTA(PTARE)*YDCST%RLVTT + (1.0_JPRB-FOEDELTA(PTARE))*YDCST%RLSTT
+(   65) # 66 "./fcttre.func.h"
+(   66) FOELDCP ( PTARE ) = &
+(   67)          &FOEDELTA(PTARE)*YDTHF%RALVDCP + (1.0_JPRB-FOEDELTA(PTARE))*YDTHF%RALSDCP
+(   68) # 69 "./fcttre.func.h"
+(   69) !     *****************************************************************
+(   70) # 71 "./fcttre.func.h"
+(   71) !           CONSIDERATION OF MIXED PHASES
+(   72) # 73 "./fcttre.func.h"
+(   73) !     *****************************************************************
+(   74) # 75 "./fcttre.func.h"
+(   75) !     FOEALFA is calculated to distinguish the three cases:
+(   76) # 77 "./fcttre.func.h"
+(   77) !                       FOEALFA=1            water phase
+(   78) !                       FOEALFA=0            ice phase
+(   79) !                       0 < FOEALFA < 1      mixed phase
+(   80) # 81 "./fcttre.func.h"
+(   81) !               INPUT : PTARE = TEMPERATURE
+(   82) REAL(KIND=JPRB) :: FOEALFA
+(   83) FOEALFA (PTARE) = MIN(1.0_JPRB,((MAX(YDTHF%RTICE,MIN(YDTHF%RTWAT,PTARE))-YDTHF%RTICE)&
+(   84)  &*YDTHF%RTWAT_RTICE_R)**2) 
+(   85) # 87 "./fcttre.func.h"
+(   87) !     Pressure of water vapour at saturation
+(   88) !        INPUT : PTARE = TEMPERATURE
+(   89) REAL(KIND=JPRB) :: FOEEWM,FOEDEM,FOELDCPM,FOELHM,FOE_DEWM_DT
+(   90) FOEEWM ( PTARE ) = YDTHF%R2ES *&
+(   91)      &(FOEALFA(PTARE)*EXP(YDTHF%R3LES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4LES))+&
+(   92)   &(1.0_JPRB-FOEALFA(PTARE))*EXP(YDTHF%R3IES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4IES)))
+(   93) # 94 "./fcttre.func.h"
+(   94) FOE_DEWM_DT( PTARE ) = YDTHF%R2ES * ( &
+(   95)      & YDTHF%R3LES*FOEALFA(PTARE)*EXP(YDTHF%R3LES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4LES)) &
+(   96)      &    *(YDCST%RTT-YDTHF%R4LES)/(PTARE-YDTHF%R4LES)**2 + &
+(   97)      & YDTHF%R3IES*(1.0-FOEALFA(PTARE))*EXP(YDTHF%R3IES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4IES)) &
+(   98)      &    *(YDCST%RTT-YDTHF%R4IES)/(PTARE-YDTHF%R4IES)**2)
+(   99) # 100 "./fcttre.func.h"
+(  100) FOEDEM ( PTARE ) = FOEALFA(PTARE)*YDTHF%R5ALVCP*(1.0_JPRB/(PTARE-YDTHF%R4LES)**2)+&
+(  101)              &(1.0_JPRB-FOEALFA(PTARE))*YDTHF%R5ALSCP*(1.0_JPRB/(PTARE-YDTHF%R4IES)**2)
+(  102) # 103 "./fcttre.func.h"
+(  103) FOELDCPM ( PTARE ) = FOEALFA(PTARE)*YDTHF%RALVDCP+&
+(  104)             &(1.0_JPRB-FOEALFA(PTARE))*YDTHF%RALSDCP
+(  105) # 106 "./fcttre.func.h"
+(  106) FOELHM ( PTARE ) =&
+(  107)          &FOEALFA(PTARE)*YDCST%RLVTT+(1.0_JPRB-FOEALFA(PTARE))*YDCST%RLSTT
+(  108) # 110 "./fcttre.func.h"
+(  110) !     Temperature normalization for humidity background change of variable
+(  111) !        INPUT : PTARE = TEMPERATURE
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 15
+
+(  112) REAL(KIND=JPRB) :: FOETB
+(  113) FOETB ( PTARE )=FOEALFA(PTARE)*YDTHF%R3LES*(YDCST%RTT-YDTHF%R4LES)*(1.0_JPRB/(PTARE-YDTHF%R4LES)**2)+&
+(  114)              &(1.0_JPRB-FOEALFA(PTARE))*YDTHF%R3IES*(YDCST%RTT-YDTHF%R4IES)*(1.0_JPRB/(PTARE-YDTHF%R4IES)**2)
+(  115) # 116 "./fcttre.func.h"
+(  116) !     ------------------------------------------------------------------
+(  117) !     *****************************************************************
+(  118) # 119 "./fcttre.func.h"
+(  119) !           CONSIDERATION OF DIFFERENT MIXED PHASE FOR CONV
+(  120) # 121 "./fcttre.func.h"
+(  121) !     *****************************************************************
+(  122) # 123 "./fcttre.func.h"
+(  123) !     FOEALFCU is calculated to distinguish the three cases:
+(  124) # 125 "./fcttre.func.h"
+(  125) !                       FOEALFCU=1            water phase
+(  126) !                       FOEALFCU=0            ice phase
+(  127) !                       0 < FOEALFCU < 1      mixed phase
+(  128) # 129 "./fcttre.func.h"
+(  129) !               INPUT : PTARE = TEMPERATURE
+(  130) REAL(KIND=JPRB) :: FOEALFCU 
+(  131) FOEALFCU (PTARE) = MIN(1.0_JPRB,((MAX(YDTHF%RTICECU,MIN(YDTHF%RTWAT,PTARE))&
+(  132) &-YDTHF%RTICECU)*YDTHF%RTWAT_RTICECU_R)**2) 
+(  133) # 135 "./fcttre.func.h"
+(  135) !     Pressure of water vapour at saturation
+(  136) !        INPUT : PTARE = TEMPERATURE
+(  137) REAL(KIND=JPRB) :: FOEEWMCU,FOEDEMCU,FOELDCPMCU,FOELHMCU
+(  138) FOEEWMCU ( PTARE ) = YDTHF%R2ES *&
+(  139)      &(FOEALFCU(PTARE)*EXP(YDTHF%R3LES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4LES))+&
+(  140)   &(1.0_JPRB-FOEALFCU(PTARE))*EXP(YDTHF%R3IES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4IES)))
+(  141) # 142 "./fcttre.func.h"
+(  142) FOEDEMCU ( PTARE )=FOEALFCU(PTARE)*YDTHF%R5ALVCP*(1.0_JPRB/(PTARE-YDTHF%R4LES)**2)+&
+(  143)              &(1.0_JPRB-FOEALFCU(PTARE))*YDTHF%R5ALSCP*(1.0_JPRB/(PTARE-YDTHF%R4IES)**2)
+(  144) # 145 "./fcttre.func.h"
+(  145) FOELDCPMCU ( PTARE ) = FOEALFCU(PTARE)*YDTHF%RALVDCP+&
+(  146)             &(1.0_JPRB-FOEALFCU(PTARE))*YDTHF%RALSDCP
+(  147) # 148 "./fcttre.func.h"
+(  148) FOELHMCU ( PTARE ) =&
+(  149)          &FOEALFCU(PTARE)*YDCST%RLVTT+(1.0_JPRB-FOEALFCU(PTARE))*YDCST%RLSTT
+(  150) !     ------------------------------------------------------------------
+(  151) # 152 "./fcttre.func.h"
+(  152) !     Pressure of water vapour at saturation
+(  153) !     This one is for the WMO definition of saturation, i.e. always
+(  154) !     with respect to water.
+(  155) !     
+(  156) !     Duplicate to FOEELIQ and FOEEICE for separate ice variable
+(  157) !     FOEELIQ always respect to water 
+(  158) !     FOEEICE always respect to ice 
+(  159) !     FOEELIQ2ICE is the ratio of vapour pressures over water and ice 
+(  160) !       (analytically simplified to avoid a suspected Cray compiler bug and using a single call to exp)
+(  161) !     (could use FOEEW and FOEEWMO, but naming convention unclear)
+(  162) !     FOELSON returns e wrt liquid water using D Sonntag (1994, Met. Zeit.)
+(  163) !      - now recommended for use with radiosonde data (WMO CIMO guide, 2014)
+(  164) !      unlike the FOEE functions does not include 1/(YDCST%RETV+1.0_JPRB) factor
+(  165) # 166 "./fcttre.func.h"
+(  166) REAL(KIND=JPRB) :: FOEEWMO, FOEELIQ, FOEEICE, FOEELIQ2ICE, FOELSON 
+(  167) FOEEWMO( PTARE ) = YDTHF%R2ES*EXP(YDTHF%R3LES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4LES))
+(  168) FOEELIQ( PTARE ) = YDTHF%R2ES*EXP(YDTHF%R3LES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4LES))
+(  169) FOEEICE( PTARE ) = YDTHF%R2ES*EXP(YDTHF%R3IES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4IES))
+(  170) FOEELIQ2ICE( PTARE )  = EXP(      (PTARE-YDCST%RTT)*(YDTHF%R3LES/(PTARE-YDTHF%R4LES) - YDTHF%R3IES/(PTARE-YDTHF%R4IES)))
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 16
+
+(  171) FOELSON( PTARE ) = EXP( -6096.9385_JPRB/PTARE + 21.2409642_JPRB &
+(  172) 	             - 2.711193E-2_JPRB * PTARE    &
+(  173)                      + 1.673952E-5_JPRB * PTARE**2 &
+(  174) 		     + 2.433502_JPRB * LOG(PTARE))
+(  175) # 176 "./fcttre.func.h"
+(  176) REAL(KIND=JPRB) :: FOEEWM_V,FOEEWMCU_V,FOELES_V,FOEIES_V
+(  177) REAL(KIND=JPRB) :: EXP1,EXP2
+(  178)       FOELES_V(PTARE)=YDTHF%R3LES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4LES)
+(  179)       FOEIES_V(PTARE)=YDTHF%R3IES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4IES)
+(  180)       FOEEWM_V( PTARE,EXP1,EXP2 )=YDTHF%R2ES*(FOEALFA(PTARE)*EXP1+ &
+(  181)           & (1.0_JPRB-FOEALFA(PTARE))*EXP2)
+(  182)       FOEEWMCU_V ( PTARE,EXP1,EXP2 ) = YDTHF%R2ES*(FOEALFCU(PTARE)*EXP1+&
+(  183)           &(1.0_JPRB-FOEALFCU(PTARE))*EXP2)
+(  184) # 112 "./cuadjtq.scc_stack.F90"
+(  112) # 112 "./cuadjtq.scc_stack.F90"
+(  112) # 1 "./cuadjtq.func.h"
+(    1) # 2 "./cuadjtq.func.h"
+(    2) REAL(KIND=JPRB) :: FMINJ, FMAXJ, X, Y
+(    3) FMINJ(X,Y) = Y - 0.5_JPRB*(ABS(X-Y)-(X-Y))
+(    4) FMAXJ(X,Y) = Y + 0.5_JPRB*(ABS(X-Y)+(X-Y))
+(    5) # 113 "./cuadjtq.scc_stack.F90"
+(  113) # 113 "./cuadjtq.scc_stack.F90"
+(  113)     
+(  114)     !     STATEMENT FUNCTIONS
+(  115)     
+(  116)     REAL(KIND=JPHOOK) :: CUADJTQ_ZHOOK_HANDLE
+(  117) !$acc routine vector
+(  118)     INTEGER(KIND=8) :: YLSTACK_L
+(  119)     INTEGER(KIND=8), INTENT(INOUT) :: YDSTACK_L
+(  120)     YLSTACK_L = YDSTACK_L
+(  121) !$acc data present( PSP, PT, PQ, LDFLAG, LDOFLAG, YDTHF, YDCST, YDEPHLI )
+(  122)     
+(  123)     !----------------------------------------------------------------------
+(  124)     
+(  125)     !     1.           DEFINE CONSTANTS
+(  126)     !                  ----------------
+(  127)     
+(  128)     
+(  129)     !IF (LHOOK) CALL DR_HOOK('CUADJTQ',0,ZHOOK_HANDLE)
+(  130)     
+(  131)     
+(  132)     CUADJTQ_ZQMAX = 0.5_JPRB
+(  133)     
+(  134)     !*********************************************
+(  135)     
+(  136) !$acc loop vector
+(  137)     DO JL=KIDIA,KFDIA
+(  138)       IF (.not.YDEPHLI%LPHYLIN) THEN
+(  139)         !*********************************************
+(  140)         
+(  141)         !     2.           CALCULATE CONDENSATION AND ADJUST T AND Q ACCORDINGLY
+(  142)         !                  -----------------------------------------------------
+(  143)         
+(  144)         IF (KCALL == 1 .or. KCALL == 6) THEN
+(  145)           
+(  146)           !   mixed phase saturation
+(  147)           
+(  148)           CUADJTQ_LLFLAG = LDFLAG(JL)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 17
+
+(  149)           IF (KCALL == 6) THEN
+(  150)             IF (PRESENT(LDOFLAG)) THEN
+(  151)               CUADJTQ_LLFLAG = CUADJTQ_LLFLAG .and. .not.LDOFLAG(JL)
+(  152)             END IF
+(  153)           END IF
+(  154)           
+(  155)           IF (CUADJTQ_LLFLAG) THEN
+(  156)             CUADJTQ_ZQP = 1.0_JPRB / PSP(JL)
+(  157)             ZL = 1.0_JPRB / (PT(JL, KK) - YDTHF%R4LES)
+(  158)             ZI = 1.0_JPRB / (PT(JL, KK) - YDTHF%R4IES)
+(  159)             !       ZQSAT=FOEEWMCU(PT(JL,KK))*ZQP
+(  160)             CUADJTQ_ZQSAT = YDTHF%R2ES*(FOEALFCU(PT(JL, KK))*EXP(YDTHF%R3LES*(PT(JL, KK) - YDCST%RTT)*ZL) + (1.0_JPRB -  &
+(  161)             & FOEALFCU(PT(JL, KK)))*EXP(YDTHF%R3IES*(PT(JL, KK) - YDCST%RTT)*ZI))
+(  162)             CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZQP
+(  163)             CUADJTQ_ZQSAT = MIN(0.5_JPRB, CUADJTQ_ZQSAT)
+(  164)             CUADJTQ_ZCOR = 1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT
+(  165)             ZF = FOEALFCU(PT(JL, KK))*YDTHF%R5ALVCP*ZL**2 + (1.0_JPRB - FOEALFCU(PT(JL, KK)))*YDTHF%R5ALSCP*ZI**2
+(  166)             CUADJTQ_ZCOND = (PQ(JL, KK)*CUADJTQ_ZCOR**2 - CUADJTQ_ZQSAT*CUADJTQ_ZCOR) / (CUADJTQ_ZCOR**2 + CUADJTQ_ZQSAT*ZF)
+(  167)             CUADJTQ_ZCOND = MAX(CUADJTQ_ZCOND, 0.0_JPRB)
+(  168)             PT(JL, KK) = PT(JL, KK) + FOELDCPMCU(PT(JL, KK))*CUADJTQ_ZCOND
+(  169)             PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND
+(  170)             ZL = 1.0_JPRB / (PT(JL, KK) - YDTHF%R4LES)
+(  171)             ZI = 1.0_JPRB / (PT(JL, KK) - YDTHF%R4IES)
+(  172)             !       ZQSAT=FOEEWMCU(PT(JL,KK))*ZQP
+(  173)             CUADJTQ_ZQSAT = YDTHF%R2ES*(FOEALFCU(PT(JL, KK))*EXP(YDTHF%R3LES*(PT(JL, KK) - YDCST%RTT)*ZL) + (1.0_JPRB -  &
+(  174)             & FOEALFCU(PT(JL, KK)))*EXP(YDTHF%R3IES*(PT(JL, KK) - YDCST%RTT)*ZI))
+(  175)             CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZQP
+(  176)             CUADJTQ_ZQSAT = FMINJ(0.5_JPRB, CUADJTQ_ZQSAT)
+(  177)             CUADJTQ_ZCOR = 1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT
+(  178)             ZF = FOEALFCU(PT(JL, KK))*YDTHF%R5ALVCP*ZL**2 + (1.0_JPRB - FOEALFCU(PT(JL, KK)))*YDTHF%R5ALSCP*ZI**2
+(  179)             CUADJTQ_ZCOND1 = (PQ(JL, KK)*CUADJTQ_ZCOR**2 - CUADJTQ_ZQSAT*CUADJTQ_ZCOR) / (CUADJTQ_ZCOR**2 + CUADJTQ_ZQSAT*ZF)
+(  180)             IF (CUADJTQ_ZCOND == 0.0_JPRB) CUADJTQ_ZCOND1 = 0.0_JPRB
+(  181)             PT(JL, KK) = PT(JL, KK) + FOELDCPMCU(PT(JL, KK))*CUADJTQ_ZCOND1
+(  182)             PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND1
+(  183)           END IF
+(  184)           
+(  185)           IF (KCALL == 6) THEN
+(  186)             
+(  187)             IF (LDFLAG(JL) .and. LDOFLAG(JL)) THEN
+(  188)               CUADJTQ_ZQP = 1.0_JPRB / PSP(JL)
+(  189)               ZL = 1.0_JPRB / (PT(JL, KK) - YDTHF%R4LES)
+(  190)               CUADJTQ_ZQSAT = YDTHF%R2ES*EXP(YDTHF%R3LES*(PT(JL, KK) - YDCST%RTT)*ZL)
+(  191)               CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZQP
+(  192)               CUADJTQ_ZQSAT = MIN(0.5_JPRB, CUADJTQ_ZQSAT)
+(  193)               CUADJTQ_ZCOR = 1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT
+(  194)               ZF = YDTHF%R5ALVCP*ZL**2
+(  195)               CUADJTQ_ZCOND = (PQ(JL, KK)*CUADJTQ_ZCOR**2 - CUADJTQ_ZQSAT*CUADJTQ_ZCOR) / (CUADJTQ_ZCOR**2 + CUADJTQ_ZQSAT*ZF)
+(  196)               CUADJTQ_ZCOND = MAX(CUADJTQ_ZCOND, 0.0_JPRB)
+(  197)               PT(JL, KK) = PT(JL, KK) + YDTHF%RALVDCP*CUADJTQ_ZCOND
+(  198)               PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND
+(  199)               ZL = 1.0_JPRB / (PT(JL, KK) - YDTHF%R4LES)
+(  200)               CUADJTQ_ZQSAT = YDTHF%R2ES*EXP(YDTHF%R3LES*(PT(JL, KK) - YDCST%RTT)*ZL)
+(  201)               CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZQP
+(  202)               CUADJTQ_ZQSAT = FMINJ(0.5_JPRB, CUADJTQ_ZQSAT)
+(  203)               CUADJTQ_ZCOR = 1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT
+(  204)               ZF = YDTHF%R5ALVCP*ZL**2
+(  205)               CUADJTQ_ZCOND1 = (PQ(JL, KK)*CUADJTQ_ZCOR**2 - CUADJTQ_ZQSAT*CUADJTQ_ZCOR) / (CUADJTQ_ZCOR**2 + CUADJTQ_ZQSAT*ZF)
+(  206)               IF (CUADJTQ_ZCOND == 0.0_JPRB) CUADJTQ_ZCOND1 = 0.0_JPRB
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 18
+
+(  207)               PT(JL, KK) = PT(JL, KK) + YDTHF%RALVDCP*CUADJTQ_ZCOND1
+(  208)               PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND1
+(  209)             END IF
+(  210)             
+(  211)           END IF
+(  212)           
+(  213)         END IF
+(  214)         
+(  215)         IF (KCALL == 2) THEN
+(  216)           
+(  217)           !DIR$    IVDEP
+(  218)           !OCL NOVREC
+(  219)           IF (LDFLAG(JL)) THEN
+(  220)             CUADJTQ_ZQP = 1.0_JPRB / PSP(JL)
+(  221)             CUADJTQ_ZQSAT = FOEEWMCU(PT(JL, KK))*CUADJTQ_ZQP
+(  222)             CUADJTQ_ZQSAT = MIN(0.5_JPRB, CUADJTQ_ZQSAT)
+(  223)             CUADJTQ_ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT)
+(  224)             CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZCOR
+(  225)             CUADJTQ_ZCOND = (PQ(JL, KK) - CUADJTQ_ZQSAT) / (1.0_JPRB + CUADJTQ_ZQSAT*CUADJTQ_ZCOR*FOEDEMCU(PT(JL, KK)))
+(  226)             CUADJTQ_ZCOND = MIN(CUADJTQ_ZCOND, 0.0_JPRB)
+(  227)             PT(JL, KK) = PT(JL, KK) + FOELDCPMCU(PT(JL, KK))*CUADJTQ_ZCOND
+(  228)             PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND
+(  229)             CUADJTQ_ZQSAT = FOEEWMCU(PT(JL, KK))*CUADJTQ_ZQP
+(  230)             CUADJTQ_ZQSAT = MIN(0.5_JPRB, CUADJTQ_ZQSAT)
+(  231)             CUADJTQ_ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT)
+(  232)             CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZCOR
+(  233)             CUADJTQ_ZCOND1 = (PQ(JL, KK) - CUADJTQ_ZQSAT) / (1.0_JPRB + CUADJTQ_ZQSAT*CUADJTQ_ZCOR*FOEDEMCU(PT(JL, KK)))
+(  234)             IF (CUADJTQ_ZCOND == 0.0_JPRB) CUADJTQ_ZCOND1 = MIN(CUADJTQ_ZCOND1, 0.0_JPRB)
+(  235)             PT(JL, KK) = PT(JL, KK) + FOELDCPMCU(PT(JL, KK))*CUADJTQ_ZCOND1
+(  236)             PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND1
+(  237)           END IF
+(  238)           
+(  239)         END IF
+(  240)         
+(  241)         IF (KCALL == 0) THEN
+(  242)           
+(  243)           !DIR$    IVDEP
+(  244)           !OCL NOVREC
+(  245)           
+(  246)           !DIR$ LOOP_INFO EST_TRIPS(16)
+(  247)           CUADJTQ_ZQP = 1.0_JPRB / PSP(JL)
+(  248)           CUADJTQ_ZQSAT = FOEEWM(PT(JL, KK))*CUADJTQ_ZQP
+(  249)           CUADJTQ_ZQSAT = MIN(0.5_JPRB, CUADJTQ_ZQSAT)
+(  250)           CUADJTQ_ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT)
+(  251)           CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZCOR
+(  252)           CUADJTQ_ZCOND1 = (PQ(JL, KK) - CUADJTQ_ZQSAT) / (1.0_JPRB + CUADJTQ_ZQSAT*CUADJTQ_ZCOR*FOEDEM(PT(JL, KK)))
+(  253)           PT(JL, KK) = PT(JL, KK) + FOELDCPM(PT(JL, KK))*CUADJTQ_ZCOND1
+(  254)           PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND1
+(  255)           CUADJTQ_ZQSAT = FOEEWM(PT(JL, KK))*CUADJTQ_ZQP
+(  256)           CUADJTQ_ZQSAT = MIN(0.5_JPRB, CUADJTQ_ZQSAT)
+(  257)           CUADJTQ_ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT)
+(  258)           CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZCOR
+(  259)           CUADJTQ_ZCOND1 = (PQ(JL, KK) - CUADJTQ_ZQSAT) / (1.0_JPRB + CUADJTQ_ZQSAT*CUADJTQ_ZCOR*FOEDEM(PT(JL, KK)))
+(  260)           PT(JL, KK) = PT(JL, KK) + FOELDCPM(PT(JL, KK))*CUADJTQ_ZCOND1
+(  261)           PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND1
+(  262)           
+(  263)         END IF
+(  264)         
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 19
+
+(  265)         IF (KCALL == 4) THEN
+(  266)           
+(  267)           IF (LDFLAG(JL)) THEN
+(  268)             CUADJTQ_ZQP = 1.0_JPRB / PSP(JL)
+(  269)             CUADJTQ_ZQSAT = FOEEWM(PT(JL, KK))*CUADJTQ_ZQP
+(  270)             CUADJTQ_ZQSAT = MIN(0.5_JPRB, CUADJTQ_ZQSAT)
+(  271)             CUADJTQ_ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT)
+(  272)             CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZCOR
+(  273)             CUADJTQ_ZCOND = (PQ(JL, KK) - CUADJTQ_ZQSAT) / (1.0_JPRB + CUADJTQ_ZQSAT*CUADJTQ_ZCOR*FOEDEM(PT(JL, KK)))
+(  274)             PT(JL, KK) = PT(JL, KK) + FOELDCPM(PT(JL, KK))*CUADJTQ_ZCOND
+(  275)             PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND
+(  276)             CUADJTQ_ZQSAT = FOEEWM(PT(JL, KK))*CUADJTQ_ZQP
+(  277)             CUADJTQ_ZQSAT = MIN(0.5_JPRB, CUADJTQ_ZQSAT)
+(  278)             CUADJTQ_ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT)
+(  279)             CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZCOR
+(  280)             CUADJTQ_ZCOND1 = (PQ(JL, KK) - CUADJTQ_ZQSAT) / (1.0_JPRB + CUADJTQ_ZQSAT*CUADJTQ_ZCOR*FOEDEM(PT(JL, KK)))
+(  281)             PT(JL, KK) = PT(JL, KK) + FOELDCPM(PT(JL, KK))*CUADJTQ_ZCOND1
+(  282)             PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND1
+(  283)           END IF
+(  284)           
+(  285)         END IF
+(  286)         
+(  287)         IF (KCALL == 5) THEN
+(  288)           ! Same as 4 but with LDFLAG all true
+(  289)           
+(  290)           !OCL NOVREC
+(  291)           !DIR$    IVDEP
+(  292)           !DIR$ LOOP_INFO EST_TRIPS(16)
+(  293)           CUADJTQ_ZQP = 1.0_JPRB / PSP(JL)
+(  294)           CUADJTQ_ZQSAT = FOEEWM(PT(JL, KK))*CUADJTQ_ZQP
+(  295)           CUADJTQ_ZQSAT = MIN(0.5_JPRB, CUADJTQ_ZQSAT)
+(  296)           CUADJTQ_ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT)
+(  297)           CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZCOR
+(  298)           CUADJTQ_ZCOND = (PQ(JL, KK) - CUADJTQ_ZQSAT) / (1.0_JPRB + CUADJTQ_ZQSAT*CUADJTQ_ZCOR*FOEDEM(PT(JL, KK)))
+(  299)           PT(JL, KK) = PT(JL, KK) + FOELDCPM(PT(JL, KK))*CUADJTQ_ZCOND
+(  300)           PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND
+(  301)           CUADJTQ_ZQSAT = FOEEWM(PT(JL, KK))*CUADJTQ_ZQP
+(  302)           CUADJTQ_ZQSAT = MIN(0.5_JPRB, CUADJTQ_ZQSAT)
+(  303)           CUADJTQ_ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT)
+(  304)           CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZCOR
+(  305)           CUADJTQ_ZCOND1 = (PQ(JL, KK) - CUADJTQ_ZQSAT) / (1.0_JPRB + CUADJTQ_ZQSAT*CUADJTQ_ZCOR*FOEDEM(PT(JL, KK)))
+(  306)           PT(JL, KK) = PT(JL, KK) + FOELDCPM(PT(JL, KK))*CUADJTQ_ZCOND1
+(  307)           PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND1
+(  308)         END IF
+(  309)         
+(  310)         IF (KCALL == 3) THEN
+(  311)           !DIR$ LOOP_INFO EST_TRIPS(16)
+(  312)           CUADJTQ_ZQP = 1.0_JPRB / PSP(JL)
+(  313)           CUADJTQ_ZQSAT = FOEEWMCU(PT(JL, KK))*CUADJTQ_ZQP
+(  314)           CUADJTQ_ZQSAT = MIN(0.5_JPRB, CUADJTQ_ZQSAT)
+(  315)           CUADJTQ_ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT)
+(  316)           CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZCOR
+(  317)           CUADJTQ_ZCOND1 = (PQ(JL, KK) - CUADJTQ_ZQSAT) / (1.0_JPRB + CUADJTQ_ZQSAT*CUADJTQ_ZCOR*FOEDEMCU(PT(JL, KK)))
+(  318)           PT(JL, KK) = PT(JL, KK) + FOELDCPMCU(PT(JL, KK))*CUADJTQ_ZCOND1
+(  319)           PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND1
+(  320)           CUADJTQ_ZQSAT = FOEEWMCU(PT(JL, KK))*CUADJTQ_ZQP
+(  321)           CUADJTQ_ZQSAT = MIN(0.5_JPRB, CUADJTQ_ZQSAT)
+(  322)           CUADJTQ_ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 20
+
+(  323)           CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZCOR
+(  324)           CUADJTQ_ZCOND1 = (PQ(JL, KK) - CUADJTQ_ZQSAT) / (1.0_JPRB + CUADJTQ_ZQSAT*CUADJTQ_ZCOR*FOEDEMCU(PT(JL, KK)))
+(  325)           PT(JL, KK) = PT(JL, KK) + FOELDCPMCU(PT(JL, KK))*CUADJTQ_ZCOND1
+(  326)           PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND1
+(  327)           
+(  328)         END IF
+(  329)         !*********************************************
+(  330)       ELSE
+(  331)         !*********************************************
+(  332)         
+(  333)         !     2.           CALCULATE CONDENSATION AND ADJUST T AND Q ACCORDINGLY
+(  334)         !                  -----------------------------------------------------
+(  335)         
+(  336)         IF (KCALL == 1) THEN
+(  337)           
+(  338)           !DIR$    IVDEP
+(  339)           !OCL NOVREC
+(  340)           !DIR$ LOOP_INFO EST_TRIPS(16)
+(  341)           IF (LDFLAG(JL)) THEN
+(  342)             CUADJTQ_ZQP = 1.0_JPRB / PSP(JL)
+(  343)             CUADJTQ_ZTARG = PT(JL, KK)
+(  344)             CUADJTQ_ZOEALFA = 0.5_JPRB*(TANH(YDEPHLI%RLPAL1*(CUADJTQ_ZTARG - YDEPHLI%RLPTRC)) + 1.0_JPRB)
+(  345)             ZFOEEWL = YDTHF%R2ES*EXP(YDTHF%R3LES*(CUADJTQ_ZTARG - YDCST%RTT) / (CUADJTQ_ZTARG - YDTHF%R4LES))
+(  346)             ZFOEEWI = YDTHF%R2ES*EXP(YDTHF%R3IES*(CUADJTQ_ZTARG - YDCST%RTT) / (CUADJTQ_ZTARG - YDTHF%R4IES))
+(  347)             CUADJTQ_ZQSAT = CUADJTQ_ZQP*(CUADJTQ_ZOEALFA*ZFOEEWL + (1.0_JPRB - CUADJTQ_ZOEALFA)*ZFOEEWI)
+(  348)             Z1S = TANH(YDEPHLI%RLPAL2*(CUADJTQ_ZQSAT - CUADJTQ_ZQMAX))
+(  349)             CUADJTQ_ZQSAT = 0.5_JPRB*((1.0_JPRB - Z1S)*CUADJTQ_ZQSAT + (1.0_JPRB + Z1S)*CUADJTQ_ZQMAX)
+(  350)             
+(  351)             CUADJTQ_ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT)
+(  352)             CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZCOR
+(  353)             
+(  354)             CUADJTQ_Z2S = CUADJTQ_ZOEALFA*YDTHF%R5ALVCP*(1.0_JPRB / (CUADJTQ_ZTARG - YDTHF%R4LES)**2) + (1.0_JPRB -  &
+(  355)             & CUADJTQ_ZOEALFA)*YDTHF%R5ALSCP*(1.0_JPRB / (CUADJTQ_ZTARG - YDTHF%R4IES)**2)
+(  356)             CUADJTQ_ZCOND = (PQ(JL, KK) - CUADJTQ_ZQSAT) / (1.0_JPRB + CUADJTQ_ZQSAT*CUADJTQ_ZCOR*CUADJTQ_Z2S)
+(  357)             
+(  358)             CUADJTQ_ZCOND = MAX(CUADJTQ_ZCOND, 0.0_JPRB)
+(  359)             
+(  360)             IF (CUADJTQ_ZCOND /= 0.0_JPRB) THEN
+(  361)               
+(  362)               PT(JL, KK) =  &
+(  363)               & PT(JL, KK) + (CUADJTQ_ZOEALFA*YDTHF%RALVDCP + (1.0_JPRB - CUADJTQ_ZOEALFA)*YDTHF%RALSDCP)*CUADJTQ_ZCOND
+(  364)               PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND
+(  365)               CUADJTQ_ZTARG = PT(JL, KK)
+(  366)               CUADJTQ_ZOEALFA = 0.5_JPRB*(TANH(YDEPHLI%RLPAL1*(CUADJTQ_ZTARG - YDEPHLI%RLPTRC)) + 1.0_JPRB)
+(  367)               ZFOEEWL = YDTHF%R2ES*EXP(YDTHF%R3LES*(CUADJTQ_ZTARG - YDCST%RTT) / (CUADJTQ_ZTARG - YDTHF%R4LES))
+(  368)               ZFOEEWI = YDTHF%R2ES*EXP(YDTHF%R3IES*(CUADJTQ_ZTARG - YDCST%RTT) / (CUADJTQ_ZTARG - YDTHF%R4IES))
+(  369)               CUADJTQ_ZQSAT = CUADJTQ_ZQP*(CUADJTQ_ZOEALFA*ZFOEEWL + (1.0_JPRB - CUADJTQ_ZOEALFA)*ZFOEEWI)
+(  370)               Z1S = TANH(YDEPHLI%RLPAL2*(CUADJTQ_ZQSAT - CUADJTQ_ZQMAX))
+(  371)               CUADJTQ_ZQSAT = 0.5_JPRB*((1.0_JPRB - Z1S)*CUADJTQ_ZQSAT + (1.0_JPRB + Z1S)*CUADJTQ_ZQMAX)
+(  372)               
+(  373)               CUADJTQ_ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT)
+(  374)               CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZCOR
+(  375)               
+(  376)               CUADJTQ_Z2S = CUADJTQ_ZOEALFA*YDTHF%R5ALVCP*(1.0_JPRB / (CUADJTQ_ZTARG - YDTHF%R4LES)**2) + (1.0_JPRB -  &
+(  377)               & CUADJTQ_ZOEALFA)*YDTHF%R5ALSCP*(1.0_JPRB / (CUADJTQ_ZTARG - YDTHF%R4IES)**2)
+(  378)               CUADJTQ_ZCOND1 = (PQ(JL, KK) - CUADJTQ_ZQSAT) / (1.0_JPRB + CUADJTQ_ZQSAT*CUADJTQ_ZCOR*CUADJTQ_Z2S)
+(  379)               
+(  380)               PT(JL, KK) =  &
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 21
+
+(  381)               & PT(JL, KK) + (CUADJTQ_ZOEALFA*YDTHF%RALVDCP + (1.0_JPRB - CUADJTQ_ZOEALFA)*YDTHF%RALSDCP)*CUADJTQ_ZCOND1
+(  382)               
+(  383)               PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND1
+(  384)             END IF
+(  385)           END IF
+(  386)           
+(  387)         END IF
+(  388)         
+(  389)         IF (KCALL == 2) THEN
+(  390)           
+(  391)           !DIR$    IVDEP
+(  392)           !OCL NOVREC
+(  393)           IF (LDFLAG(JL)) THEN
+(  394)             CUADJTQ_ZQP = 1.0_JPRB / PSP(JL)
+(  395)             
+(  396)             CUADJTQ_ZTARG = PT(JL, KK)
+(  397)             CUADJTQ_ZOEALFA = 0.5_JPRB*(TANH(YDEPHLI%RLPAL1*(CUADJTQ_ZTARG - YDEPHLI%RLPTRC)) + 1.0_JPRB)
+(  398)             ZFOEEWL = YDTHF%R2ES*EXP(YDTHF%R3LES*(CUADJTQ_ZTARG - YDCST%RTT) / (CUADJTQ_ZTARG - YDTHF%R4LES))
+(  399)             ZFOEEWI = YDTHF%R2ES*EXP(YDTHF%R3IES*(CUADJTQ_ZTARG - YDCST%RTT) / (CUADJTQ_ZTARG - YDTHF%R4IES))
+(  400)             CUADJTQ_ZQSAT = CUADJTQ_ZQP*(CUADJTQ_ZOEALFA*ZFOEEWL + (1.0_JPRB - CUADJTQ_ZOEALFA)*ZFOEEWI)
+(  401)             Z1S = TANH(YDEPHLI%RLPAL2*(CUADJTQ_ZQSAT - CUADJTQ_ZQMAX))
+(  402)             CUADJTQ_ZQSAT = 0.5_JPRB*((1.0_JPRB - Z1S)*CUADJTQ_ZQSAT + (1.0_JPRB + Z1S)*CUADJTQ_ZQMAX)
+(  403)             
+(  404)             CUADJTQ_ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT)
+(  405)             CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZCOR
+(  406)             
+(  407)             CUADJTQ_Z2S = CUADJTQ_ZOEALFA*YDTHF%R5ALVCP*(1.0_JPRB / (CUADJTQ_ZTARG - YDTHF%R4LES)**2) + (1.0_JPRB -  &
+(  408)             & CUADJTQ_ZOEALFA)*YDTHF%R5ALSCP*(1.0_JPRB / (CUADJTQ_ZTARG - YDTHF%R4IES)**2)
+(  409)             CUADJTQ_ZCOND = (PQ(JL, KK) - CUADJTQ_ZQSAT) / (1.0_JPRB + CUADJTQ_ZQSAT*CUADJTQ_ZCOR*CUADJTQ_Z2S)
+(  410)             
+(  411)             CUADJTQ_ZCOND = MIN(CUADJTQ_ZCOND, 0.0_JPRB)
+(  412)             
+(  413)             IF (CUADJTQ_ZCOND /= 0.0_JPRB) THEN
+(  414)               
+(  415)               PT(JL, KK) =  &
+(  416)               & PT(JL, KK) + (CUADJTQ_ZOEALFA*YDTHF%RALVDCP + (1.0_JPRB - CUADJTQ_ZOEALFA)*YDTHF%RALSDCP)*CUADJTQ_ZCOND
+(  417)               PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND
+(  418)               CUADJTQ_ZTARG = PT(JL, KK)
+(  419)               CUADJTQ_ZOEALFA = 0.5_JPRB*(TANH(YDEPHLI%RLPAL1*(CUADJTQ_ZTARG - YDEPHLI%RLPTRC)) + 1.0_JPRB)
+(  420)               ZFOEEWL = YDTHF%R2ES*EXP(YDTHF%R3LES*(CUADJTQ_ZTARG - YDCST%RTT) / (CUADJTQ_ZTARG - YDTHF%R4LES))
+(  421)               ZFOEEWI = YDTHF%R2ES*EXP(YDTHF%R3IES*(CUADJTQ_ZTARG - YDCST%RTT) / (CUADJTQ_ZTARG - YDTHF%R4IES))
+(  422)               CUADJTQ_ZQSAT = CUADJTQ_ZQP*(CUADJTQ_ZOEALFA*ZFOEEWL + (1.0_JPRB - CUADJTQ_ZOEALFA)*ZFOEEWI)
+(  423)               Z1S = TANH(YDEPHLI%RLPAL2*(CUADJTQ_ZQSAT - CUADJTQ_ZQMAX))
+(  424)               CUADJTQ_ZQSAT = 0.5_JPRB*((1.0_JPRB - Z1S)*CUADJTQ_ZQSAT + (1.0_JPRB + Z1S)*CUADJTQ_ZQMAX)
+(  425)               
+(  426)               CUADJTQ_ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT)
+(  427)               CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZCOR
+(  428)               
+(  429)               CUADJTQ_Z2S = CUADJTQ_ZOEALFA*YDTHF%R5ALVCP*(1.0_JPRB / (CUADJTQ_ZTARG - YDTHF%R4LES)**2) + (1.0_JPRB -  &
+(  430)               & CUADJTQ_ZOEALFA)*YDTHF%R5ALSCP*(1.0_JPRB / (CUADJTQ_ZTARG - YDTHF%R4IES)**2)
+(  431)               CUADJTQ_ZCOND1 = (PQ(JL, KK) - CUADJTQ_ZQSAT) / (1.0_JPRB + CUADJTQ_ZQSAT*CUADJTQ_ZCOR*CUADJTQ_Z2S)
+(  432)               
+(  433)               PT(JL, KK) =  &
+(  434)               & PT(JL, KK) + (CUADJTQ_ZOEALFA*YDTHF%RALVDCP + (1.0_JPRB - CUADJTQ_ZOEALFA)*YDTHF%RALSDCP)*CUADJTQ_ZCOND1
+(  435)               
+(  436)               PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND1
+(  437)             END IF
+(  438)           END IF
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 22
+
+(  439)           
+(  440)         END IF
+(  441)         
+(  442)         IF (KCALL == 0) THEN
+(  443)           
+(  444)           !DIR$    IVDEP
+(  445)           !OCL NOVREC
+(  446)           CUADJTQ_ZQP = 1.0_JPRB / PSP(JL)
+(  447)           
+(  448)           CUADJTQ_ZTARG = PT(JL, KK)
+(  449)           CUADJTQ_ZOEALFA = 0.5_JPRB*(TANH(YDEPHLI%RLPAL1*(CUADJTQ_ZTARG - YDEPHLI%RLPTRC)) + 1.0_JPRB)
+(  450)           ZFOEEWL = YDTHF%R2ES*EXP(YDTHF%R3LES*(CUADJTQ_ZTARG - YDCST%RTT) / (CUADJTQ_ZTARG - YDTHF%R4LES))
+(  451)           ZFOEEWI = YDTHF%R2ES*EXP(YDTHF%R3IES*(CUADJTQ_ZTARG - YDCST%RTT) / (CUADJTQ_ZTARG - YDTHF%R4IES))
+(  452)           CUADJTQ_ZQSAT = CUADJTQ_ZQP*(CUADJTQ_ZOEALFA*ZFOEEWL + (1.0_JPRB - CUADJTQ_ZOEALFA)*ZFOEEWI)
+(  453)           Z1S = TANH(YDEPHLI%RLPAL2*(CUADJTQ_ZQSAT - CUADJTQ_ZQMAX))
+(  454)           CUADJTQ_ZQSAT = 0.5_JPRB*((1.0_JPRB - Z1S)*CUADJTQ_ZQSAT + (1.0_JPRB + Z1S)*CUADJTQ_ZQMAX)
+(  455)           
+(  456)           CUADJTQ_ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT)
+(  457)           CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZCOR
+(  458)           
+(  459)           CUADJTQ_Z2S = CUADJTQ_ZOEALFA*YDTHF%R5ALVCP*(1.0_JPRB / (CUADJTQ_ZTARG - YDTHF%R4LES)**2) + (1.0_JPRB - CUADJTQ_ZOEALFA &
+(  460)           & )*YDTHF%R5ALSCP*(1.0_JPRB / (CUADJTQ_ZTARG - YDTHF%R4IES)**2)
+(  461)           CUADJTQ_ZCOND1 = (PQ(JL, KK) - CUADJTQ_ZQSAT) / (1.0_JPRB + CUADJTQ_ZQSAT*CUADJTQ_ZCOR*CUADJTQ_Z2S)
+(  462)           
+(  463)           PT(JL, KK) = PT(JL, KK) + (CUADJTQ_ZOEALFA*YDTHF%RALVDCP + (1.0_JPRB - CUADJTQ_ZOEALFA)*YDTHF%RALSDCP)*CUADJTQ_ZCOND1
+(  464)           
+(  465)           PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND1
+(  466)           
+(  467)           CUADJTQ_ZTARG = PT(JL, KK)
+(  468)           CUADJTQ_ZOEALFA = 0.5_JPRB*(TANH(YDEPHLI%RLPAL1*(CUADJTQ_ZTARG - YDEPHLI%RLPTRC)) + 1.0_JPRB)
+(  469)           ZFOEEWL = YDTHF%R2ES*EXP(YDTHF%R3LES*(CUADJTQ_ZTARG - YDCST%RTT) / (CUADJTQ_ZTARG - YDTHF%R4LES))
+(  470)           ZFOEEWI = YDTHF%R2ES*EXP(YDTHF%R3IES*(CUADJTQ_ZTARG - YDCST%RTT) / (CUADJTQ_ZTARG - YDTHF%R4IES))
+(  471)           CUADJTQ_ZQSAT = CUADJTQ_ZQP*(CUADJTQ_ZOEALFA*ZFOEEWL + (1.0_JPRB - CUADJTQ_ZOEALFA)*ZFOEEWI)
+(  472)           Z1S = TANH(YDEPHLI%RLPAL2*(CUADJTQ_ZQSAT - CUADJTQ_ZQMAX))
+(  473)           CUADJTQ_ZQSAT = 0.5_JPRB*((1.0_JPRB - Z1S)*CUADJTQ_ZQSAT + (1.0_JPRB + Z1S)*CUADJTQ_ZQMAX)
+(  474)           
+(  475)           CUADJTQ_ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT)
+(  476)           CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZCOR
+(  477)           
+(  478)           CUADJTQ_Z2S = CUADJTQ_ZOEALFA*YDTHF%R5ALVCP*(1.0_JPRB / (CUADJTQ_ZTARG - YDTHF%R4LES)**2) + (1.0_JPRB - CUADJTQ_ZOEALFA &
+(  479)           & )*YDTHF%R5ALSCP*(1.0_JPRB / (CUADJTQ_ZTARG - YDTHF%R4IES)**2)
+(  480)           CUADJTQ_ZCOND1 = (PQ(JL, KK) - CUADJTQ_ZQSAT) / (1.0_JPRB + CUADJTQ_ZQSAT*CUADJTQ_ZCOR*CUADJTQ_Z2S)
+(  481)           
+(  482)           PT(JL, KK) = PT(JL, KK) + (CUADJTQ_ZOEALFA*YDTHF%RALVDCP + (1.0_JPRB - CUADJTQ_ZOEALFA)*YDTHF%RALSDCP)*CUADJTQ_ZCOND1
+(  483)           
+(  484)           PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND1
+(  485)           
+(  486)         END IF
+(  487)         
+(  488)         IF (KCALL == 4) THEN
+(  489)           
+(  490)           !DIR$    IVDEP
+(  491)           !OCL NOVREC
+(  492)           IF (LDFLAG(JL)) THEN
+(  493)             CUADJTQ_ZQP = 1.0_JPRB / PSP(JL)
+(  494)             
+(  495)             CUADJTQ_ZTARG = PT(JL, KK)
+(  496)             CUADJTQ_ZOEALFA = 0.5_JPRB*(TANH(YDEPHLI%RLPAL1*(CUADJTQ_ZTARG - YDEPHLI%RLPTRC)) + 1.0_JPRB)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 23
+
+(  497)             ZFOEEWL = YDTHF%R2ES*EXP(YDTHF%R3LES*(CUADJTQ_ZTARG - YDCST%RTT) / (CUADJTQ_ZTARG - YDTHF%R4LES))
+(  498)             ZFOEEWI = YDTHF%R2ES*EXP(YDTHF%R3IES*(CUADJTQ_ZTARG - YDCST%RTT) / (CUADJTQ_ZTARG - YDTHF%R4IES))
+(  499)             CUADJTQ_ZQSAT = CUADJTQ_ZQP*(CUADJTQ_ZOEALFA*ZFOEEWL + (1.0_JPRB - CUADJTQ_ZOEALFA)*ZFOEEWI)
+(  500)             Z1S = TANH(YDEPHLI%RLPAL2*(CUADJTQ_ZQSAT - CUADJTQ_ZQMAX))
+(  501)             CUADJTQ_ZQSAT = 0.5_JPRB*((1.0_JPRB - Z1S)*CUADJTQ_ZQSAT + (1.0_JPRB + Z1S)*CUADJTQ_ZQMAX)
+(  502)             
+(  503)             CUADJTQ_ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT)
+(  504)             CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZCOR
+(  505)             
+(  506)             CUADJTQ_Z2S = CUADJTQ_ZOEALFA*YDTHF%R5ALVCP*(1.0_JPRB / (CUADJTQ_ZTARG - YDTHF%R4LES)**2) + (1.0_JPRB -  &
+(  507)             & CUADJTQ_ZOEALFA)*YDTHF%R5ALSCP*(1.0_JPRB / (CUADJTQ_ZTARG - YDTHF%R4IES)**2)
+(  508)             CUADJTQ_ZCOND = (PQ(JL, KK) - CUADJTQ_ZQSAT) / (1.0_JPRB + CUADJTQ_ZQSAT*CUADJTQ_ZCOR*CUADJTQ_Z2S)
+(  509)             
+(  510)             PT(JL, KK) = PT(JL, KK) + (CUADJTQ_ZOEALFA*YDTHF%RALVDCP + (1.0_JPRB - CUADJTQ_ZOEALFA)*YDTHF%RALSDCP)*CUADJTQ_ZCOND
+(  511)             
+(  512)             PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND
+(  513)             
+(  514)             CUADJTQ_ZTARG = PT(JL, KK)
+(  515)             CUADJTQ_ZOEALFA = 0.5_JPRB*(TANH(YDEPHLI%RLPAL1*(CUADJTQ_ZTARG - YDEPHLI%RLPTRC)) + 1.0_JPRB)
+(  516)             ZFOEEWL = YDTHF%R2ES*EXP(YDTHF%R3LES*(CUADJTQ_ZTARG - YDCST%RTT) / (CUADJTQ_ZTARG - YDTHF%R4LES))
+(  517)             ZFOEEWI = YDTHF%R2ES*EXP(YDTHF%R3IES*(CUADJTQ_ZTARG - YDCST%RTT) / (CUADJTQ_ZTARG - YDTHF%R4IES))
+(  518)             CUADJTQ_ZQSAT = CUADJTQ_ZQP*(CUADJTQ_ZOEALFA*ZFOEEWL + (1.0_JPRB - CUADJTQ_ZOEALFA)*ZFOEEWI)
+(  519)             Z1S = TANH(YDEPHLI%RLPAL2*(CUADJTQ_ZQSAT - CUADJTQ_ZQMAX))
+(  520)             CUADJTQ_ZQSAT = 0.5_JPRB*((1.0_JPRB - Z1S)*CUADJTQ_ZQSAT + (1.0_JPRB + Z1S)*CUADJTQ_ZQMAX)
+(  521)             
+(  522)             CUADJTQ_ZQSAT = MIN(CUADJTQ_ZQMAX, CUADJTQ_ZQSAT)
+(  523)             CUADJTQ_ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*CUADJTQ_ZQSAT)
+(  524)             CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZCOR
+(  525)             
+(  526)             CUADJTQ_Z2S = CUADJTQ_ZOEALFA*YDTHF%R5ALVCP*(1.0_JPRB / (CUADJTQ_ZTARG - YDTHF%R4LES)**2) + (1.0_JPRB -  &
+(  527)             & CUADJTQ_ZOEALFA)*YDTHF%R5ALSCP*(1.0_JPRB / (CUADJTQ_ZTARG - YDTHF%R4IES)**2)
+(  528)             CUADJTQ_ZCOND1 = (PQ(JL, KK) - CUADJTQ_ZQSAT) / (1.0_JPRB + CUADJTQ_ZQSAT*CUADJTQ_ZCOR*CUADJTQ_Z2S)
+(  529)             
+(  530)             PT(JL, KK) = PT(JL, KK) + (CUADJTQ_ZOEALFA*YDTHF%RALVDCP + (1.0_JPRB - CUADJTQ_ZOEALFA)*YDTHF%RALSDCP)*CUADJTQ_ZCOND1
+(  531)             
+(  532)             PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND1
+(  533)           END IF
+(  534)           
+(  535)         END IF
+(  536)         
+(  537)         !*********************************************
+(  538)       END IF
+(  539)     END DO
+(  540)     
+(  541)     !*********************************************
+(  542)     
+(  543)     
+(  544)     !IF (LHOOK) CALL DR_HOOK('CUADJTQ',1,ZHOOK_HANDLE)
+(  545)     
+(  546)     
+(  547) !$acc end data
+(  548)   END SUBROUTINE CUADJTQ_LOKI
+(  549) END MODULE CUADJTQ_LOKI_MOD

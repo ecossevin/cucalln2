@@ -1,0 +1,763 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:03      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./cuddrafn.F90
+
+(    1) SUBROUTINE CUDDRAFN &
+(    2)  & (YDCST,   YDTHF,    YDEPHLI, YDECUMF,&
+(    3)  & KIDIA,    KFDIA,    KLON,     KLEV,&
+(    4)  & LDDRAF,&
+(    5)  & PTENH,    PQENH,    PQSEN,&
+(    6)  & PGEO,     PGEOH,    PAPH,     PRFL,&
+(    7)  & PTD,      PQD,      PMFU,&
+(    8)  & PMFD,     PMFDS,    PMFDQ,    PDMFDP,&
+(    9)  & PDMFDE,   PMFDDE_RATE,        PKINED )  
+(   10) 
+(   11) !          THIS ROUTINE CALCULATES CUMULUS DOWNDRAFT DESCENT
+(   12) 
+(   13) !          PURPOSE.
+(   14) !          --------
+(   15) !          TO PRODUCE THE VERTICAL PROFILES FOR CUMULUS DOWNDRAFTS
+(   16) !          (I.E. T,Q,U AND V AND FLUXES)
+(   17) 
+(   18) !          INTERFACE
+(   19) !          ---------
+(   20) 
+(   21) !          THIS ROUTINE IS CALLED FROM *CUMASTR*.
+(   22) !          INPUT IS T,Q,P,PHI,U,V AT HALF LEVELS.
+(   23) !          IT RETURNS FLUXES OF S,Q AND EVAPORATION RATE
+(   24) !          AND U,V AT LEVELS WHERE DOWNDRAFT OCCURS
+(   25) 
+(   26) !          METHOD.
+(   27) !          --------
+(   28) !          CALCULATE MOIST DESCENT FOR ENTRAINING/DETRAINING PLUME BY
+(   29) !          A) MOVING AIR DRY-ADIABATICALLY TO NEXT LEVEL BELOW AND
+(   30) !          B) CORRECTING FOR EVAPORATION TO OBTAIN SATURATED STATE.
+(   31) 
+(   32) !     PARAMETER     DESCRIPTION                                   UNITS
+(   33) !     ---------     -----------                                   -----
+(   34) !     INPUT PARAMETERS (INTEGER):
+(   35) 
+(   36) !    *KIDIA*        START POINT
+(   37) !    *KFDIA*        END POINT
+(   38) !    *KLON*         NUMBER OF GRID POINTS PER PACKET
+(   39) !    *KLEV*         NUMBER OF LEVELS
+(   40) 
+(   41) !    INPUT PARAMETERS (LOGICAL):
+(   42) 
+(   43) !    *LDDRAF*       .TRUE. IF DOWNDRAFTS EXIST
+(   44) 
+(   45) !    INPUT PARAMETERS (REAL):
+(   46) 
+(   47) !    *PTENH*        ENV. TEMPERATURE (T+1) ON HALF LEVELS          K
+(   48) !    *PQENH*        ENV. SPEC. HUMIDITY (T+1) ON HALF LEVELS     KG/KG
+(   49) !    *PQSEN*        ENV. SATUR. SPEC. HUMIDITY (T+1)             KG/KG
+(   50) !    *PGEO*         GEOPOTENTIAL                                  M2/S2
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:03      page 2
+
+(   51) !    *PGEOH*        GEOPOTENTIAL ON HALF LEVELS                  M2/S2
+(   52) !    *PAPH*         PROVISIONAL PRESSURE ON HALF LEVELS           PA
+(   53) !    *PMFU*         MASSFLUX UPDRAFTS                           KG/(M2*S)
+(   54) 
+(   55) !    UPDATED PARAMETERS (REAL):
+(   56) 
+(   57) !    *PRFL*         PRECIPITATION RATE                           KG/(M2*S)
+(   58) 
+(   59) !    OUTPUT PARAMETERS (REAL):
+(   60) 
+(   61) !    *PTD*          TEMPERATURE IN DOWNDRAFTS                      K
+(   62) !    *PQD*          SPEC. HUMIDITY IN DOWNDRAFTS                 KG/KG
+(   63) !    *PMFD*         MASSFLUX IN DOWNDRAFTS                       KG/(M2*S)
+(   64) !    *PMFDS*        FLUX OF DRY STATIC ENERGY IN DOWNDRAFTS       J/(M2*S)
+(   65) !    *PMFDQ*        FLUX OF SPEC. HUMIDITY IN DOWNDRAFTS         KG/(M2*S)
+(   66) !    *PDMFDP*       FLUX DIFFERENCE OF PRECIP. IN DOWNDRAFTS     KG/(M2*S)
+(   67) !    *PMFDDE_RATE*  DOWNDRAFT DETRAINMENT RATE                   KG/(M2*S)
+(   68) !    *PKINED*       DOWNDRAFT KINETIC ENERGY                     M2/S2
+(   69) 
+(   70) !          EXTERNALS
+(   71) !          ---------
+(   72) !          *CUADJTQ* FOR ADJUSTING T AND Q DUE TO EVAPORATION IN
+(   73) !          SATURATED DESCENT
+(   74) 
+(   75) !          REFERENCE
+(   76) !          ---------
+(   77) !          (TIEDTKE,1989)
+(   78) 
+(   79) !     AUTHOR.
+(   80) !     -------
+(   81) !      M.TIEDTKE         E.C.M.W.F.    12/86 MODIF. 12/89
+(   82) 
+(   83) !     MODIFICATIONS.
+(   84) !     --------------
+(   85) !      03-08-28 : Clean-up detrainment rates   P. BECHTOLD
+(   86) !      M.Hamrud      01-Oct-2003 CY28 Cleaning
+(   87) !     R. El Khatib 22-Jun-2022 A contribution to simplify phasing after the refactoring of YOMCLI/YOMCST/YOETHF.
+(   88) !----------------------------------------------------------------------
+(   89) 
+(   90) USE YOEPHLI  , ONLY : TEPHLI
+(   91) USE PARKIND1 , ONLY : JPIM     ,JPRB
+(   92) USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+(   93) 
+(   94) USE YOMCST   , ONLY : TCST
+(   95) USE YOETHF   , ONLY : TTHF
+(   96) USE YOECUMF  , ONLY : TECUMF
+(   97) 
+(   98) IMPLICIT NONE
+(   99) 
+(  100) TYPE(TCST)        ,INTENT(IN)    :: YDCST
+(  101) TYPE(TTHF)        ,INTENT(IN)    :: YDTHF
+(  102) TYPE(TECUMF)      ,INTENT(IN)    :: YDECUMF
+(  103) TYPE(TEPHLI)      ,INTENT(IN)    :: YDEPHLI
+(  104) INTEGER(KIND=JPIM),INTENT(IN)    :: KLON 
+(  105) INTEGER(KIND=JPIM),INTENT(IN)    :: KLEV 
+(  106) INTEGER(KIND=JPIM),INTENT(IN)    :: KIDIA 
+(  107) INTEGER(KIND=JPIM),INTENT(IN)    :: KFDIA 
+(  108) LOGICAL           ,INTENT(IN)    :: LDDRAF(KLON) 
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:03      page 3
+
+(  109) REAL(KIND=JPRB)   ,INTENT(IN)    :: PTENH(KLON,KLEV) 
+(  110) REAL(KIND=JPRB)   ,INTENT(IN)    :: PQENH(KLON,KLEV) 
+(  111) REAL(KIND=JPRB)   ,INTENT(IN)    :: PQSEN(KLON,KLEV)
+(  112) REAL(KIND=JPRB)   ,INTENT(IN)    :: PGEO(KLON,KLEV) 
+(  113) REAL(KIND=JPRB)   ,INTENT(IN)    :: PGEOH(KLON,KLEV+1) 
+(  114) REAL(KIND=JPRB)   ,INTENT(IN)    :: PAPH(KLON,KLEV+1) 
+(  115) REAL(KIND=JPRB)   ,INTENT(INOUT) :: PRFL(KLON) 
+(  116) REAL(KIND=JPRB)   ,INTENT(INOUT) :: PTD(KLON,KLEV) 
+(  117) REAL(KIND=JPRB)   ,INTENT(INOUT) :: PQD(KLON,KLEV) 
+(  118) REAL(KIND=JPRB)   ,INTENT(IN)    :: PMFU(KLON,KLEV) 
+(  119) REAL(KIND=JPRB)   ,INTENT(INOUT) :: PMFD(KLON,KLEV) 
+(  120) REAL(KIND=JPRB)   ,INTENT(INOUT) :: PMFDS(KLON,KLEV) 
+(  121) REAL(KIND=JPRB)   ,INTENT(INOUT) :: PMFDQ(KLON,KLEV) 
+(  122) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PDMFDP(KLON,KLEV) 
+(  123) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PDMFDE(KLON,KLEV) 
+(  124) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PMFDDE_RATE(KLON,KLEV) 
+(  125) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PKINED(KLON,KLEV)
+(  126) REAL(KIND=JPRB) ::     ZDMFEN(KLON),           ZDMFDE(KLON),&
+(  127)  & ZCOND(KLON),        ZOENTR(KLON),           ZBUOY(KLON)  
+(  128) REAL(KIND=JPRB) ::     ZPH(KLON)
+(  129) LOGICAL ::  LLO2(KLON)
+(  130) INTEGER(KIND=JPIM) :: IK, IS, ITOPDE, JK, JL
+(  131) 
+(  132) REAL(KIND=JPRB) :: ZBUO, ZBUOYZ, ZBUOYV, ZDMFDP, ZDZ, ZENTR, ZMFDQK,&
+(  133)  & ZMFDSK, ZQDDE, ZQEEN, ZRAIN, &
+(  134)  & ZSDDE, ZSEEN, ZZENTR, ZRG, ZFACBUO, Z_CWDRAG , ZDKBUO, ZDKEN
+(  135) REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+(  136) 
+(  137) #include "cuadjtq.intfb.h"
+(  138) 
+(  139) IF (LHOOK) CALL DR_HOOK('CUDDRAFN',0,ZHOOK_HANDLE)
+(  140) ASSOCIATE(ENTRDD=>YDECUMF%ENTRDD, NJKT3=>YDECUMF%NJKT3, &
+(  141)  & RCPD=>YDCST%RCPD, RETV=>YDCST%RETV, RG=>YDCST%RG, &
+(  142)  & RMFCMIN=>YDECUMF%RMFCMIN)
+(  143) ITOPDE=NJKT3
+(  144) ZRG=1.0_JPRB/RG
+(  145) ZFACBUO=0.5_JPRB/(1.0_JPRB+0.5_JPRB)
+(  146) Z_CWDRAG=(3._JPRB/8._JPRB)*0.506_JPRB/0.2_JPRB
+(  147) !----------------------------------------------------------------------
+(  148) 
+(  149) !     1.           CALCULATE MOIST DESCENT FOR CUMULUS DOWNDRAFT BY
+(  150) !                     (A) CALCULATING ENTRAINMENT/DETRAINMENT RATES, 
+(  151) !                         INCLUDING ORGANIZED ENTRAINMENT DEPENDENT ON
+(  152) !                         NEGATIVE BUOYANCY AND ASSUMING
+(  153) !                         LINEAR DECREASE OF MASSFLUX IN PBL
+(  154) !                     (B) DOING MOIST DESCENT - EVAPORATIVE COOLING
+(  155) !                         AND MOISTENING IS CALCULATED IN *CUADJTQ*
+(  156) !                     (C) CHECKING FOR NEGATIVE BUOYANCY AND
+(  157) !                         SPECIFYING FINAL T,Q,U,V AND DOWNWARD FLUXES
+(  158) !                    -------------------------------------------------
+(  159) 
+(  160) DO JL=KIDIA,KFDIA
+(  161)   ZOENTR(JL)=0.0_JPRB
+(  162)   ZBUOY(JL)=0.0_JPRB
+(  163)   ZDMFEN(JL)=0.0_JPRB
+(  164)   ZDMFDE(JL)=0.0_JPRB
+(  165)   PDMFDE(JL,:)=0.0_JPRB
+(  166)   PMFDDE_RATE(JL,:)=0.0_JPRB
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:03      page 4
+
+(  167)   PKINED(JL,:)=0.0_JPRB
+(  168) ENDDO
+(  169) 
+(  170) DO JK=3,KLEV
+(  171)   IS=0
+(  172)   DO JL=KIDIA,KFDIA
+(  173)     ZPH(JL)=PAPH(JL,JK)
+(  174)     LLO2(JL)=LDDRAF(JL).AND.PMFD(JL,JK-1) < 0.0_JPRB
+(  175)     IF(LLO2(JL)) THEN
+(  176)       IS=IS+1
+(  177)     ENDIF
+(  178)   ENDDO
+(  179)   IF(IS == 0) CYCLE
+(  180) 
+(  181)   DO JL=KIDIA,KFDIA
+(  182)     IF(LLO2(JL)) THEN
+(  183)       ZENTR=ENTRDD*PMFD(JL,JK-1)*(PGEOH(JL,JK-1)-PGEOH(JL,JK))*ZRG
+(  184)          ! &*(1.6_JPRB-MIN(1.0_JPRB,PQENH(JL,JK-1)/PQSEN(JL,JK)))
+(  185)       ZDMFEN(JL)=ZENTR
+(  186)       ZDMFDE(JL)=ZENTR
+(  187)     ENDIF
+(  188)   ENDDO
+(  189) 
+(  190)   IF(JK > ITOPDE) THEN
+(  191)     DO JL=KIDIA,KFDIA
+(  192)       IF(LLO2(JL)) THEN
+(  193)         ZDMFEN(JL)=0.0_JPRB
+(  194)         ZDMFDE(JL)=PMFD(JL,ITOPDE)*&
+(  195)          & (PAPH(JL,JK)-PAPH(JL,JK-1))/&
+(  196)          & (PAPH(JL,KLEV+1)-PAPH(JL,ITOPDE))  
+(  197)       ENDIF
+(  198)     ENDDO
+(  199)   ENDIF
+(  200) 
+(  201)   IF(JK <= ITOPDE) THEN
+(  202)     DO JL=KIDIA,KFDIA
+(  203)       IF(LLO2(JL)) THEN
+(  204)         ZDZ=-(PGEOH(JL,JK-1)-PGEOH(JL,JK))*ZRG
+(  205)         ZZENTR=ZOENTR(JL)*ZDZ*PMFD(JL,JK-1)
+(  206)         ZDMFEN(JL)=ZDMFEN(JL)+ZZENTR
+(  207)         ZDMFEN(JL)=MAX(ZDMFEN(JL),0.3_JPRB*PMFD(JL,JK-1))
+(  208)         ZDMFEN(JL)=MAX(ZDMFEN(JL),-0.75_JPRB*PMFU(JL,JK)-&
+(  209)          & (PMFD(JL,JK-1)-ZDMFDE(JL)))  
+(  210)         ZDMFEN(JL)=MIN(ZDMFEN(JL),0.0_JPRB)
+(  211)       ENDIF
+(  212) 
+(  213)       PDMFDE(JL,JK)=ZDMFEN(JL)-ZDMFDE(JL)
+(  214) 
+(  215)     ENDDO
+(  216)   ENDIF
+(  217)   DO JL=KIDIA,KFDIA
+(  218)     IF(LLO2(JL)) THEN
+(  219)       PMFD(JL,JK)=PMFD(JL,JK-1)+ZDMFEN(JL)-ZDMFDE(JL)
+(  220)       ZSEEN=(RCPD*PTENH(JL,JK-1)+PGEOH(JL,JK-1))*ZDMFEN(JL)
+(  221)       ZQEEN=PQENH(JL,JK-1)*ZDMFEN(JL)
+(  222)       ZSDDE=(RCPD*PTD(JL,JK-1)+PGEOH(JL,JK-1))*ZDMFDE(JL)
+(  223)       ZQDDE=PQD(JL,JK-1)*ZDMFDE(JL)
+(  224)       ZMFDSK=PMFDS(JL,JK-1)+ZSEEN-ZSDDE
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:03      page 5
+
+(  225)       ZMFDQK=PMFDQ(JL,JK-1)+ZQEEN-ZQDDE
+(  226)       PQD(JL,JK)=ZMFDQK*(1.0_JPRB/MIN(-RMFCMIN,PMFD(JL,JK)))
+(  227)       PTD(JL,JK)=(ZMFDSK*(1.0_JPRB/MIN(-RMFCMIN,PMFD(JL,JK)))-PGEOH(JL,JK))/RCPD
+(  228)       PTD(JL,JK)=MIN(400._JPRB,PTD(JL,JK))
+(  229)       PTD(JL,JK)=MAX(100._JPRB,PTD(JL,JK))
+(  230)       ZCOND(JL)=PQD(JL,JK)
+(  231)     ENDIF
+(  232)   ENDDO
+(  233) 
+(  234)   IK=JK
+(  235)   !$loki inline
+(  236)   CALL CUADJTQ &
+(  237)    & ( YDTHF, YDCST, YDEPHLI,  KIDIA,    KFDIA,    KLON,     KLEV,     IK, &
+(  238)    &   ZPH,      PTD,      PQD,      LLO2,     2 )  
+(  239) 
+(  240)   DO JL=KIDIA,KFDIA
+(  241)     IF(LLO2(JL)) THEN
+(  242)       ZCOND(JL)=ZCOND(JL)-PQD(JL,JK)
+(  243)       ZBUO=PTD(JL,JK)*(1.0_JPRB+RETV  *PQD(JL,JK))-&
+(  244)        & PTENH(JL,JK)*(1.0_JPRB+RETV  *PQENH(JL,JK))  
+(  245)       IF(PRFL(JL) > 0.0_JPRB.AND.PMFU(JL,JK) > 0.0_JPRB) THEN
+(  246)         ZRAIN=PRFL(JL)/PMFU(JL,JK)
+(  247)         ZBUO=ZBUO-PTD(JL,JK)*ZRAIN
+(  248)       ENDIF
+(  249)       IF(ZBUO >= 0.0_JPRB.OR.PRFL(JL) <= (PMFD(JL,JK)*ZCOND(JL))) THEN
+(  250)         PMFD(JL,JK)=0.0_JPRB
+(  251)         ZBUO=0.0_JPRB
+(  252)       ENDIF
+(  253)       PMFDS(JL,JK)=(RCPD*PTD(JL,JK)+PGEOH(JL,JK))*PMFD(JL,JK)
+(  254)       PMFDQ(JL,JK)=PQD(JL,JK)*PMFD(JL,JK)
+(  255)       ZDMFDP=-PMFD(JL,JK)*ZCOND(JL)
+(  256)       PDMFDP(JL,JK-1)=ZDMFDP
+(  257)       PRFL(JL)=PRFL(JL)+ZDMFDP
+(  258) 
+(  259) ! COMPUTE ORGANIZED ENTRAINMENT FOR USE AT NEXT LEVEL
+(  260) 
+(  261)       ZBUOYZ=ZBUO/PTENH(JL,JK)
+(  262)       ZBUOYV=ZBUOYZ
+(  263)       ZBUOYZ=MIN(ZBUOYZ,0.0_JPRB)
+(  264)       ZDZ=-(PGEO(JL,JK-1)-PGEO(JL,JK))
+(  265)       ZBUOY(JL)=ZBUOY(JL)+ZBUOYZ*ZDZ
+(  266)       ZOENTR(JL)=RG*ZBUOYZ*0.5_JPRB/(1.0_JPRB+ZBUOY(JL))
+(  267) 
+(  268) ! STORE DOWNDRAUGHT DETRAINMENT RATES
+(  269) 
+(  270)       PMFDDE_RATE(JL,JK)=-ZDMFDE(JL)
+(  271) 
+(  272) ! COMPUTE KINETIC ENERGY
+(  273) 
+(  274)       ZDKBUO=ZDZ*ZBUOYV*ZFACBUO
+(  275)       IF(ZDMFEN(JL) < 0.0_JPRB)THEN
+(  276)         ZDKEN=MIN(1.0_JPRB,(1 + Z_CWDRAG)*&
+(  277)          & ZDMFEN(JL)/MIN(-RMFCMIN,PMFD(JL,JK-1)))  
+(  278)       ELSE
+(  279)         ZDKEN=MIN(1.0_JPRB,(1 + Z_CWDRAG)*&
+(  280)          & ZDMFDE(JL)/MIN(-RMFCMIN,PMFD(JL,JK-1)))  
+(  281)       ENDIF
+(  282)       PKINED(JL,JK)=MAX(0.0_JPRB,(PKINED(JL,JK-1)*(1-ZDKEN)+ZDKBUO)/(1+ZDKEN))
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:03      page 6
+
+(  283) 
+(  284)     ENDIF
+(  285)   ENDDO
+(  286)   
+(  287) ENDDO
+(  288) 
+(  289) END ASSOCIATE
+(  290) IF (LHOOK) CALL DR_HOOK('CUDDRAFN',1,ZHOOK_HANDLE)
+(  291) END SUBROUTINE CUDDRAFN
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:03      page 7
+
+(    1) # 1 "./cuddrafn.F90"
+(    1) SUBROUTINE CUDDRAFN &
+(    2)  & (YDCST,   YDTHF,    YDEPHLI, YDECUMF,&
+(    3)  & KIDIA,    KFDIA,    KLON,     KLEV,&
+(    4)  & LDDRAF,&
+(    5)  & PTENH,    PQENH,    PQSEN,&
+(    6)  & PGEO,     PGEOH,    PAPH,     PRFL,&
+(    7)  & PTD,      PQD,      PMFU,&
+(    8)  & PMFD,     PMFDS,    PMFDQ,    PDMFDP,&
+(    9)  & PDMFDE,   PMFDDE_RATE,        PKINED )  
+(   10) # 11 "./cuddrafn.F90"
+(   11) !          THIS ROUTINE CALCULATES CUMULUS DOWNDRAFT DESCENT
+(   12) # 13 "./cuddrafn.F90"
+(   13) !          PURPOSE.
+(   14) !          --------
+(   15) !          TO PRODUCE THE VERTICAL PROFILES FOR CUMULUS DOWNDRAFTS
+(   16) !          (I.E. T,Q,U AND V AND FLUXES)
+(   17) # 18 "./cuddrafn.F90"
+(   18) !          INTERFACE
+(   19) !          ---------
+(   20) # 21 "./cuddrafn.F90"
+(   21) !          THIS ROUTINE IS CALLED FROM *CUMASTR*.
+(   22) !          INPUT IS T,Q,P,PHI,U,V AT HALF LEVELS.
+(   23) !          IT RETURNS FLUXES OF S,Q AND EVAPORATION RATE
+(   24) !          AND U,V AT LEVELS WHERE DOWNDRAFT OCCURS
+(   25) # 26 "./cuddrafn.F90"
+(   26) !          METHOD.
+(   27) !          --------
+(   28) !          CALCULATE MOIST DESCENT FOR ENTRAINING/DETRAINING PLUME BY
+(   29) !          A) MOVING AIR DRY-ADIABATICALLY TO NEXT LEVEL BELOW AND
+(   30) !          B) CORRECTING FOR EVAPORATION TO OBTAIN SATURATED STATE.
+(   31) # 32 "./cuddrafn.F90"
+(   32) !     PARAMETER     DESCRIPTION                                   UNITS
+(   33) !     ---------     -----------                                   -----
+(   34) !     INPUT PARAMETERS (INTEGER):
+(   35) # 36 "./cuddrafn.F90"
+(   36) !    *KIDIA*        START POINT
+(   37) !    *KFDIA*        END POINT
+(   38) !    *KLON*         NUMBER OF GRID POINTS PER PACKET
+(   39) !    *KLEV*         NUMBER OF LEVELS
+(   40) # 41 "./cuddrafn.F90"
+(   41) !    INPUT PARAMETERS (LOGICAL):
+(   42) # 43 "./cuddrafn.F90"
+(   43) !    *LDDRAF*       .TRUE. IF DOWNDRAFTS EXIST
+(   44) # 45 "./cuddrafn.F90"
+(   45) !    INPUT PARAMETERS (REAL):
+(   46) # 47 "./cuddrafn.F90"
+(   47) !    *PTENH*        ENV. TEMPERATURE (T+1) ON HALF LEVELS          K
+(   48) !    *PQENH*        ENV. SPEC. HUMIDITY (T+1) ON HALF LEVELS     KG/KG
+(   49) !    *PQSEN*        ENV. SATUR. SPEC. HUMIDITY (T+1)             KG/KG
+(   50) !    *PGEO*         GEOPOTENTIAL                                  M2/S2
+(   51) !    *PGEOH*        GEOPOTENTIAL ON HALF LEVELS                  M2/S2
+(   52) !    *PAPH*         PROVISIONAL PRESSURE ON HALF LEVELS           PA
+(   53) !    *PMFU*         MASSFLUX UPDRAFTS                           KG/(M2*S)
+(   54) # 55 "./cuddrafn.F90"
+(   55) !    UPDATED PARAMETERS (REAL):
+(   56) # 57 "./cuddrafn.F90"
+(   57) !    *PRFL*         PRECIPITATION RATE                           KG/(M2*S)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:03      page 8
+
+(   58) # 59 "./cuddrafn.F90"
+(   59) !    OUTPUT PARAMETERS (REAL):
+(   60) # 61 "./cuddrafn.F90"
+(   61) !    *PTD*          TEMPERATURE IN DOWNDRAFTS                      K
+(   62) !    *PQD*          SPEC. HUMIDITY IN DOWNDRAFTS                 KG/KG
+(   63) !    *PMFD*         MASSFLUX IN DOWNDRAFTS                       KG/(M2*S)
+(   64) !    *PMFDS*        FLUX OF DRY STATIC ENERGY IN DOWNDRAFTS       J/(M2*S)
+(   65) !    *PMFDQ*        FLUX OF SPEC. HUMIDITY IN DOWNDRAFTS         KG/(M2*S)
+(   66) !    *PDMFDP*       FLUX DIFFERENCE OF PRECIP. IN DOWNDRAFTS     KG/(M2*S)
+(   67) !    *PMFDDE_RATE*  DOWNDRAFT DETRAINMENT RATE                   KG/(M2*S)
+(   68) !    *PKINED*       DOWNDRAFT KINETIC ENERGY                     M2/S2
+(   69) # 70 "./cuddrafn.F90"
+(   70) !          EXTERNALS
+(   71) !          ---------
+(   72) !          *CUADJTQ* FOR ADJUSTING T AND Q DUE TO EVAPORATION IN
+(   73) !          SATURATED DESCENT
+(   74) # 75 "./cuddrafn.F90"
+(   75) !          REFERENCE
+(   76) !          ---------
+(   77) !          (TIEDTKE,1989)
+(   78) # 79 "./cuddrafn.F90"
+(   79) !     AUTHOR.
+(   80) !     -------
+(   81) !      M.TIEDTKE         E.C.M.W.F.    12/86 MODIF. 12/89
+(   82) # 83 "./cuddrafn.F90"
+(   83) !     MODIFICATIONS.
+(   84) !     --------------
+(   85) !      03-08-28 : Clean-up detrainment rates   P. BECHTOLD
+(   86) !      M.Hamrud      01-Oct-2003 CY28 Cleaning
+(   87) !     R. El Khatib 22-Jun-2022 A contribution to simplify phasing after the refactoring of YOMCLI/YOMCST/YOETHF.
+(   88) !----------------------------------------------------------------------
+(   89) # 90 "./cuddrafn.F90"
+(   90) USE YOEPHLI  , ONLY : TEPHLI
+(   91) USE PARKIND1 , ONLY : JPIM     ,JPRB
+(   92) USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+(   93) # 94 "./cuddrafn.F90"
+(   94) USE YOMCST   , ONLY : TCST
+(   95) USE YOETHF   , ONLY : TTHF
+(   96) USE YOECUMF  , ONLY : TECUMF
+(   97) # 98 "./cuddrafn.F90"
+(   98) IMPLICIT NONE
+(   99) # 100 "./cuddrafn.F90"
+(  100) TYPE(TCST)        ,INTENT(IN)    :: YDCST
+(  101) TYPE(TTHF)        ,INTENT(IN)    :: YDTHF
+(  102) TYPE(TECUMF)      ,INTENT(IN)    :: YDECUMF
+(  103) TYPE(TEPHLI)      ,INTENT(IN)    :: YDEPHLI
+(  104) INTEGER(KIND=JPIM),INTENT(IN)    :: KLON 
+(  105) INTEGER(KIND=JPIM),INTENT(IN)    :: KLEV 
+(  106) INTEGER(KIND=JPIM),INTENT(IN)    :: KIDIA 
+(  107) INTEGER(KIND=JPIM),INTENT(IN)    :: KFDIA 
+(  108) LOGICAL           ,INTENT(IN)    :: LDDRAF(KLON) 
+(  109) REAL(KIND=JPRB)   ,INTENT(IN)    :: PTENH(KLON,KLEV) 
+(  110) REAL(KIND=JPRB)   ,INTENT(IN)    :: PQENH(KLON,KLEV) 
+(  111) REAL(KIND=JPRB)   ,INTENT(IN)    :: PQSEN(KLON,KLEV)
+(  112) REAL(KIND=JPRB)   ,INTENT(IN)    :: PGEO(KLON,KLEV) 
+(  113) REAL(KIND=JPRB)   ,INTENT(IN)    :: PGEOH(KLON,KLEV+1) 
+(  114) REAL(KIND=JPRB)   ,INTENT(IN)    :: PAPH(KLON,KLEV+1) 
+(  115) REAL(KIND=JPRB)   ,INTENT(INOUT) :: PRFL(KLON) 
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:03      page 9
+
+(  116) REAL(KIND=JPRB)   ,INTENT(INOUT) :: PTD(KLON,KLEV) 
+(  117) REAL(KIND=JPRB)   ,INTENT(INOUT) :: PQD(KLON,KLEV) 
+(  118) REAL(KIND=JPRB)   ,INTENT(IN)    :: PMFU(KLON,KLEV) 
+(  119) REAL(KIND=JPRB)   ,INTENT(INOUT) :: PMFD(KLON,KLEV) 
+(  120) REAL(KIND=JPRB)   ,INTENT(INOUT) :: PMFDS(KLON,KLEV) 
+(  121) REAL(KIND=JPRB)   ,INTENT(INOUT) :: PMFDQ(KLON,KLEV) 
+(  122) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PDMFDP(KLON,KLEV) 
+(  123) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PDMFDE(KLON,KLEV) 
+(  124) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PMFDDE_RATE(KLON,KLEV) 
+(  125) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PKINED(KLON,KLEV)
+(  126) REAL(KIND=JPRB) ::     ZDMFEN(KLON),           ZDMFDE(KLON),&
+(  127)  & ZCOND(KLON),        ZOENTR(KLON),           ZBUOY(KLON)  
+(  128) REAL(KIND=JPRB) ::     ZPH(KLON)
+(  129) LOGICAL ::  LLO2(KLON)
+(  130) INTEGER(KIND=JPIM) :: IK, IS, ITOPDE, JK, JL
+(  131) # 132 "./cuddrafn.F90"
+(  132) REAL(KIND=JPRB) :: ZBUO, ZBUOYZ, ZBUOYV, ZDMFDP, ZDZ, ZENTR, ZMFDQK,&
+(  133)  & ZMFDSK, ZQDDE, ZQEEN, ZRAIN, &
+(  134)  & ZSDDE, ZSEEN, ZZENTR, ZRG, ZFACBUO, Z_CWDRAG , ZDKBUO, ZDKEN
+(  135) REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+(  136) # 137 "./cuddrafn.F90"
+(  137) # 1 "./cuadjtq.intfb.h"
+(    1) INTERFACE
+(    2) # 3 "./cuadjtq.intfb.h"
+(    3) SUBROUTINE CUADJTQ &
+(    4) & (YDTHF, YDCST, YDEPHLI,KIDIA,    KFDIA,    KLON,    KLEV,     KK,&
+(    5) &  PSP,      PT,       PQ,      LDFLAG,   KCALL,   LDOFLAG)
+(    6) USE PARKIND1 , ONLY : JPIM     ,JPRB
+(    7) USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+(    8) USE YOMCST   , ONLY : TCST
+(    9) USE YOETHF   , ONLY : TTHF
+(   10) USE YOEPHLI  , ONLY : TEPHLI
+(   11) IMPLICIT NONE
+(   12) TYPE(TTHF)         ,INTENT(IN)               :: YDTHF
+(   13) TYPE(TCST)         ,INTENT(IN)               :: YDCST
+(   14) TYPE(TEPHLI)       ,INTENT(IN)               :: YDEPHLI
+(   15) INTEGER(KIND=JPIM) ,INTENT(IN)               :: KIDIA
+(   16) INTEGER(KIND=JPIM) ,INTENT(IN)               :: KFDIA
+(   17) INTEGER(KIND=JPIM) ,INTENT(IN)               :: KLON
+(   18) INTEGER(KIND=JPIM) ,INTENT(IN)               :: KLEV
+(   19) INTEGER(KIND=JPIM) ,INTENT(IN)               :: KK
+(   20) REAL(KIND=JPRB)    ,INTENT(IN)               :: PSP(KLON)
+(   21) REAL(KIND=JPRB)    ,INTENT(INOUT)            :: PT(KLON,KLEV)
+(   22) REAL(KIND=JPRB)    ,INTENT(INOUT)            :: PQ(KLON,KLEV)
+(   23) LOGICAL            ,INTENT(IN)               :: LDFLAG(KLON)
+(   24) INTEGER(KIND=JPIM) ,INTENT(IN)               :: KCALL
+(   25) LOGICAL            ,INTENT(IN)    ,OPTIONAL  :: LDOFLAG(KLON)
+(   26) END SUBROUTINE CUADJTQ
+(   27) # 28 "./cuadjtq.intfb.h"
+(   28) END INTERFACE
+(   29) # 138 "./cuddrafn.F90"
+(  138) # 139 "./cuddrafn.F90"
+(  139) IF (LHOOK) CALL DR_HOOK('CUDDRAFN',0,ZHOOK_HANDLE)
+(  140) ASSOCIATE(ENTRDD=>YDECUMF%ENTRDD, NJKT3=>YDECUMF%NJKT3, &
+(  141)  & RCPD=>YDCST%RCPD, RETV=>YDCST%RETV, RG=>YDCST%RG, &
+(  142)  & RMFCMIN=>YDECUMF%RMFCMIN)
+(  143) ITOPDE=NJKT3
+(  144) ZRG=1.0_JPRB/RG
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:03      page 10
+
+(  145) ZFACBUO=0.5_JPRB/(1.0_JPRB+0.5_JPRB)
+(  146) Z_CWDRAG=(3._JPRB/8._JPRB)*0.506_JPRB/0.2_JPRB
+(  147) !----------------------------------------------------------------------
+(  148) # 149 "./cuddrafn.F90"
+(  149) !     1.           CALCULATE MOIST DESCENT FOR CUMULUS DOWNDRAFT BY
+(  150) !                     (A) CALCULATING ENTRAINMENT/DETRAINMENT RATES, 
+(  151) !                         INCLUDING ORGANIZED ENTRAINMENT DEPENDENT ON
+(  152) !                         NEGATIVE BUOYANCY AND ASSUMING
+(  153) !                         LINEAR DECREASE OF MASSFLUX IN PBL
+(  154) !                     (B) DOING MOIST DESCENT - EVAPORATIVE COOLING
+(  155) !                         AND MOISTENING IS CALCULATED IN *CUADJTQ*
+(  156) !                     (C) CHECKING FOR NEGATIVE BUOYANCY AND
+(  157) !                         SPECIFYING FINAL T,Q,U,V AND DOWNWARD FLUXES
+(  158) !                    -------------------------------------------------
+(  159) # 160 "./cuddrafn.F90"
+(  160) DO JL=KIDIA,KFDIA
+(  161)   ZOENTR(JL)=0.0_JPRB
+(  162)   ZBUOY(JL)=0.0_JPRB
+(  163)   ZDMFEN(JL)=0.0_JPRB
+(  164)   ZDMFDE(JL)=0.0_JPRB
+(  165)   PDMFDE(JL,:)=0.0_JPRB
+(  166)   PMFDDE_RATE(JL,:)=0.0_JPRB
+(  167)   PKINED(JL,:)=0.0_JPRB
+(  168) ENDDO
+(  169) # 170 "./cuddrafn.F90"
+(  170) DO JK=3,KLEV
+(  171)   IS=0
+(  172)   DO JL=KIDIA,KFDIA
+(  173)     ZPH(JL)=PAPH(JL,JK)
+(  174)     LLO2(JL)=LDDRAF(JL).AND.PMFD(JL,JK-1) < 0.0_JPRB
+(  175)     IF(LLO2(JL)) THEN
+(  176)       IS=IS+1
+(  177)     ENDIF
+(  178)   ENDDO
+(  179)   IF(IS == 0) CYCLE
+(  180) # 181 "./cuddrafn.F90"
+(  181)   DO JL=KIDIA,KFDIA
+(  182)     IF(LLO2(JL)) THEN
+(  183)       ZENTR=ENTRDD*PMFD(JL,JK-1)*(PGEOH(JL,JK-1)-PGEOH(JL,JK))*ZRG
+(  184)          ! &*(1.6_JPRB-MIN(1.0_JPRB,PQENH(JL,JK-1)/PQSEN(JL,JK)))
+(  185)       ZDMFEN(JL)=ZENTR
+(  186)       ZDMFDE(JL)=ZENTR
+(  187)     ENDIF
+(  188)   ENDDO
+(  189) # 190 "./cuddrafn.F90"
+(  190)   IF(JK > ITOPDE) THEN
+(  191)     DO JL=KIDIA,KFDIA
+(  192)       IF(LLO2(JL)) THEN
+(  193)         ZDMFEN(JL)=0.0_JPRB
+(  194)         ZDMFDE(JL)=PMFD(JL,ITOPDE)*&
+(  195)          & (PAPH(JL,JK)-PAPH(JL,JK-1))/&
+(  196)          & (PAPH(JL,KLEV+1)-PAPH(JL,ITOPDE))  
+(  197)       ENDIF
+(  198)     ENDDO
+(  199)   ENDIF
+(  200) # 201 "./cuddrafn.F90"
+(  201)   IF(JK <= ITOPDE) THEN
+(  202)     DO JL=KIDIA,KFDIA
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:03      page 11
+
+(  203)       IF(LLO2(JL)) THEN
+(  204)         ZDZ=-(PGEOH(JL,JK-1)-PGEOH(JL,JK))*ZRG
+(  205)         ZZENTR=ZOENTR(JL)*ZDZ*PMFD(JL,JK-1)
+(  206)         ZDMFEN(JL)=ZDMFEN(JL)+ZZENTR
+(  207)         ZDMFEN(JL)=MAX(ZDMFEN(JL),0.3_JPRB*PMFD(JL,JK-1))
+(  208)         ZDMFEN(JL)=MAX(ZDMFEN(JL),-0.75_JPRB*PMFU(JL,JK)-&
+(  209)          & (PMFD(JL,JK-1)-ZDMFDE(JL)))  
+(  210)         ZDMFEN(JL)=MIN(ZDMFEN(JL),0.0_JPRB)
+(  211)       ENDIF
+(  212) # 213 "./cuddrafn.F90"
+(  213)       PDMFDE(JL,JK)=ZDMFEN(JL)-ZDMFDE(JL)
+(  214) # 215 "./cuddrafn.F90"
+(  215)     ENDDO
+(  216)   ENDIF
+(  217)   DO JL=KIDIA,KFDIA
+(  218)     IF(LLO2(JL)) THEN
+(  219)       PMFD(JL,JK)=PMFD(JL,JK-1)+ZDMFEN(JL)-ZDMFDE(JL)
+(  220)       ZSEEN=(RCPD*PTENH(JL,JK-1)+PGEOH(JL,JK-1))*ZDMFEN(JL)
+(  221)       ZQEEN=PQENH(JL,JK-1)*ZDMFEN(JL)
+(  222)       ZSDDE=(RCPD*PTD(JL,JK-1)+PGEOH(JL,JK-1))*ZDMFDE(JL)
+(  223)       ZQDDE=PQD(JL,JK-1)*ZDMFDE(JL)
+(  224)       ZMFDSK=PMFDS(JL,JK-1)+ZSEEN-ZSDDE
+(  225)       ZMFDQK=PMFDQ(JL,JK-1)+ZQEEN-ZQDDE
+(  226)       PQD(JL,JK)=ZMFDQK*(1.0_JPRB/MIN(-RMFCMIN,PMFD(JL,JK)))
+(  227)       PTD(JL,JK)=(ZMFDSK*(1.0_JPRB/MIN(-RMFCMIN,PMFD(JL,JK)))-PGEOH(JL,JK))/RCPD
+(  228)       PTD(JL,JK)=MIN(400._JPRB,PTD(JL,JK))
+(  229)       PTD(JL,JK)=MAX(100._JPRB,PTD(JL,JK))
+(  230)       ZCOND(JL)=PQD(JL,JK)
+(  231)     ENDIF
+(  232)   ENDDO
+(  233) # 234 "./cuddrafn.F90"
+(  234)   IK=JK
+(  235)   !$loki inline
+(  236)   CALL CUADJTQ &
+(  237)    & ( YDTHF, YDCST, YDEPHLI,  KIDIA,    KFDIA,    KLON,     KLEV,     IK, &
+(  238)    &   ZPH,      PTD,      PQD,      LLO2,     2 )  
+(  239) # 240 "./cuddrafn.F90"
+(  240)   DO JL=KIDIA,KFDIA
+(  241)     IF(LLO2(JL)) THEN
+(  242)       ZCOND(JL)=ZCOND(JL)-PQD(JL,JK)
+(  243)       ZBUO=PTD(JL,JK)*(1.0_JPRB+RETV  *PQD(JL,JK))-&
+(  244)        & PTENH(JL,JK)*(1.0_JPRB+RETV  *PQENH(JL,JK))  
+(  245)       IF(PRFL(JL) > 0.0_JPRB.AND.PMFU(JL,JK) > 0.0_JPRB) THEN
+(  246)         ZRAIN=PRFL(JL)/PMFU(JL,JK)
+(  247)         ZBUO=ZBUO-PTD(JL,JK)*ZRAIN
+(  248)       ENDIF
+(  249)       IF(ZBUO >= 0.0_JPRB.OR.PRFL(JL) <= (PMFD(JL,JK)*ZCOND(JL))) THEN
+(  250)         PMFD(JL,JK)=0.0_JPRB
+(  251)         ZBUO=0.0_JPRB
+(  252)       ENDIF
+(  253)       PMFDS(JL,JK)=(RCPD*PTD(JL,JK)+PGEOH(JL,JK))*PMFD(JL,JK)
+(  254)       PMFDQ(JL,JK)=PQD(JL,JK)*PMFD(JL,JK)
+(  255)       ZDMFDP=-PMFD(JL,JK)*ZCOND(JL)
+(  256)       PDMFDP(JL,JK-1)=ZDMFDP
+(  257)       PRFL(JL)=PRFL(JL)+ZDMFDP
+(  258) # 259 "./cuddrafn.F90"
+(  259) ! COMPUTE ORGANIZED ENTRAINMENT FOR USE AT NEXT LEVEL
+(  260) # 261 "./cuddrafn.F90"
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:03      page 12
+
+(  261)       ZBUOYZ=ZBUO/PTENH(JL,JK)
+(  262)       ZBUOYV=ZBUOYZ
+(  263)       ZBUOYZ=MIN(ZBUOYZ,0.0_JPRB)
+(  264)       ZDZ=-(PGEO(JL,JK-1)-PGEO(JL,JK))
+(  265)       ZBUOY(JL)=ZBUOY(JL)+ZBUOYZ*ZDZ
+(  266)       ZOENTR(JL)=RG*ZBUOYZ*0.5_JPRB/(1.0_JPRB+ZBUOY(JL))
+(  267) # 268 "./cuddrafn.F90"
+(  268) ! STORE DOWNDRAUGHT DETRAINMENT RATES
+(  269) # 270 "./cuddrafn.F90"
+(  270)       PMFDDE_RATE(JL,JK)=-ZDMFDE(JL)
+(  271) # 272 "./cuddrafn.F90"
+(  272) ! COMPUTE KINETIC ENERGY
+(  273) # 274 "./cuddrafn.F90"
+(  274)       ZDKBUO=ZDZ*ZBUOYV*ZFACBUO
+(  275)       IF(ZDMFEN(JL) < 0.0_JPRB)THEN
+(  276)         ZDKEN=MIN(1.0_JPRB,(1 + Z_CWDRAG)*&
+(  277)          & ZDMFEN(JL)/MIN(-RMFCMIN,PMFD(JL,JK-1)))  
+(  278)       ELSE
+(  279)         ZDKEN=MIN(1.0_JPRB,(1 + Z_CWDRAG)*&
+(  280)          & ZDMFDE(JL)/MIN(-RMFCMIN,PMFD(JL,JK-1)))  
+(  281)       ENDIF
+(  282)       PKINED(JL,JK)=MAX(0.0_JPRB,(PKINED(JL,JK-1)*(1-ZDKEN)+ZDKBUO)/(1+ZDKEN))
+(  283) # 284 "./cuddrafn.F90"
+(  284)     ENDIF
+(  285)   ENDDO
+(  286)   
+(  287) ENDDO
+(  288) # 289 "./cuddrafn.F90"
+(  289) END ASSOCIATE
+(  290) IF (LHOOK) CALL DR_HOOK('CUDDRAFN',1,ZHOOK_HANDLE)
+(  291) END SUBROUTINE CUDDRAFN

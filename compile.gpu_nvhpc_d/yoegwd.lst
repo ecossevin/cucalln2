@@ -1,0 +1,214 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:22      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./yoegwd.F90
+
+(    1) MODULE YOEGWD
+(    2) 
+(    3) USE PARKIND1  ,ONLY : JPIM     ,JPRB
+(    4) 
+(    5) IMPLICIT NONE
+(    6) 
+(    7) SAVE
+(    8) 
+(    9) !     -----------------------------------------------------------------
+(   10) !*    ** *YOEGWD* - PARAMETERS FOR GRAVITY WAVE DRAG CALCULATIONS
+(   11) !     -----------------------------------------------------------------
+(   12) 
+(   13) TYPE :: TEGWD
+(   14) INTEGER(KIND=JPIM) :: NKTOPG
+(   15) INTEGER(KIND=JPIM) :: NGWDLIM
+(   16) INTEGER(KIND=JPIM) :: NGWDTOP
+(   17) INTEGER(KIND=JPIM) :: NDIFF_STRATO
+(   18) REAL(KIND=JPRB) :: GFRCRIT
+(   19) REAL(KIND=JPRB) :: GRCRIT
+(   20) REAL(KIND=JPRB) :: GKDRAG
+(   21) REAL(KIND=JPRB) :: GKWAKE
+(   22) REAL(KIND=JPRB) :: GSSEC
+(   23) REAL(KIND=JPRB) :: GTSEC
+(   24) REAL(KIND=JPRB) :: GVSEC
+(   25) REAL(KIND=JPRB) :: GTENLIM
+(   26) REAL(KIND=JPRB) :: GRFPLM
+(   27) LOGICAL         :: LRDIFF_STRATO
+(   28) LOGICAL         :: LDIAG_STRATO
+(   29) !---------------------------------------------------------------------
+(   30) CONTAINS
+(   31) END TYPE TEGWD
+(   32) !=====================================================================
+(   33) 
+(   34) !!TYPE(TEGWD), POINTER :: YREGWD => NULL()
+(   35) 
+(   36) !        * E.C.M.W.F. PHYSICS PACKAGE *
+(   37) 
+(   38) !     M. J. MILLER          E.C.M.W.F.      89/12/14
+(   39) 
+(   40) !  NAME     TYPE     PURPOSE
+(   41) !  ----  :  ----   : ---------------------------------------------------
+(   42) 
+(   43) ! GFRCRIT: CRITICAL FROUDE NUMBER
+(   44) ! GRCRIT : CRITICAL RICHARDSON NUMBER FOR ONSET OF WAVE TURBULENCE.
+(   45) ! GKDRAG : DRAG CONSTANT (PROPORTIONAL TO WAVENUMBER)
+(   46) ! GKWAKE : DRAG COEFFICIENT FOR LOWLEVEL WAKE DRAG
+(   47) ! NKTOPG : NUMBER OF TOPMOST LAYER USED TO DEFINE LOW-LEVEL FLOW
+(   48) ! NGWDLIM: VERTICAL LEVEL ABOVE WHICH THE WIND TENDENCIES WILL BE LIMITED 
+(   49) !          TO GTENLIM
+(   50) ! GTENLIM: LIMITER FOR WIND TENDENCIES IN THE STRATOSPHERE AND MESOSPHERE
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:22      page 2
+
+(   51) ! GRFPLM : PRESUURE LIMIT FOR RAYLEIGH FRICTION
+(   52) ! NGWDTOP: INDEX FOR GRFPLM
+(   53) ! LRDIFF_STRATO: IF TRUE REDUCED VERTICAL DIFFUSION IN STRATOSPHERE
+(   54) ! NDIFF_STRATO: TYPE OF REDUCED VERTICAL DIFFUSION IN STRATOSPHERE
+(   55) ! LDIAG_STRATO:  IF TRUE STORE GRAVITY-WAVE MOMENTUM FLUXES
+(   56) 
+(   57) 
+(   58) !*    SECURITY PARAMETERS.
+(   59) !     --------------------
+(   60) 
+(   61) ! GSSEC  : TO SECURE STABILITY.
+(   62) ! GTSEC  : TO SECURE THE STRESS CALCULATION.
+(   63) ! GVSEC  : TO SECURE THE PROJECTION CALCULATION.
+(   64) !     -----------------------------------------------------------------
+(   65)  
+(   66) !---------------------------------------------------------------------
+(   67) 
+(   68) END MODULE YOEGWD
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:22      page 3
+
+(    1) # 1 "./yoegwd.F90"
+(    1) MODULE YOEGWD
+(    2) # 3 "./yoegwd.F90"
+(    3) USE PARKIND1  ,ONLY : JPIM     ,JPRB
+(    4) # 5 "./yoegwd.F90"
+(    5) IMPLICIT NONE
+(    6) # 7 "./yoegwd.F90"
+(    7) SAVE
+(    8) # 9 "./yoegwd.F90"
+(    9) !     -----------------------------------------------------------------
+(   10) !*    ** *YOEGWD* - PARAMETERS FOR GRAVITY WAVE DRAG CALCULATIONS
+(   11) !     -----------------------------------------------------------------
+(   12) # 13 "./yoegwd.F90"
+(   13) TYPE :: TEGWD
+(   14) INTEGER(KIND=JPIM) :: NKTOPG
+(   15) INTEGER(KIND=JPIM) :: NGWDLIM
+(   16) INTEGER(KIND=JPIM) :: NGWDTOP
+(   17) INTEGER(KIND=JPIM) :: NDIFF_STRATO
+(   18) REAL(KIND=JPRB) :: GFRCRIT
+(   19) REAL(KIND=JPRB) :: GRCRIT
+(   20) REAL(KIND=JPRB) :: GKDRAG
+(   21) REAL(KIND=JPRB) :: GKWAKE
+(   22) REAL(KIND=JPRB) :: GSSEC
+(   23) REAL(KIND=JPRB) :: GTSEC
+(   24) REAL(KIND=JPRB) :: GVSEC
+(   25) REAL(KIND=JPRB) :: GTENLIM
+(   26) REAL(KIND=JPRB) :: GRFPLM
+(   27) LOGICAL         :: LRDIFF_STRATO
+(   28) LOGICAL         :: LDIAG_STRATO
+(   29) !---------------------------------------------------------------------
+(   30) CONTAINS
+(   31) END TYPE TEGWD
+(   32) !=====================================================================
+(   33) # 34 "./yoegwd.F90"
+(   34) !!TYPE(TEGWD), POINTER :: YREGWD => NULL()
+(   35) # 36 "./yoegwd.F90"
+(   36) !        * E.C.M.W.F. PHYSICS PACKAGE *
+(   37) # 38 "./yoegwd.F90"
+(   38) !     M. J. MILLER          E.C.M.W.F.      89/12/14
+(   39) # 40 "./yoegwd.F90"
+(   40) !  NAME     TYPE     PURPOSE
+(   41) !  ----  :  ----   : ---------------------------------------------------
+(   42) # 43 "./yoegwd.F90"
+(   43) ! GFRCRIT: CRITICAL FROUDE NUMBER
+(   44) ! GRCRIT : CRITICAL RICHARDSON NUMBER FOR ONSET OF WAVE TURBULENCE.
+(   45) ! GKDRAG : DRAG CONSTANT (PROPORTIONAL TO WAVENUMBER)
+(   46) ! GKWAKE : DRAG COEFFICIENT FOR LOWLEVEL WAKE DRAG
+(   47) ! NKTOPG : NUMBER OF TOPMOST LAYER USED TO DEFINE LOW-LEVEL FLOW
+(   48) ! NGWDLIM: VERTICAL LEVEL ABOVE WHICH THE WIND TENDENCIES WILL BE LIMITED 
+(   49) !          TO GTENLIM
+(   50) ! GTENLIM: LIMITER FOR WIND TENDENCIES IN THE STRATOSPHERE AND MESOSPHERE
+(   51) ! GRFPLM : PRESUURE LIMIT FOR RAYLEIGH FRICTION
+(   52) ! NGWDTOP: INDEX FOR GRFPLM
+(   53) ! LRDIFF_STRATO: IF TRUE REDUCED VERTICAL DIFFUSION IN STRATOSPHERE
+(   54) ! NDIFF_STRATO: TYPE OF REDUCED VERTICAL DIFFUSION IN STRATOSPHERE
+(   55) ! LDIAG_STRATO:  IF TRUE STORE GRAVITY-WAVE MOMENTUM FLUXES
+(   56) # 58 "./yoegwd.F90"
+(   58) !*    SECURITY PARAMETERS.
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:22      page 4
+
+(   59) !     --------------------
+(   60) # 61 "./yoegwd.F90"
+(   61) ! GSSEC  : TO SECURE STABILITY.
+(   62) ! GTSEC  : TO SECURE THE STRESS CALCULATION.
+(   63) ! GVSEC  : TO SECURE THE PROJECTION CALCULATION.
+(   64) !     -----------------------------------------------------------------
+(   65)  
+(   66) !---------------------------------------------------------------------
+(   67) # 68 "./yoegwd.F90"
+(   68) END MODULE YOEGWD

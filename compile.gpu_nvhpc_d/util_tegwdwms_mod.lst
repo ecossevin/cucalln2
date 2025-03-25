@@ -1,0 +1,369 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:38      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./util_tegwdwms_mod.F90
+
+(    1) MODULE UTIL_TEGWDWMS_MOD
+(    2) 
+(    3) USE YOEGWDWMS, ONLY : TEGWDWMS
+(    4) 
+(    5) INTERFACE SAVE
+(    6) MODULE PROCEDURE SAVE_TEGWDWMS
+(    7) END INTERFACE
+(    8) 
+(    9) INTERFACE LOAD
+(   10) MODULE PROCEDURE LOAD_TEGWDWMS
+(   11) END INTERFACE
+(   12) 
+(   13) INTERFACE COPY
+(   14) MODULE PROCEDURE COPY_TEGWDWMS
+(   15) END INTERFACE
+(   16) 
+(   17) INTERFACE HOST
+(   18) MODULE PROCEDURE HOST_TEGWDWMS
+(   19) END INTERFACE
+(   20) 
+(   21)      
+(   22) INTERFACE CRC64
+(   23) MODULE PROCEDURE CRC64_TEGWDWMS
+(   24) END INTERFACE
+(   25) 
+(   26) INTERFACE WIPE
+(   27) MODULE PROCEDURE WIPE_TEGWDWMS
+(   28) END INTERFACE
+(   29) 
+(   30) INTERFACE SIZE
+(   31) MODULE PROCEDURE SIZE_TEGWDWMS
+(   32) END INTERFACE
+(   33) 
+(   34) 
+(   35) CONTAINS
+(   36) 
+(   37) SUBROUTINE SAVE_TEGWDWMS (KLUN, YD)
+(   38) 
+(   39) IMPLICIT NONE
+(   40) INTEGER, INTENT (IN) :: KLUN
+(   41) TYPE (TEGWDWMS), INTENT (IN), TARGET :: YD
+(   42) 
+(   43) WRITE (KLUN) YD%LREGWWMS
+(   44) END SUBROUTINE
+(   45) 
+(   46) SUBROUTINE LOAD_TEGWDWMS (KLUN, YD)
+(   47) 
+(   48) IMPLICIT NONE
+(   49) INTEGER, INTENT (IN) :: KLUN
+(   50) TYPE (TEGWDWMS), INTENT (OUT), TARGET :: YD
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:38      page 2
+
+(   51) 
+(   52) READ (KLUN) YD%LREGWWMS
+(   53) END SUBROUTINE
+(   54) 
+(   55) 
+(   56) SUBROUTINE COPY_TEGWDWMS (YD, LDCREATED, LDFIELDAPI)
+(   57) 
+(   58) IMPLICIT NONE
+(   59) TYPE (TEGWDWMS), INTENT (IN), TARGET :: YD
+(   60) LOGICAL, OPTIONAL, INTENT (IN) :: LDCREATED, LDFIELDAPI
+(   61) LOGICAL :: LLCREATED
+(   62) LOGICAL :: LLFIELDAPI
+(   63) 
+(   64) LLFIELDAPI = .FALSE.
+(   65) IF (PRESENT (LDFIELDAPI)) THEN
+(   66)   LLFIELDAPI = LDFIELDAPI
+(   67) ENDIF
+(   68) LLCREATED = .FALSE.
+(   69) IF (PRESENT (LDCREATED)) THEN
+(   70)   LLCREATED = LDCREATED
+(   71) ENDIF
+(   72) IF (.NOT. LLCREATED) THEN
+(   73)   !$acc enter data create (YD)
+(   74)   !$acc update device (YD)
+(   75) ENDIF
+(   76) 
+(   77) END SUBROUTINE
+(   78) 
+(   79) SUBROUTINE HOST_TEGWDWMS (YD)
+(   80) 
+(   81) IMPLICIT NONE
+(   82) TYPE (TEGWDWMS), TARGET :: YD
+(   83) 
+(   84) 
+(   85) END SUBROUTINE
+(   86) 
+(   87)      
+(   88) 
+(   89) SUBROUTINE CRC64_TEGWDWMS (YD, KLUN, CDPATH)
+(   90) USE CRC64_INTRINSIC
+(   91) 
+(   92) IMPLICIT NONE
+(   93) TYPE (TEGWDWMS), TARGET :: YD
+(   94) INTEGER, INTENT (IN) :: KLUN
+(   95) CHARACTER(LEN=*), INTENT (IN) :: CDPATH
+(   96) CHARACTER(LEN=128) :: CLIND
+(   97) 
+(   98) WRITE (KLUN, '(Z16.16," ",A)') CRC64 (YD%LREGWWMS), CDPATH//'%LREGWWMS'
+(   99) 
+(  100) END SUBROUTINE
+(  101) 
+(  102) SUBROUTINE WIPE_TEGWDWMS (YD, LDDELETED, LDFIELDAPI)
+(  103) 
+(  104) IMPLICIT NONE
+(  105) TYPE (TEGWDWMS), INTENT (IN), TARGET :: YD
+(  106) LOGICAL, OPTIONAL, INTENT (IN) :: LDDELETED, LDFIELDAPI
+(  107) LOGICAL :: LLDELETED
+(  108) LOGICAL :: LLFIELDAPI
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:38      page 3
+
+(  109) 
+(  110) LLFIELDAPI = .FALSE.
+(  111) IF (PRESENT (LDFIELDAPI)) THEN
+(  112)   LLFIELDAPI = LDFIELDAPI
+(  113) ENDIF
+(  114) 
+(  115) LLDELETED = .FALSE.
+(  116) IF (PRESENT (LDDELETED)) THEN
+(  117)   LLDELETED = LDDELETED
+(  118) ENDIF
+(  119) IF (.NOT. LLDELETED) THEN
+(  120)   !$acc exit data delete (YD)
+(  121) ENDIF
+(  122) END SUBROUTINE
+(  123) 
+(  124) INTEGER*8 FUNCTION SIZE_TEGWDWMS (YD, CDPATH, LDPRINT) RESULT (KSIZE)
+(  125) 
+(  126) IMPLICIT NONE
+(  127) TYPE (TEGWDWMS),     INTENT (IN), TARGET :: YD
+(  128) CHARACTER(LEN=*), INTENT (IN), OPTIONAL :: CDPATH
+(  129) LOGICAL,          INTENT (IN), OPTIONAL :: LDPRINT
+(  130) INTEGER*8 :: ISIZE, JSIZE
+(  131) LOGICAL :: LLPRINT
+(  132) CHARACTER(LEN=128) :: CLPATH
+(  133) 
+(  134) LLPRINT = .FALSE.
+(  135) IF (PRESENT (LDPRINT)) THEN
+(  136)   LLPRINT = LDPRINT
+(  137) ENDIF
+(  138) CLPATH=''
+(  139) IF (PRESENT (CDPATH)) THEN
+(  140)   CLPATH = CDPATH
+(  141) ENDIF
+(  142) KSIZE = 0
+(  143) ISIZE = KIND (YD%LREGWWMS)
+(  144) IF (LLPRINT) THEN
+(  145)   WRITE (*, '(I10," ")', ADVANCE='NO') ISIZE
+(  146)   WRITE (*, *) TRIM (CLPATH)//'%LREGWWMS'
+(  147) ENDIF
+(  148) KSIZE = KSIZE + ISIZE
+(  149) END FUNCTION
+(  150) 
+(  151) END MODULE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:38      page 4
+
+(    1) # 1 "./util_tegwdwms_mod.F90"
+(    1) MODULE UTIL_TEGWDWMS_MOD
+(    2) # 3 "./util_tegwdwms_mod.F90"
+(    3) USE YOEGWDWMS, ONLY : TEGWDWMS
+(    4) # 5 "./util_tegwdwms_mod.F90"
+(    5) INTERFACE SAVE
+(    6) MODULE PROCEDURE SAVE_TEGWDWMS
+(    7) END INTERFACE
+(    8) # 9 "./util_tegwdwms_mod.F90"
+(    9) INTERFACE LOAD
+(   10) MODULE PROCEDURE LOAD_TEGWDWMS
+(   11) END INTERFACE
+(   12) # 13 "./util_tegwdwms_mod.F90"
+(   13) INTERFACE COPY
+(   14) MODULE PROCEDURE COPY_TEGWDWMS
+(   15) END INTERFACE
+(   16) # 17 "./util_tegwdwms_mod.F90"
+(   17) INTERFACE HOST
+(   18) MODULE PROCEDURE HOST_TEGWDWMS
+(   19) END INTERFACE
+(   20) # 21 "./util_tegwdwms_mod.F90"
+(   21)      
+(   22) INTERFACE CRC64
+(   23) MODULE PROCEDURE CRC64_TEGWDWMS
+(   24) END INTERFACE
+(   25) # 26 "./util_tegwdwms_mod.F90"
+(   26) INTERFACE WIPE
+(   27) MODULE PROCEDURE WIPE_TEGWDWMS
+(   28) END INTERFACE
+(   29) # 30 "./util_tegwdwms_mod.F90"
+(   30) INTERFACE SIZE
+(   31) MODULE PROCEDURE SIZE_TEGWDWMS
+(   32) END INTERFACE
+(   33) # 35 "./util_tegwdwms_mod.F90"
+(   35) CONTAINS
+(   36) # 37 "./util_tegwdwms_mod.F90"
+(   37) SUBROUTINE SAVE_TEGWDWMS (KLUN, YD)
+(   38) # 39 "./util_tegwdwms_mod.F90"
+(   39) IMPLICIT NONE
+(   40) INTEGER, INTENT (IN) :: KLUN
+(   41) TYPE (TEGWDWMS), INTENT (IN), TARGET :: YD
+(   42) # 43 "./util_tegwdwms_mod.F90"
+(   43) WRITE (KLUN) YD%LREGWWMS
+(   44) END SUBROUTINE
+(   45) # 46 "./util_tegwdwms_mod.F90"
+(   46) SUBROUTINE LOAD_TEGWDWMS (KLUN, YD)
+(   47) # 48 "./util_tegwdwms_mod.F90"
+(   48) IMPLICIT NONE
+(   49) INTEGER, INTENT (IN) :: KLUN
+(   50) TYPE (TEGWDWMS), INTENT (OUT), TARGET :: YD
+(   51) # 52 "./util_tegwdwms_mod.F90"
+(   52) READ (KLUN) YD%LREGWWMS
+(   53) END SUBROUTINE
+(   54) # 56 "./util_tegwdwms_mod.F90"
+(   56) SUBROUTINE COPY_TEGWDWMS (YD, LDCREATED, LDFIELDAPI)
+(   57) # 58 "./util_tegwdwms_mod.F90"
+(   58) IMPLICIT NONE
+(   59) TYPE (TEGWDWMS), INTENT (IN), TARGET :: YD
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:38      page 5
+
+(   60) LOGICAL, OPTIONAL, INTENT (IN) :: LDCREATED, LDFIELDAPI
+(   61) LOGICAL :: LLCREATED
+(   62) LOGICAL :: LLFIELDAPI
+(   63) # 64 "./util_tegwdwms_mod.F90"
+(   64) LLFIELDAPI = .FALSE.
+(   65) IF (PRESENT (LDFIELDAPI)) THEN
+(   66)   LLFIELDAPI = LDFIELDAPI
+(   67) ENDIF
+(   68) LLCREATED = .FALSE.
+(   69) IF (PRESENT (LDCREATED)) THEN
+(   70)   LLCREATED = LDCREATED
+(   71) ENDIF
+(   72) IF (.NOT. LLCREATED) THEN
+(   73)   !$acc enter data create (YD)
+(   74)   !$acc update device (YD)
+(   75) ENDIF
+(   76) # 77 "./util_tegwdwms_mod.F90"
+(   77) END SUBROUTINE
+(   78) # 79 "./util_tegwdwms_mod.F90"
+(   79) SUBROUTINE HOST_TEGWDWMS (YD)
+(   80) # 81 "./util_tegwdwms_mod.F90"
+(   81) IMPLICIT NONE
+(   82) TYPE (TEGWDWMS), TARGET :: YD
+(   83) # 85 "./util_tegwdwms_mod.F90"
+(   85) END SUBROUTINE
+(   86) # 87 "./util_tegwdwms_mod.F90"
+(   87)      
+(   88) # 89 "./util_tegwdwms_mod.F90"
+(   89) SUBROUTINE CRC64_TEGWDWMS (YD, KLUN, CDPATH)
+(   90) USE CRC64_INTRINSIC
+(   91) # 92 "./util_tegwdwms_mod.F90"
+(   92) IMPLICIT NONE
+(   93) TYPE (TEGWDWMS), TARGET :: YD
+(   94) INTEGER, INTENT (IN) :: KLUN
+(   95) CHARACTER(LEN=*), INTENT (IN) :: CDPATH
+(   96) CHARACTER(LEN=128) :: CLIND
+(   97) # 98 "./util_tegwdwms_mod.F90"
+(   98) WRITE (KLUN, '(Z16.16," ",A)') CRC64 (YD%LREGWWMS), CDPATH//'%LREGWWMS'
+(   99) # 100 "./util_tegwdwms_mod.F90"
+(  100) END SUBROUTINE
+(  101) # 102 "./util_tegwdwms_mod.F90"
+(  102) SUBROUTINE WIPE_TEGWDWMS (YD, LDDELETED, LDFIELDAPI)
+(  103) # 104 "./util_tegwdwms_mod.F90"
+(  104) IMPLICIT NONE
+(  105) TYPE (TEGWDWMS), INTENT (IN), TARGET :: YD
+(  106) LOGICAL, OPTIONAL, INTENT (IN) :: LDDELETED, LDFIELDAPI
+(  107) LOGICAL :: LLDELETED
+(  108) LOGICAL :: LLFIELDAPI
+(  109) # 110 "./util_tegwdwms_mod.F90"
+(  110) LLFIELDAPI = .FALSE.
+(  111) IF (PRESENT (LDFIELDAPI)) THEN
+(  112)   LLFIELDAPI = LDFIELDAPI
+(  113) ENDIF
+(  114) # 115 "./util_tegwdwms_mod.F90"
+(  115) LLDELETED = .FALSE.
+(  116) IF (PRESENT (LDDELETED)) THEN
+(  117)   LLDELETED = LDDELETED
+(  118) ENDIF
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:38      page 6
+
+(  119) IF (.NOT. LLDELETED) THEN
+(  120)   !$acc exit data delete (YD)
+(  121) ENDIF
+(  122) END SUBROUTINE
+(  123) # 124 "./util_tegwdwms_mod.F90"
+(  124) INTEGER*8 FUNCTION SIZE_TEGWDWMS (YD, CDPATH, LDPRINT) RESULT (KSIZE)
+(  125) # 126 "./util_tegwdwms_mod.F90"
+(  126) IMPLICIT NONE
+(  127) TYPE (TEGWDWMS),     INTENT (IN), TARGET :: YD
+(  128) CHARACTER(LEN=*), INTENT (IN), OPTIONAL :: CDPATH
+(  129) LOGICAL,          INTENT (IN), OPTIONAL :: LDPRINT
+(  130) INTEGER*8 :: ISIZE, JSIZE
+(  131) LOGICAL :: LLPRINT
+(  132) CHARACTER(LEN=128) :: CLPATH
+(  133) # 134 "./util_tegwdwms_mod.F90"
+(  134) LLPRINT = .FALSE.
+(  135) IF (PRESENT (LDPRINT)) THEN
+(  136)   LLPRINT = LDPRINT
+(  137) ENDIF
+(  138) CLPATH=''
+(  139) IF (PRESENT (CDPATH)) THEN
+(  140)   CLPATH = CDPATH
+(  141) ENDIF
+(  142) KSIZE = 0
+(  143) ISIZE = KIND (YD%LREGWWMS)
+(  144) IF (LLPRINT) THEN
+(  145)   WRITE (*, '(I10," ")', ADVANCE='NO') ISIZE
+(  146)   WRITE (*, *) TRIM (CLPATH)//'%LREGWWMS'
+(  147) ENDIF
+(  148) KSIZE = KSIZE + ISIZE
+(  149) END FUNCTION
+(  150) # 151 "./util_tegwdwms_mod.F90"
+(  151) END MODULE

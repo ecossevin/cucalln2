@@ -1,0 +1,218 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:25      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./yoe_spectral_planck.F90
+
+(    1) ! (C) Copyright 2019- ECMWF.
+(    2) !
+(    3) ! This software is licensed under the terms of the Apache Licence Version 2.0
+(    4) ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+(    5) !
+(    6) ! In applying this licence, ECMWF does not waive the privileges and immunities
+(    7) ! granted to it by virtue of its status as an intergovernmental organisation
+(    8) ! nor does it submit to any jurisdiction.
+(    9) 
+(   10) MODULE YOE_SPECTRAL_PLANCK
+(   11) 
+(   12) ! YOE_SPECTRAL_PLANCK
+(   13) !
+(   14) ! PURPOSE
+(   15) ! -------
+(   16) !   Calculate Planck function integrated across user-specified
+(   17) !   spectral intervals, used in RADHEATN by approximate longwave
+(   18) !   update scheme to modify longwave fluxes to account for the
+(   19) !   spectral emissivity on the high-resolution model grid (rather than
+(   20) !   the lower resolution grid seen by the radiation scheme).
+(   21) !
+(   22) ! INTERFACE
+(   23) ! ---------
+(   24) !   Call the INIT member routine to configure the look-up table of the
+(   25) !   TSPECRALPLANCK type, followed by any number of CALC calls with the
+(   26) !   temperatures at which the Planck function is required. FREE then
+(   27) !   deallocates memory.
+(   28) !
+(   29) ! AUTHOR
+(   30) ! ------
+(   31) !   Robin Hogan, ECMWF
+(   32) !   Original: 2019-02-04
+(   33) !
+(   34) ! MODIFICATIONS
+(   35) ! -------------
+(   36) !   A Dawson 2019-08-05 avoid single precision overflow in INIT
+(   37) 
+(   38) !-----------------------------------------------------------------------
+(   39) 
+(   40) USE PARKIND1, ONLY : JPRB,JPRD,JPIM
+(   41) USE YOMHOOK,  ONLY : LHOOK, DR_HOOK, JPHOOK
+(   42) IMPLICIT NONE
+(   43) SAVE
+(   44) 
+(   45) !-----------------------------------------------------------------------
+(   46) ! Type for storing Planck function look-up table
+(   47) TYPE TSPECTRALPLANCK
+(   48)   ! Number of intervals over which the integrated Planck function is
+(   49)   ! required. Note that an interval need not be contiguous in
+(   50)   ! wavelength.
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:25      page 2
+
+(   51)   INTEGER(KIND=JPIM) :: NINTERVALS
+(   52) 
+(   53)   ! Number of temperatures in look-up table
+(   54)   INTEGER(KIND=JPIM) :: NTEMPS
+(   55) 
+(   56)   ! Start temperature and temperature spacing of look-up table
+(   57)   REAL(KIND=JPRB) :: TEMP1, DTEMP
+(   58) 
+(   59)   ! Integrated Planck functions in look-up table, dimensioned
+(   60)   ! (NINTERVALS,NTEMPS)
+(   61)   REAL(KIND=JPRB),    ALLOCATABLE :: PLANCK_LUT(:,:)
+(   62) 
+(   63)   ! Store interval data
+(   64)   REAL(KIND=JPRB),    ALLOCATABLE :: WAVLEN_BOUND(:)
+(   65)   INTEGER(KIND=JPIM), ALLOCATABLE :: INTERVAL_MAP(:)
+(   66) 
+(   67) CONTAINS
+(   68) 
+(   69) END TYPE TSPECTRALPLANCK
+(   70) 
+(   71) END MODULE YOE_SPECTRAL_PLANCK
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:25      page 3
+
+(    1) # 1 "./yoe_spectral_planck.F90"
+(    1) ! (C) Copyright 2019- ECMWF.
+(    2) !
+(    3) ! This software is licensed under the terms of the Apache Licence Version 2.0
+(    4) ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+(    5) !
+(    6) ! In applying this licence, ECMWF does not waive the privileges and immunities
+(    7) ! granted to it by virtue of its status as an intergovernmental organisation
+(    8) ! nor does it submit to any jurisdiction.
+(    9) # 10 "./yoe_spectral_planck.F90"
+(   10) MODULE YOE_SPECTRAL_PLANCK
+(   11) # 12 "./yoe_spectral_planck.F90"
+(   12) ! YOE_SPECTRAL_PLANCK
+(   13) !
+(   14) ! PURPOSE
+(   15) ! -------
+(   16) !   Calculate Planck function integrated across user-specified
+(   17) !   spectral intervals, used in RADHEATN by approximate longwave
+(   18) !   update scheme to modify longwave fluxes to account for the
+(   19) !   spectral emissivity on the high-resolution model grid (rather than
+(   20) !   the lower resolution grid seen by the radiation scheme).
+(   21) !
+(   22) ! INTERFACE
+(   23) ! ---------
+(   24) !   Call the INIT member routine to configure the look-up table of the
+(   25) !   TSPECRALPLANCK type, followed by any number of CALC calls with the
+(   26) !   temperatures at which the Planck function is required. FREE then
+(   27) !   deallocates memory.
+(   28) !
+(   29) ! AUTHOR
+(   30) ! ------
+(   31) !   Robin Hogan, ECMWF
+(   32) !   Original: 2019-02-04
+(   33) !
+(   34) ! MODIFICATIONS
+(   35) ! -------------
+(   36) !   A Dawson 2019-08-05 avoid single precision overflow in INIT
+(   37) # 38 "./yoe_spectral_planck.F90"
+(   38) !-----------------------------------------------------------------------
+(   39) # 40 "./yoe_spectral_planck.F90"
+(   40) USE PARKIND1, ONLY : JPRB,JPRD,JPIM
+(   41) USE YOMHOOK,  ONLY : LHOOK, DR_HOOK, JPHOOK
+(   42) IMPLICIT NONE
+(   43) SAVE
+(   44) # 45 "./yoe_spectral_planck.F90"
+(   45) !-----------------------------------------------------------------------
+(   46) ! Type for storing Planck function look-up table
+(   47) TYPE TSPECTRALPLANCK
+(   48)   ! Number of intervals over which the integrated Planck function is
+(   49)   ! required. Note that an interval need not be contiguous in
+(   50)   ! wavelength.
+(   51)   INTEGER(KIND=JPIM) :: NINTERVALS
+(   52) # 53 "./yoe_spectral_planck.F90"
+(   53)   ! Number of temperatures in look-up table
+(   54)   INTEGER(KIND=JPIM) :: NTEMPS
+(   55) # 56 "./yoe_spectral_planck.F90"
+(   56)   ! Start temperature and temperature spacing of look-up table
+(   57)   REAL(KIND=JPRB) :: TEMP1, DTEMP
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:25      page 4
+
+(   58) # 59 "./yoe_spectral_planck.F90"
+(   59)   ! Integrated Planck functions in look-up table, dimensioned
+(   60)   ! (NINTERVALS,NTEMPS)
+(   61)   REAL(KIND=JPRB),    ALLOCATABLE :: PLANCK_LUT(:,:)
+(   62) # 63 "./yoe_spectral_planck.F90"
+(   63)   ! Store interval data
+(   64)   REAL(KIND=JPRB),    ALLOCATABLE :: WAVLEN_BOUND(:)
+(   65)   INTEGER(KIND=JPIM), ALLOCATABLE :: INTERVAL_MAP(:)
+(   66) # 67 "./yoe_spectral_planck.F90"
+(   67) CONTAINS
+(   68) # 69 "./yoe_spectral_planck.F90"
+(   69) END TYPE TSPECTRALPLANCK
+(   70) # 71 "./yoe_spectral_planck.F90"
+(   71) END MODULE YOE_SPECTRAL_PLANCK

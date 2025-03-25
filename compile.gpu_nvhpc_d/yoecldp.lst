@@ -1,0 +1,737 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:21      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./yoecldp.F90
+
+(    1) ! (C) Copyright 1988- ECMWF.
+(    2) !
+(    3) ! This software is licensed under the terms of the Apache Licence Version 2.0
+(    4) ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+(    5) !
+(    6) ! In applying this licence, ECMWF does not waive the privileges and immunities
+(    7) ! granted to it by virtue of its status as an intergovernmental organisation
+(    8) ! nor does it submit to any jurisdiction.
+(    9) 
+(   10) MODULE YOECLDP
+(   11) 
+(   12) USE PARKIND1, ONLY : JPIM, JPRB
+(   13) USE YOMHOOK,  ONLY : LHOOK, DR_HOOK, JPHOOK
+(   14) 
+(   15) IMPLICIT NONE
+(   16) 
+(   17) SAVE
+(   18) 
+(   19) !     -----------------------------------------------------------------
+(   20) !     ** YOECLDP - CONTROL PARAMETERS FOR PROGNOSTIC CLOUD SCHEME
+(   21) !     -----------------------------------------------------------------
+(   22) 
+(   23) !     * E.C.M.W.F. PHYSICS PACKAGE *
+(   24) 
+(   25) !     C. JAKOB     E.C.M.W.F.    94/02/07
+(   26) !     A. Tompkins  E.C.M.W.F.  2004/12/03 total water variance setup for
+(   27) !                                                  moist advection-diffusion PBL
+(   28) !     A. Tompkins  E.C.M.W.F.  2004/09/02 Aerosol in microphysics switches
+(   29) !     JJMorcrette  ECMWF       20100813   Aerosol index for aerosol-cloud interactions
+(   30) !     R. Forbes    ECMWF       20110301   Added ice deposition parameters
+(   31) !     R. Forbes    ECMWF       20150115   Added additional ice, snow and rain parameters
+(   32) !     R. Forbes    ECMWF       20190115   Added inhomog, overlapliqice and effrime parameters
+(   33) !     F. Vana      ECMWF       20200914   Cloud relaxation to help adjoint accuracy
+(   34) !     R. Forbes    ECMWF       20201115   Added RSSICEFACTOR and extra consts for ice
+(   35) !     R. Forbes    ECMWF       20201215   Renamed RCL_FACR to RCL_LAMR and added for snow
+(   36) !     R. Forbes    ECMWF       20220501   Added NPTYPE_SEV2WMO
+(   37) 
+(   38) !      NAME     TYPE      PURPOSE
+(   39) !      ----     ----      -------
+(   40) 
+(   41) !     *RAMID*   REAL      BASE VALUE FOR CALCULATION OF RELATIVE 
+(   42) !                         HUMIDITY THRESHOLD FOR ONSET OF STRATIFORM
+(   43) !                         CONDENSATION (TIEDTKE, 1993, EQUATION 24)
+(   44) !     *RCLDIFF* REAL      DIFFUSION-COEFFICIENT FOR EVAPORATION BY
+(   45) !                         TURBULENT MIXING (IBID., EQU. 30)
+(   46) !     *RCLDIFF_CONVI*REAL ENHANCEMENT FACTOR OF  RCLDIFF FOR CONVECTION
+(   47) !     *RCLCRIT* REAL      BASE VALUE OF CRITICAL CLOUD WATER CONTENT 
+(   48) !                         FOR CONVERSION TO RAIN (SUNDQUIST, 1988)
+(   49) !     *RCLCRIT_SEA* REAL  BASE VALUE OF CRITICAL CLOUD WATER CONTENT FOR SEA
+(   50) !     *RCLCRIT_LAND* REAL BASE VALUE OF CRITICAL CLOUD WATER CONTENT FOR LAND
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:21      page 2
+
+(   51) !     *RKCONV*  REAL      BASE VALUE FOR CONVERSION COEFFICIENT (IBID.)
+(   52) !     *RPRC1*   REAL      COALESCENCE CONSTANT (IBID.)
+(   53) !     *RPRC2*   REAL      BERGERON-FINDEISEN CONSTANT (IBID.)
+(   54) !     *RCLDMAX* REAL      MAXIMUM CLOUD WATER CONTENT
+(   55) !     *RPECONS* REAL      EVAPORATION CONSTANT AFTER KESSLER 
+(   56) !                         (TIEDTKE, 1993, EQU.35)
+(   57) !     *RPRECRHMAX* REAL   MAX THRESHOLD RH FOR EVAPORATION FOR ZERO COVER
+(   58) !     *RTAUMEL* REAL      RELAXATION TIME FOR MELTING OF SNOW
+(   59) !     *RAMIN*   REAL      LIMIT FOR A
+(   60) !     *RLMIN*   REAL      LIMIT FOR L
+(   61) !     *RKOOPTAU*  REAL    TIMESCALE FOR ICE SUPERSATURATION REMOVAL
+(   62) !     *RSSICEFACTOR* REAL TIMESTEP FACTOR FOR ICE SUPERSATURATION REMOVAL
+(   63) !     *RVICE*     REAL    FIXED ICE FALLSPEED
+(   64) !     *RVRAIN*    REAL    FIXED RAIN FALLSPEED
+(   65) !     *RVSNOW*    REAL    FIXED SNOW FALLSPEED
+(   66) !     *RTHOMO*    REAL    TEMPERATURE THRESHOLD FOR SPONTANEOUS FREEZING OF LIQUID DROPLETS
+(   67) !     *RCOVPMIN*  REAL    MINIMUM PRECIPITATION COVERAGE REQUIRED FOR THE NEW PROGNOSTIC PRECIP
+(   68) !     *RCLDTOPP*  REAL    TOP PRESSURE FOR CLOUD CALCULATION
+(   69) !     *NCLDTOP*   INTEGER TOP LEVEL FOR CLOUD CALCULATION
+(   70) !     *NSSOPT*  INTEGER   PARAMETRIZATION CHOICE FOR SUPERSATURATION
+(   71) !     *NCLDDIAG*INTEGER   CONTROLS CLOUDSC DIAGNOSTICS IN PEXTRA
+(   72) !     *NCLV*     INTEGER   NUMBER OF PROGNOSTIC EQUATIONS IN CLOUDSC 
+(   73) !                         (INCLUDES WATER VAPOUR AS DUMMY VARIABLE) 
+(   74) !      NAERCLD         INT  INDEX TO CONTROL SWITCHES FOR 
+(   75) !                           AEROSOL-MICROPHYSICS INTERACTION, LAER*
+(   76) !      NAECLxx         INT  INDEX OF GEMS AEROSOLS USED IN AEROSOL-CLOUD INTERACTIONS
+(   77) !      RCCN            REAL DEFAULT CCN (CM-3)
+(   78) !      RNICE           REAL DEFAULT ICE NUMBER CONCENTRATION (CM-3)
+(   79) !      LAERLIQAUTOLSP  LOG  AEROSOLS AFFECT RAIN AUTOCONVERSION IN LSP
+(   80) !      LAERLIQAUTOCP   LOG  AEROSOLS AFFECT RAIN AUTOCONVERSION IN CP
+(   81) !      LAERLIQCOLL     LOG  AEROSOLS AFFECT RAIN COLLECTION 
+(   82) !      LAERICESED      LOG  AEROSOLS AFFECT ICE SEDIMENTATION
+(   83) !      LAERICEAUTO     LOG  AEROSOLS AFFECT ICE AUTOCONVERSION
+(   84) !      RCCNOM          REAL CONSTANT IN MENON PARAM FOR ORGANIC MATTER -> CCN
+(   85) !      RCCNSS          REAL CONSTANT IN MENON PARAM SEA SALT -> CCN
+(   86) !      RCCNSU          REAL CONSTANT IN MENON PARAM FOR SULPHATE -> CCN
+(   87) !      RCLDTOPCF       REAL Cloud fraction threshold that defines cloud top 
+(   88) !      RDEPLIQREFRATE  REAL Fraction of deposition rate in cloud top layer
+(   89) !      RDEPLIQREFDEPTH REAL Depth of supercooled liquid water layer (m)
+(   90) !      RCL_OVERLAPLIQICE REAL overlap of liquid and ice cloud fractions
+(   91) !      RCL_EFFRIME       REAL riming efficiency coefficient
+(   92) !      RVRFACTOR       REAL KESSLER FACTOR=5.09E-3 FOR EVAPORATION OF CLEAR-SKY RAIN  (KESSLER,1969)
+(   93) !      RCL_INHOMOGAUT  REAL Constant for autoconversion inhomogeneity factor
+(   94) !      RCL_INHOMOGACC  REAL Constant for accretion inhomogeneity factor
+(   95) !      LCLOUD_INHOMOG  LOG  switch on regime-dependent FSD use for calculation of ZEaut and ZEacc
+(   96) !      RTAU_CLD_TLAD   REAL Relaxation factor of semi-prognostic cloud towards
+(   97) !                           its non-linear trajecotry (TL/AD)
+(   98) 
+(   99) INTEGER(KIND=JPIM),PARAMETER :: NCLV=5      ! number of microphysics variables
+(  100) INTEGER(KIND=JPIM),PARAMETER :: NCLDQL=1    ! liquid cloud water
+(  101) INTEGER(KIND=JPIM),PARAMETER :: NCLDQI=2    ! ice cloud water
+(  102) INTEGER(KIND=JPIM),PARAMETER :: NCLDQR=3    ! rain water
+(  103) INTEGER(KIND=JPIM),PARAMETER :: NCLDQS=4    ! snow
+(  104) INTEGER(KIND=JPIM),PARAMETER :: NCLDQV=5    ! vapour
+(  105) 
+(  106) ! Number of precipitation types in WMO Code Table 4.201
+(  107) INTEGER(KIND=JPIM),PARAMETER :: NPRECTYPES=12
+(  108) 
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:21      page 3
+
+(  109) TYPE :: TECLDP
+(  110) REAL(KIND=JPRB) :: RAMID
+(  111) REAL(KIND=JPRB) :: RCLDIFF
+(  112) REAL(KIND=JPRB) :: RCLDIFF_CONVI
+(  113) REAL(KIND=JPRB) :: RCLCRIT
+(  114) REAL(KIND=JPRB) :: RCLCRIT_SEA
+(  115) REAL(KIND=JPRB) :: RCLCRIT_LAND
+(  116) REAL(KIND=JPRB) :: RKCONV
+(  117) REAL(KIND=JPRB) :: RPRC1
+(  118) REAL(KIND=JPRB) :: RPRC2
+(  119) REAL(KIND=JPRB) :: RCLDMAX
+(  120) REAL(KIND=JPRB) :: RPECONS
+(  121) REAL(KIND=JPRB) :: RVRFACTOR
+(  122) REAL(KIND=JPRB) :: RPRECRHMAX
+(  123) REAL(KIND=JPRB) :: RTAUMEL
+(  124) REAL(KIND=JPRB) :: RAMIN
+(  125) REAL(KIND=JPRB) :: RLMIN
+(  126) REAL(KIND=JPRB) :: RKOOPTAU
+(  127) REAL(KIND=JPRB) :: RSSICEFACTOR
+(  128) REAL(KIND=JPRB) :: RCLDTOPP
+(  129) REAL(KIND=JPRB) :: RLCRITSNOW
+(  130) REAL(KIND=JPRB) :: RSNOWLIN1
+(  131) REAL(KIND=JPRB) :: RSNOWLIN2
+(  132) REAL(KIND=JPRB) :: RICEHI1
+(  133) REAL(KIND=JPRB) :: RICEHI2
+(  134) REAL(KIND=JPRB) :: RICEINIT
+(  135) REAL(KIND=JPRB) :: RVICE
+(  136) REAL(KIND=JPRB) :: RVRAIN
+(  137) REAL(KIND=JPRB) :: RVSNOW
+(  138) REAL(KIND=JPRB) :: RTHOMO
+(  139) REAL(KIND=JPRB) :: RCOVPMIN
+(  140) REAL(KIND=JPRB) :: RCCN
+(  141) REAL(KIND=JPRB) :: RNICE
+(  142) REAL(KIND=JPRB) :: RCCNOM
+(  143) REAL(KIND=JPRB) :: RCCNSS
+(  144) REAL(KIND=JPRB) :: RCCNSU
+(  145) REAL(KIND=JPRB) :: RCLDTOPCF
+(  146) REAL(KIND=JPRB) :: RDEPLIQREFRATE
+(  147) REAL(KIND=JPRB) :: RDEPLIQREFDEPTH
+(  148) REAL(KIND=JPRB) :: RCL_OVERLAPLIQICE
+(  149) REAL(KIND=JPRB) :: RCL_EFFRIME
+(  150) REAL(KIND=JPRB) :: RTAU_CLD_TLAD
+(  151) !--------------------------------------------------------
+(  152) ! Autoconversion/accretion (Khairoutdinov and Kogan 2000)
+(  153) !--------------------------------------------------------
+(  154) REAL(KIND=JPRB) :: RCL_KKAAC
+(  155) REAL(KIND=JPRB) :: RCL_KKBAC
+(  156) REAL(KIND=JPRB) :: RCL_KKAAU
+(  157) REAL(KIND=JPRB) :: RCL_KKBAUQ
+(  158) REAL(KIND=JPRB) :: RCL_KKBAUN
+(  159) REAL(KIND=JPRB) :: RCL_KK_CLOUD_NUM_SEA
+(  160) REAL(KIND=JPRB) :: RCL_KK_CLOUD_NUM_LAND
+(  161) REAL(KIND=JPRB) :: RCL_INHOMOGAUT
+(  162) REAL(KIND=JPRB) :: RCL_INHOMOGACC
+(  163) LOGICAL         :: LCLOUD_INHOMOG
+(  164) !--------------------------------------------------------
+(  165) ! Ice
+(  166) !--------------------------------------------------------
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:21      page 4
+
+(  167) REAL(KIND=JPRB) :: RCL_AI
+(  168) REAL(KIND=JPRB) :: RCL_BI
+(  169) REAL(KIND=JPRB) :: RCL_CI
+(  170) REAL(KIND=JPRB) :: RCL_DI
+(  171) REAL(KIND=JPRB) :: RCL_X1I
+(  172) REAL(KIND=JPRB) :: RCL_X2I
+(  173) REAL(KIND=JPRB) :: RCL_X3I
+(  174) REAL(KIND=JPRB) :: RCL_X4I
+(  175) REAL(KIND=JPRB) :: RCL_CONST1I
+(  176) REAL(KIND=JPRB) :: RCL_CONST2I
+(  177) REAL(KIND=JPRB) :: RCL_CONST3I
+(  178) REAL(KIND=JPRB) :: RCL_CONST4I
+(  179) REAL(KIND=JPRB) :: RCL_CONST5I
+(  180) REAL(KIND=JPRB) :: RCL_CONST6I
+(  181) REAL(KIND=JPRB) :: RCL_CONST7I
+(  182) REAL(KIND=JPRB) :: RCL_LAMBDA1I
+(  183) REAL(KIND=JPRB) :: RCL_LAMBDA2I
+(  184) REAL(KIND=JPRB) :: RCL_APB1
+(  185) REAL(KIND=JPRB) :: RCL_APB2
+(  186) REAL(KIND=JPRB) :: RCL_APB3
+(  187) !--------------------------------------------------------
+(  188) ! Snow
+(  189) !--------------------------------------------------------
+(  190) REAL(KIND=JPRB) :: RCL_AS
+(  191) REAL(KIND=JPRB) :: RCL_BS
+(  192) REAL(KIND=JPRB) :: RCL_CS
+(  193) REAL(KIND=JPRB) :: RCL_DS
+(  194) REAL(KIND=JPRB) :: RCL_X1S
+(  195) REAL(KIND=JPRB) :: RCL_X2S
+(  196) REAL(KIND=JPRB) :: RCL_X3S
+(  197) REAL(KIND=JPRB) :: RCL_X4S
+(  198) REAL(KIND=JPRB) :: RCL_CONST1S
+(  199) REAL(KIND=JPRB) :: RCL_CONST2S
+(  200) REAL(KIND=JPRB) :: RCL_CONST3S
+(  201) REAL(KIND=JPRB) :: RCL_CONST4S
+(  202) REAL(KIND=JPRB) :: RCL_CONST5S
+(  203) REAL(KIND=JPRB) :: RCL_CONST6S
+(  204) REAL(KIND=JPRB) :: RCL_CONST7S
+(  205) REAL(KIND=JPRB) :: RCL_CONST8S
+(  206) REAL(KIND=JPRB) :: RCL_LAM1S
+(  207) REAL(KIND=JPRB) :: RCL_LAM2S
+(  208) !--------------------------------------------------------
+(  209) ! Rain
+(  210) !--------------------------------------------------------
+(  211) REAL(KIND=JPRB) :: RDENSWAT
+(  212) REAL(KIND=JPRB) :: RDENSREF
+(  213) REAL(KIND=JPRB) :: RCL_AR
+(  214) REAL(KIND=JPRB) :: RCL_BR
+(  215) REAL(KIND=JPRB) :: RCL_CR
+(  216) REAL(KIND=JPRB) :: RCL_DR
+(  217) REAL(KIND=JPRB) :: RCL_X1R
+(  218) REAL(KIND=JPRB) :: RCL_X2R
+(  219) REAL(KIND=JPRB) :: RCL_X4R
+(  220) REAL(KIND=JPRB) :: RCL_X1R_MP
+(  221) REAL(KIND=JPRB) :: RCL_X2R_MP
+(  222) REAL(KIND=JPRB) :: RCL_X4R_MP
+(  223) REAL(KIND=JPRB) :: RCL_KA273
+(  224) REAL(KIND=JPRB) :: RCL_CDENOM1
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:21      page 5
+
+(  225) REAL(KIND=JPRB) :: RCL_CDENOM2
+(  226) REAL(KIND=JPRB) :: RCL_CDENOM3
+(  227) REAL(KIND=JPRB) :: RCL_SCHMIDT
+(  228) REAL(KIND=JPRB) :: RCL_DYNVISC
+(  229) REAL(KIND=JPRB) :: RCL_CONST1R
+(  230) REAL(KIND=JPRB) :: RCL_CONST2R
+(  231) REAL(KIND=JPRB) :: RCL_CONST3R
+(  232) REAL(KIND=JPRB) :: RCL_CONST4R
+(  233) REAL(KIND=JPRB) :: RCL_CONST7R
+(  234) REAL(KIND=JPRB) :: RCL_CONST8R
+(  235) REAL(KIND=JPRB) :: RCL_LAM1R
+(  236) REAL(KIND=JPRB) :: RCL_LAM2R
+(  237) REAL(KIND=JPRB) :: RCL_LAM1R_MP
+(  238) REAL(KIND=JPRB) :: RCL_LAM2R_MP
+(  239) ! Rain freezing
+(  240) REAL(KIND=JPRB) :: RCL_CONST5R
+(  241) REAL(KIND=JPRB) :: RCL_CONST6R
+(  242) REAL(KIND=JPRB) :: RCL_FZRAB
+(  243) REAL(KIND=JPRB) :: RCL_FZRBB
+(  244) ! Rain accretion
+(  245) REAL(KIND=JPRB) :: RCL_CONST9R
+(  246) REAL(KIND=JPRB) :: RCL_CONST10R
+(  247) REAL(KIND=JPRB) :: RCL_EFF_RACW
+(  248) 
+(  249) !----------------------------------------------------------------
+(  250) ! Lookup arrays relating WMO precip type to precip type severity
+(  251) !---------------------------------------------------------------
+(  252) INTEGER(KIND=JPIM) :: NPTYPE_SEV2WMO(NPRECTYPES)
+(  253) 
+(  254) !--------------------------------------------------------
+(  255) ! Cloud process budget diagnostic control
+(  256) !--------------------------------------------------------
+(  257) LOGICAL :: LCLDEXTRA, LCLDBUDGET
+(  258) LOGICAL :: LCLDBUDC    
+(  259) LOGICAL :: LCLDBUDL    
+(  260) LOGICAL :: LCLDBUDI    
+(  261) LOGICAL :: LCLDBUDT    
+(  262) LOGICAL :: LCLDBUD_TIMEINT
+(  263) LOGICAL :: LCLDBUD_VERTINT
+(  264) 
+(  265) INTEGER(KIND=JPIM) :: NSSOPT
+(  266) INTEGER(KIND=JPIM) :: NCLDTOP
+(  267) INTEGER(KIND=JPIM) :: NAECLBC, NAECLDU, NAECLOM, NAECLSS, NAECLSU
+(  268) INTEGER(KIND=JPIM) :: NCLDDIAG
+(  269) 
+(  270) ! aerosols
+(  271) INTEGER(KIND=JPIM) :: NAERCLD
+(  272) LOGICAL :: LAERLIQAUTOLSP
+(  273) LOGICAL :: LAERLIQAUTOCP
+(  274) LOGICAL :: LAERLIQAUTOCPB
+(  275) LOGICAL :: LAERLIQCOLL
+(  276) LOGICAL :: LAERICESED
+(  277) LOGICAL :: LAERICEAUTO
+(  278) 
+(  279) ! variance arrays
+(  280) REAL(KIND=JPRB) :: NSHAPEP
+(  281) REAL(KIND=JPRB) :: NSHAPEQ
+(  282) INTEGER(KIND=JPIM) :: NBETA
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:21      page 6
+
+(  283) REAL(KIND=JPRB) :: RBETA(0:100)
+(  284) REAL(KIND=JPRB) :: RBETAP1(0:100)
+(  285) !----------------------------------------------------------------------------
+(  286) 
+(  287) CONTAINS
+(  288) 
+(  289) END TYPE TECLDP
+(  290) !============================================================================
+(  291) 
+(  292) !!TYPE(TECLDP), POINTER :: YRECLDP => NULL()
+(  293) 
+(  294) END MODULE YOECLDP
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:21      page 7
+
+(    1) # 1 "./yoecldp.F90"
+(    1) ! (C) Copyright 1988- ECMWF.
+(    2) !
+(    3) ! This software is licensed under the terms of the Apache Licence Version 2.0
+(    4) ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+(    5) !
+(    6) ! In applying this licence, ECMWF does not waive the privileges and immunities
+(    7) ! granted to it by virtue of its status as an intergovernmental organisation
+(    8) ! nor does it submit to any jurisdiction.
+(    9) # 10 "./yoecldp.F90"
+(   10) MODULE YOECLDP
+(   11) # 12 "./yoecldp.F90"
+(   12) USE PARKIND1, ONLY : JPIM, JPRB
+(   13) USE YOMHOOK,  ONLY : LHOOK, DR_HOOK, JPHOOK
+(   14) # 15 "./yoecldp.F90"
+(   15) IMPLICIT NONE
+(   16) # 17 "./yoecldp.F90"
+(   17) SAVE
+(   18) # 19 "./yoecldp.F90"
+(   19) !     -----------------------------------------------------------------
+(   20) !     ** YOECLDP - CONTROL PARAMETERS FOR PROGNOSTIC CLOUD SCHEME
+(   21) !     -----------------------------------------------------------------
+(   22) # 23 "./yoecldp.F90"
+(   23) !     * E.C.M.W.F. PHYSICS PACKAGE *
+(   24) # 25 "./yoecldp.F90"
+(   25) !     C. JAKOB     E.C.M.W.F.    94/02/07
+(   26) !     A. Tompkins  E.C.M.W.F.  2004/12/03 total water variance setup for
+(   27) !                                                  moist advection-diffusion PBL
+(   28) !     A. Tompkins  E.C.M.W.F.  2004/09/02 Aerosol in microphysics switches
+(   29) !     JJMorcrette  ECMWF       20100813   Aerosol index for aerosol-cloud interactions
+(   30) !     R. Forbes    ECMWF       20110301   Added ice deposition parameters
+(   31) !     R. Forbes    ECMWF       20150115   Added additional ice, snow and rain parameters
+(   32) !     R. Forbes    ECMWF       20190115   Added inhomog, overlapliqice and effrime parameters
+(   33) !     F. Vana      ECMWF       20200914   Cloud relaxation to help adjoint accuracy
+(   34) !     R. Forbes    ECMWF       20201115   Added RSSICEFACTOR and extra consts for ice
+(   35) !     R. Forbes    ECMWF       20201215   Renamed RCL_FACR to RCL_LAMR and added for snow
+(   36) !     R. Forbes    ECMWF       20220501   Added NPTYPE_SEV2WMO
+(   37) # 38 "./yoecldp.F90"
+(   38) !      NAME     TYPE      PURPOSE
+(   39) !      ----     ----      -------
+(   40) # 41 "./yoecldp.F90"
+(   41) !     *RAMID*   REAL      BASE VALUE FOR CALCULATION OF RELATIVE 
+(   42) !                         HUMIDITY THRESHOLD FOR ONSET OF STRATIFORM
+(   43) !                         CONDENSATION (TIEDTKE, 1993, EQUATION 24)
+(   44) !     *RCLDIFF* REAL      DIFFUSION-COEFFICIENT FOR EVAPORATION BY
+(   45) !                         TURBULENT MIXING (IBID., EQU. 30)
+(   46) !     *RCLDIFF_CONVI*REAL ENHANCEMENT FACTOR OF  RCLDIFF FOR CONVECTION
+(   47) !     *RCLCRIT* REAL      BASE VALUE OF CRITICAL CLOUD WATER CONTENT 
+(   48) !                         FOR CONVERSION TO RAIN (SUNDQUIST, 1988)
+(   49) !     *RCLCRIT_SEA* REAL  BASE VALUE OF CRITICAL CLOUD WATER CONTENT FOR SEA
+(   50) !     *RCLCRIT_LAND* REAL BASE VALUE OF CRITICAL CLOUD WATER CONTENT FOR LAND
+(   51) !     *RKCONV*  REAL      BASE VALUE FOR CONVERSION COEFFICIENT (IBID.)
+(   52) !     *RPRC1*   REAL      COALESCENCE CONSTANT (IBID.)
+(   53) !     *RPRC2*   REAL      BERGERON-FINDEISEN CONSTANT (IBID.)
+(   54) !     *RCLDMAX* REAL      MAXIMUM CLOUD WATER CONTENT
+(   55) !     *RPECONS* REAL      EVAPORATION CONSTANT AFTER KESSLER 
+(   56) !                         (TIEDTKE, 1993, EQU.35)
+(   57) !     *RPRECRHMAX* REAL   MAX THRESHOLD RH FOR EVAPORATION FOR ZERO COVER
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:21      page 8
+
+(   58) !     *RTAUMEL* REAL      RELAXATION TIME FOR MELTING OF SNOW
+(   59) !     *RAMIN*   REAL      LIMIT FOR A
+(   60) !     *RLMIN*   REAL      LIMIT FOR L
+(   61) !     *RKOOPTAU*  REAL    TIMESCALE FOR ICE SUPERSATURATION REMOVAL
+(   62) !     *RSSICEFACTOR* REAL TIMESTEP FACTOR FOR ICE SUPERSATURATION REMOVAL
+(   63) !     *RVICE*     REAL    FIXED ICE FALLSPEED
+(   64) !     *RVRAIN*    REAL    FIXED RAIN FALLSPEED
+(   65) !     *RVSNOW*    REAL    FIXED SNOW FALLSPEED
+(   66) !     *RTHOMO*    REAL    TEMPERATURE THRESHOLD FOR SPONTANEOUS FREEZING OF LIQUID DROPLETS
+(   67) !     *RCOVPMIN*  REAL    MINIMUM PRECIPITATION COVERAGE REQUIRED FOR THE NEW PROGNOSTIC PRECIP
+(   68) !     *RCLDTOPP*  REAL    TOP PRESSURE FOR CLOUD CALCULATION
+(   69) !     *NCLDTOP*   INTEGER TOP LEVEL FOR CLOUD CALCULATION
+(   70) !     *NSSOPT*  INTEGER   PARAMETRIZATION CHOICE FOR SUPERSATURATION
+(   71) !     *NCLDDIAG*INTEGER   CONTROLS CLOUDSC DIAGNOSTICS IN PEXTRA
+(   72) !     *NCLV*     INTEGER   NUMBER OF PROGNOSTIC EQUATIONS IN CLOUDSC 
+(   73) !                         (INCLUDES WATER VAPOUR AS DUMMY VARIABLE) 
+(   74) !      NAERCLD         INT  INDEX TO CONTROL SWITCHES FOR 
+(   75) !                           AEROSOL-MICROPHYSICS INTERACTION, LAER*
+(   76) !      NAECLxx         INT  INDEX OF GEMS AEROSOLS USED IN AEROSOL-CLOUD INTERACTIONS
+(   77) !      RCCN            REAL DEFAULT CCN (CM-3)
+(   78) !      RNICE           REAL DEFAULT ICE NUMBER CONCENTRATION (CM-3)
+(   79) !      LAERLIQAUTOLSP  LOG  AEROSOLS AFFECT RAIN AUTOCONVERSION IN LSP
+(   80) !      LAERLIQAUTOCP   LOG  AEROSOLS AFFECT RAIN AUTOCONVERSION IN CP
+(   81) !      LAERLIQCOLL     LOG  AEROSOLS AFFECT RAIN COLLECTION 
+(   82) !      LAERICESED      LOG  AEROSOLS AFFECT ICE SEDIMENTATION
+(   83) !      LAERICEAUTO     LOG  AEROSOLS AFFECT ICE AUTOCONVERSION
+(   84) !      RCCNOM          REAL CONSTANT IN MENON PARAM FOR ORGANIC MATTER -> CCN
+(   85) !      RCCNSS          REAL CONSTANT IN MENON PARAM SEA SALT -> CCN
+(   86) !      RCCNSU          REAL CONSTANT IN MENON PARAM FOR SULPHATE -> CCN
+(   87) !      RCLDTOPCF       REAL Cloud fraction threshold that defines cloud top 
+(   88) !      RDEPLIQREFRATE  REAL Fraction of deposition rate in cloud top layer
+(   89) !      RDEPLIQREFDEPTH REAL Depth of supercooled liquid water layer (m)
+(   90) !      RCL_OVERLAPLIQICE REAL overlap of liquid and ice cloud fractions
+(   91) !      RCL_EFFRIME       REAL riming efficiency coefficient
+(   92) !      RVRFACTOR       REAL KESSLER FACTOR=5.09E-3 FOR EVAPORATION OF CLEAR-SKY RAIN  (KESSLER,1969)
+(   93) !      RCL_INHOMOGAUT  REAL Constant for autoconversion inhomogeneity factor
+(   94) !      RCL_INHOMOGACC  REAL Constant for accretion inhomogeneity factor
+(   95) !      LCLOUD_INHOMOG  LOG  switch on regime-dependent FSD use for calculation of ZEaut and ZEacc
+(   96) !      RTAU_CLD_TLAD   REAL Relaxation factor of semi-prognostic cloud towards
+(   97) !                           its non-linear trajecotry (TL/AD)
+(   98) # 99 "./yoecldp.F90"
+(   99) INTEGER(KIND=JPIM),PARAMETER :: NCLV=5      ! number of microphysics variables
+(  100) INTEGER(KIND=JPIM),PARAMETER :: NCLDQL=1    ! liquid cloud water
+(  101) INTEGER(KIND=JPIM),PARAMETER :: NCLDQI=2    ! ice cloud water
+(  102) INTEGER(KIND=JPIM),PARAMETER :: NCLDQR=3    ! rain water
+(  103) INTEGER(KIND=JPIM),PARAMETER :: NCLDQS=4    ! snow
+(  104) INTEGER(KIND=JPIM),PARAMETER :: NCLDQV=5    ! vapour
+(  105) # 106 "./yoecldp.F90"
+(  106) ! Number of precipitation types in WMO Code Table 4.201
+(  107) INTEGER(KIND=JPIM),PARAMETER :: NPRECTYPES=12
+(  108) # 109 "./yoecldp.F90"
+(  109) TYPE :: TECLDP
+(  110) REAL(KIND=JPRB) :: RAMID
+(  111) REAL(KIND=JPRB) :: RCLDIFF
+(  112) REAL(KIND=JPRB) :: RCLDIFF_CONVI
+(  113) REAL(KIND=JPRB) :: RCLCRIT
+(  114) REAL(KIND=JPRB) :: RCLCRIT_SEA
+(  115) REAL(KIND=JPRB) :: RCLCRIT_LAND
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:21      page 9
+
+(  116) REAL(KIND=JPRB) :: RKCONV
+(  117) REAL(KIND=JPRB) :: RPRC1
+(  118) REAL(KIND=JPRB) :: RPRC2
+(  119) REAL(KIND=JPRB) :: RCLDMAX
+(  120) REAL(KIND=JPRB) :: RPECONS
+(  121) REAL(KIND=JPRB) :: RVRFACTOR
+(  122) REAL(KIND=JPRB) :: RPRECRHMAX
+(  123) REAL(KIND=JPRB) :: RTAUMEL
+(  124) REAL(KIND=JPRB) :: RAMIN
+(  125) REAL(KIND=JPRB) :: RLMIN
+(  126) REAL(KIND=JPRB) :: RKOOPTAU
+(  127) REAL(KIND=JPRB) :: RSSICEFACTOR
+(  128) REAL(KIND=JPRB) :: RCLDTOPP
+(  129) REAL(KIND=JPRB) :: RLCRITSNOW
+(  130) REAL(KIND=JPRB) :: RSNOWLIN1
+(  131) REAL(KIND=JPRB) :: RSNOWLIN2
+(  132) REAL(KIND=JPRB) :: RICEHI1
+(  133) REAL(KIND=JPRB) :: RICEHI2
+(  134) REAL(KIND=JPRB) :: RICEINIT
+(  135) REAL(KIND=JPRB) :: RVICE
+(  136) REAL(KIND=JPRB) :: RVRAIN
+(  137) REAL(KIND=JPRB) :: RVSNOW
+(  138) REAL(KIND=JPRB) :: RTHOMO
+(  139) REAL(KIND=JPRB) :: RCOVPMIN
+(  140) REAL(KIND=JPRB) :: RCCN
+(  141) REAL(KIND=JPRB) :: RNICE
+(  142) REAL(KIND=JPRB) :: RCCNOM
+(  143) REAL(KIND=JPRB) :: RCCNSS
+(  144) REAL(KIND=JPRB) :: RCCNSU
+(  145) REAL(KIND=JPRB) :: RCLDTOPCF
+(  146) REAL(KIND=JPRB) :: RDEPLIQREFRATE
+(  147) REAL(KIND=JPRB) :: RDEPLIQREFDEPTH
+(  148) REAL(KIND=JPRB) :: RCL_OVERLAPLIQICE
+(  149) REAL(KIND=JPRB) :: RCL_EFFRIME
+(  150) REAL(KIND=JPRB) :: RTAU_CLD_TLAD
+(  151) !--------------------------------------------------------
+(  152) ! Autoconversion/accretion (Khairoutdinov and Kogan 2000)
+(  153) !--------------------------------------------------------
+(  154) REAL(KIND=JPRB) :: RCL_KKAAC
+(  155) REAL(KIND=JPRB) :: RCL_KKBAC
+(  156) REAL(KIND=JPRB) :: RCL_KKAAU
+(  157) REAL(KIND=JPRB) :: RCL_KKBAUQ
+(  158) REAL(KIND=JPRB) :: RCL_KKBAUN
+(  159) REAL(KIND=JPRB) :: RCL_KK_CLOUD_NUM_SEA
+(  160) REAL(KIND=JPRB) :: RCL_KK_CLOUD_NUM_LAND
+(  161) REAL(KIND=JPRB) :: RCL_INHOMOGAUT
+(  162) REAL(KIND=JPRB) :: RCL_INHOMOGACC
+(  163) LOGICAL         :: LCLOUD_INHOMOG
+(  164) !--------------------------------------------------------
+(  165) ! Ice
+(  166) !--------------------------------------------------------
+(  167) REAL(KIND=JPRB) :: RCL_AI
+(  168) REAL(KIND=JPRB) :: RCL_BI
+(  169) REAL(KIND=JPRB) :: RCL_CI
+(  170) REAL(KIND=JPRB) :: RCL_DI
+(  171) REAL(KIND=JPRB) :: RCL_X1I
+(  172) REAL(KIND=JPRB) :: RCL_X2I
+(  173) REAL(KIND=JPRB) :: RCL_X3I
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:21      page 10
+
+(  174) REAL(KIND=JPRB) :: RCL_X4I
+(  175) REAL(KIND=JPRB) :: RCL_CONST1I
+(  176) REAL(KIND=JPRB) :: RCL_CONST2I
+(  177) REAL(KIND=JPRB) :: RCL_CONST3I
+(  178) REAL(KIND=JPRB) :: RCL_CONST4I
+(  179) REAL(KIND=JPRB) :: RCL_CONST5I
+(  180) REAL(KIND=JPRB) :: RCL_CONST6I
+(  181) REAL(KIND=JPRB) :: RCL_CONST7I
+(  182) REAL(KIND=JPRB) :: RCL_LAMBDA1I
+(  183) REAL(KIND=JPRB) :: RCL_LAMBDA2I
+(  184) REAL(KIND=JPRB) :: RCL_APB1
+(  185) REAL(KIND=JPRB) :: RCL_APB2
+(  186) REAL(KIND=JPRB) :: RCL_APB3
+(  187) !--------------------------------------------------------
+(  188) ! Snow
+(  189) !--------------------------------------------------------
+(  190) REAL(KIND=JPRB) :: RCL_AS
+(  191) REAL(KIND=JPRB) :: RCL_BS
+(  192) REAL(KIND=JPRB) :: RCL_CS
+(  193) REAL(KIND=JPRB) :: RCL_DS
+(  194) REAL(KIND=JPRB) :: RCL_X1S
+(  195) REAL(KIND=JPRB) :: RCL_X2S
+(  196) REAL(KIND=JPRB) :: RCL_X3S
+(  197) REAL(KIND=JPRB) :: RCL_X4S
+(  198) REAL(KIND=JPRB) :: RCL_CONST1S
+(  199) REAL(KIND=JPRB) :: RCL_CONST2S
+(  200) REAL(KIND=JPRB) :: RCL_CONST3S
+(  201) REAL(KIND=JPRB) :: RCL_CONST4S
+(  202) REAL(KIND=JPRB) :: RCL_CONST5S
+(  203) REAL(KIND=JPRB) :: RCL_CONST6S
+(  204) REAL(KIND=JPRB) :: RCL_CONST7S
+(  205) REAL(KIND=JPRB) :: RCL_CONST8S
+(  206) REAL(KIND=JPRB) :: RCL_LAM1S
+(  207) REAL(KIND=JPRB) :: RCL_LAM2S
+(  208) !--------------------------------------------------------
+(  209) ! Rain
+(  210) !--------------------------------------------------------
+(  211) REAL(KIND=JPRB) :: RDENSWAT
+(  212) REAL(KIND=JPRB) :: RDENSREF
+(  213) REAL(KIND=JPRB) :: RCL_AR
+(  214) REAL(KIND=JPRB) :: RCL_BR
+(  215) REAL(KIND=JPRB) :: RCL_CR
+(  216) REAL(KIND=JPRB) :: RCL_DR
+(  217) REAL(KIND=JPRB) :: RCL_X1R
+(  218) REAL(KIND=JPRB) :: RCL_X2R
+(  219) REAL(KIND=JPRB) :: RCL_X4R
+(  220) REAL(KIND=JPRB) :: RCL_X1R_MP
+(  221) REAL(KIND=JPRB) :: RCL_X2R_MP
+(  222) REAL(KIND=JPRB) :: RCL_X4R_MP
+(  223) REAL(KIND=JPRB) :: RCL_KA273
+(  224) REAL(KIND=JPRB) :: RCL_CDENOM1
+(  225) REAL(KIND=JPRB) :: RCL_CDENOM2
+(  226) REAL(KIND=JPRB) :: RCL_CDENOM3
+(  227) REAL(KIND=JPRB) :: RCL_SCHMIDT
+(  228) REAL(KIND=JPRB) :: RCL_DYNVISC
+(  229) REAL(KIND=JPRB) :: RCL_CONST1R
+(  230) REAL(KIND=JPRB) :: RCL_CONST2R
+(  231) REAL(KIND=JPRB) :: RCL_CONST3R
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:21      page 11
+
+(  232) REAL(KIND=JPRB) :: RCL_CONST4R
+(  233) REAL(KIND=JPRB) :: RCL_CONST7R
+(  234) REAL(KIND=JPRB) :: RCL_CONST8R
+(  235) REAL(KIND=JPRB) :: RCL_LAM1R
+(  236) REAL(KIND=JPRB) :: RCL_LAM2R
+(  237) REAL(KIND=JPRB) :: RCL_LAM1R_MP
+(  238) REAL(KIND=JPRB) :: RCL_LAM2R_MP
+(  239) ! Rain freezing
+(  240) REAL(KIND=JPRB) :: RCL_CONST5R
+(  241) REAL(KIND=JPRB) :: RCL_CONST6R
+(  242) REAL(KIND=JPRB) :: RCL_FZRAB
+(  243) REAL(KIND=JPRB) :: RCL_FZRBB
+(  244) ! Rain accretion
+(  245) REAL(KIND=JPRB) :: RCL_CONST9R
+(  246) REAL(KIND=JPRB) :: RCL_CONST10R
+(  247) REAL(KIND=JPRB) :: RCL_EFF_RACW
+(  248) # 249 "./yoecldp.F90"
+(  249) !----------------------------------------------------------------
+(  250) ! Lookup arrays relating WMO precip type to precip type severity
+(  251) !---------------------------------------------------------------
+(  252) INTEGER(KIND=JPIM) :: NPTYPE_SEV2WMO(NPRECTYPES)
+(  253) # 254 "./yoecldp.F90"
+(  254) !--------------------------------------------------------
+(  255) ! Cloud process budget diagnostic control
+(  256) !--------------------------------------------------------
+(  257) LOGICAL :: LCLDEXTRA, LCLDBUDGET
+(  258) LOGICAL :: LCLDBUDC    
+(  259) LOGICAL :: LCLDBUDL    
+(  260) LOGICAL :: LCLDBUDI    
+(  261) LOGICAL :: LCLDBUDT    
+(  262) LOGICAL :: LCLDBUD_TIMEINT
+(  263) LOGICAL :: LCLDBUD_VERTINT
+(  264) # 265 "./yoecldp.F90"
+(  265) INTEGER(KIND=JPIM) :: NSSOPT
+(  266) INTEGER(KIND=JPIM) :: NCLDTOP
+(  267) INTEGER(KIND=JPIM) :: NAECLBC, NAECLDU, NAECLOM, NAECLSS, NAECLSU
+(  268) INTEGER(KIND=JPIM) :: NCLDDIAG
+(  269) # 270 "./yoecldp.F90"
+(  270) ! aerosols
+(  271) INTEGER(KIND=JPIM) :: NAERCLD
+(  272) LOGICAL :: LAERLIQAUTOLSP
+(  273) LOGICAL :: LAERLIQAUTOCP
+(  274) LOGICAL :: LAERLIQAUTOCPB
+(  275) LOGICAL :: LAERLIQCOLL
+(  276) LOGICAL :: LAERICESED
+(  277) LOGICAL :: LAERICEAUTO
+(  278) # 279 "./yoecldp.F90"
+(  279) ! variance arrays
+(  280) REAL(KIND=JPRB) :: NSHAPEP
+(  281) REAL(KIND=JPRB) :: NSHAPEQ
+(  282) INTEGER(KIND=JPIM) :: NBETA
+(  283) REAL(KIND=JPRB) :: RBETA(0:100)
+(  284) REAL(KIND=JPRB) :: RBETAP1(0:100)
+(  285) !----------------------------------------------------------------------------
+(  286) # 287 "./yoecldp.F90"
+(  287) CONTAINS
+(  288) # 289 "./yoecldp.F90"
+(  289) END TYPE TECLDP
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:21      page 12
+
+(  290) !============================================================================
+(  291) # 292 "./yoecldp.F90"
+(  292) !!TYPE(TECLDP), POINTER :: YRECLDP => NULL()
+(  293) # 294 "./yoecldp.F90"
+(  294) END MODULE YOECLDP

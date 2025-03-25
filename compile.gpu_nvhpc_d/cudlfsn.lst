@@ -1,0 +1,964 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:03      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./cudlfsn.F90
+
+(    1) SUBROUTINE CUDLFSN &
+(    2)  & (YDTHF, YDCST, YDEPHLI, YDECUMF,&
+(    3)  & KIDIA,    KFDIA,    KLON,    KLEV,&
+(    4)  & KCBOT,    KCTOP,    LDCUM,&
+(    5)  & PTENH,    PQENH,    PTEN,     PQSEN,    PGEO,&
+(    6)  & PGEOH,    PAPH,     PTU,      PQU,&
+(    7)  & PMFUB,    PRFL,&
+(    8)  & PTD,      PQD,&
+(    9)  & PMFD,     PMFDS,    PMFDQ,    PDMFDP,&
+(   10)  & KDTOP,    LDDRAF)  
+(   11) 
+(   12) !          THIS ROUTINE CALCULATES LEVEL OF FREE SINKING FOR
+(   13) !          CUMULUS DOWNDRAFTS AND SPECIFIES T,Q,U AND V VALUES
+(   14) 
+(   15) !          PURPOSE.
+(   16) !          --------
+(   17) !          TO PRODUCE LFS-VALUES FOR CUMULUS DOWNDRAFTS
+(   18) !          FOR MASSFLUX CUMULUS PARAMETERIZATION
+(   19) 
+(   20) !          INTERFACE
+(   21) !          ---------
+(   22) !          THIS ROUTINE IS CALLED FROM *CUMASTR*.
+(   23) !          INPUT ARE ENVIRONMENTAL VALUES OF T,Q,U,V,P,PHI
+(   24) !          AND UPDRAFT VALUES T,Q,U AND V AND ALSO
+(   25) !          CLOUD BASE MASSFLUX AND CU-PRECIPITATION RATE.
+(   26) !          IT RETURNS T,Q,U AND V VALUES AND MASSFLUX AT LFS.
+(   27) 
+(   28) !          METHOD.
+(   29) 
+(   30) !          CHECK FOR NEGATIVE BUOYANCY OF AIR OF EQUAL PARTS OF
+(   31) !          MOIST ENVIRONMENTAL AIR AND CLOUD AIR.
+(   32) 
+(   33) !     PARAMETER     DESCRIPTION                                   UNITS
+(   34) !     ---------     -----------                                   -----
+(   35) !     INPUT PARAMETERS (INTEGER):
+(   36) 
+(   37) !    *KIDIA*        START POINT
+(   38) !    *KFDIA*        END POINT
+(   39) !    *KLON*         NUMBER OF GRID POINTS PER PACKET
+(   40) !    *KLEV*         NUMBER OF LEVELS
+(   41) !    *KCBOT*        CLOUD BASE LEVEL
+(   42) !    *KCTOP*        CLOUD TOP LEVEL
+(   43) 
+(   44) !    INPUT PARAMETERS (LOGICAL):
+(   45) 
+(   46) !    *LDCUM*        FLAG: .TRUE. FOR CONVECTIVE POINTS
+(   47) 
+(   48) !    INPUT PARAMETERS (REAL):
+(   49) 
+(   50) !    *PTENH*        ENV. TEMPERATURE (T+1) ON HALF LEVELS          K
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:03      page 2
+
+(   51) !    *PQENH*        ENV. SPEC. HUMIDITY (T+1) ON HALF LEVELS     KG/KG
+(   52) !    *PTEN*         PROVISIONAL ENVIRONMENT TEMPERATURE (T+1)       K
+(   53) !    *PQSEN*        ENVIRONMENT SPEC. SATURATION HUMIDITY (T+1)   KG/KG
+(   54) !    *PGEO*         GEOPOTENTIAL                                  M2/S2
+(   55) !    *PGEOH*        GEOPOTENTIAL ON HALF LEVELS                  M2/S2
+(   56) !    *PAPH*         PROVISIONAL PRESSURE ON HALF LEVELS           PA
+(   57) !    *PTU*          TEMPERATURE IN UPDRAFTS                        K
+(   58) !    *PQU*          SPEC. HUMIDITY IN UPDRAFTS                   KG/KG
+(   59) !    *PMFUB*        MASSFLUX IN UPDRAFTS AT CLOUD BASE           KG/(M2*S)
+(   60) 
+(   61) !    UPDATED PARAMETERS (REAL):
+(   62) 
+(   63) !    *PRFL*         PRECIPITATION RATE                           KG/(M2*S)
+(   64) 
+(   65) !    OUTPUT PARAMETERS (REAL):
+(   66) 
+(   67) !    *PTD*          TEMPERATURE IN DOWNDRAFTS                      K
+(   68) !    *PQD*          SPEC. HUMIDITY IN DOWNDRAFTS                 KG/KG
+(   69) !    *PMFD*         MASSFLUX IN DOWNDRAFTS                       KG/(M2*S)
+(   70) !    *PMFDS*        FLUX OF DRY STATIC ENERGY IN DOWNDRAFTS       J/(M2*S)
+(   71) !    *PMFDQ*        FLUX OF SPEC. HUMIDITY IN DOWNDRAFTS         KG/(M2*S)
+(   72) !    *PDMFDP*       FLUX DIFFERENCE OF PRECIP. IN DOWNDRAFTS     KG/(M2*S)
+(   73) 
+(   74) !    OUTPUT PARAMETERS (INTEGER):
+(   75) 
+(   76) !    *KDTOP*        TOP LEVEL OF DOWNDRAFTS
+(   77) 
+(   78) !    OUTPUT PARAMETERS (LOGICAL):
+(   79) 
+(   80) !    *LDDRAF*       .TRUE. IF DOWNDRAFTS EXIST
+(   81) 
+(   82) !          EXTERNALS
+(   83) !          ---------
+(   84) !          *CUADJTQ* FOR CALCULATING WET BULB T AND Q AT LFS
+(   85) 
+(   86) !     AUTHOR.
+(   87) !     -------
+(   88) !      M.TIEDTKE         E.C.M.W.F.    12/86 MODIF. 12/89
+(   89) 
+(   90) !     MODIFICATIONS.
+(   91) !     --------------
+(   92) !      M.Hamrud      01-Oct-2003 CY28 Cleaning
+(   93) !      P. Lopez      20-Jun-2007 CY32R2 Bug correction in latent heat when LPHYLIN=T.
+(   94) !     R. El Khatib 22-Jun-2022 A contribution to simplify phasing after the refactoring of YOMCLI/YOMCST/YOETHF.
+(   95) !----------------------------------------------------------------------
+(   96) 
+(   97) USE PARKIND1  ,ONLY : JPIM     ,JPRB
+(   98) USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
+(   99) 
+(  100) USE YOMCST   , ONLY : TCST
+(  101) USE YOETHF   , ONLY : TTHF  
+(  102) USE YOECUMF  , ONLY : TECUMF
+(  103) USE YOEPHLI  , ONLY : TEPHLI
+(  104) 
+(  105) IMPLICIT NONE
+(  106) 
+(  107) TYPE(TTHF)        ,INTENT(IN)    :: YDTHF
+(  108) TYPE(TCST)        ,INTENT(IN)    :: YDCST
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:03      page 3
+
+(  109) TYPE(TECUMF)      ,INTENT(IN)    :: YDECUMF
+(  110) TYPE(TEPHLI)      ,INTENT(IN)    :: YDEPHLI
+(  111) INTEGER(KIND=JPIM),INTENT(IN)    :: KLON 
+(  112) INTEGER(KIND=JPIM),INTENT(IN)    :: KLEV 
+(  113) INTEGER(KIND=JPIM),INTENT(IN)    :: KIDIA 
+(  114) INTEGER(KIND=JPIM),INTENT(IN)    :: KFDIA 
+(  115) INTEGER(KIND=JPIM),INTENT(IN)    :: KCBOT(KLON)
+(  116) INTEGER(KIND=JPIM),INTENT(IN)    :: KCTOP(KLON)
+(  117) LOGICAL           ,INTENT(IN)    :: LDCUM(KLON)
+(  118) REAL(KIND=JPRB)   ,INTENT(IN)    :: PTENH(KLON,KLEV) 
+(  119) REAL(KIND=JPRB)   ,INTENT(IN)    :: PQENH(KLON,KLEV) 
+(  120) REAL(KIND=JPRB)   ,INTENT(IN)    :: PTEN(KLON,KLEV) 
+(  121) REAL(KIND=JPRB)   ,INTENT(IN)    :: PQSEN(KLON,KLEV) 
+(  122) REAL(KIND=JPRB)   ,INTENT(IN)    :: PGEO(KLON,KLEV) 
+(  123) REAL(KIND=JPRB)   ,INTENT(IN)    :: PGEOH(KLON,KLEV+1) 
+(  124) REAL(KIND=JPRB)   ,INTENT(IN)    :: PAPH(KLON,KLEV+1) 
+(  125) REAL(KIND=JPRB)   ,INTENT(IN)    :: PTU(KLON,KLEV) 
+(  126) REAL(KIND=JPRB)   ,INTENT(IN)    :: PQU(KLON,KLEV) 
+(  127) REAL(KIND=JPRB)   ,INTENT(IN)    :: PMFUB(KLON) 
+(  128) REAL(KIND=JPRB)   ,INTENT(INOUT) :: PRFL(KLON) 
+(  129) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PTD(KLON,KLEV) 
+(  130) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PQD(KLON,KLEV) 
+(  131) REAL(KIND=JPRB)   ,INTENT(INOUT) :: PMFD(KLON,KLEV) 
+(  132) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PMFDS(KLON,KLEV) 
+(  133) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PMFDQ(KLON,KLEV) 
+(  134) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PDMFDP(KLON,KLEV) 
+(  135) INTEGER(KIND=JPIM),INTENT(OUT)   :: KDTOP(KLON) 
+(  136) LOGICAL           ,INTENT(OUT)   :: LDDRAF(KLON) 
+(  137) INTEGER(KIND=JPIM) ::            IKHSMIN(KLON)
+(  138) REAL(KIND=JPRB) ::     ZTENWB(KLON,KLEV),      ZQENWB(KLON,KLEV),&
+(  139)  & ZCOND(KLON),            ZPH(KLON),&
+(  140)  & ZHSMIN(KLON)  
+(  141) LOGICAL ::  LLO2(KLON)
+(  142) 
+(  143) INTEGER(KIND=JPIM) :: IK, IKE, IS, JK, JL
+(  144) 
+(  145) REAL(KIND=JPRB) :: ZBUO, ZHSK, ZMFTOP, ZOEALFA,&
+(  146)  & ZOELHM, ZQTEST, ZTARG, ZTTEST  
+(  147) REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+(  148) 
+(  149) #include "cuadjtq.intfb.h"
+(  150) 
+(  151) #include "fcttre.func.h"
+(  152) !----------------------------------------------------------------------
+(  153) 
+(  154) !     1.           SET DEFAULT VALUES FOR DOWNDRAFTS
+(  155) !                  ---------------------------------
+(  156) 
+(  157) IF (LHOOK) CALL DR_HOOK('CUDLFSN',0,ZHOOK_HANDLE)
+(  158) ASSOCIATE(LMFDD=>YDECUMF%LMFDD, RMFDEPS=>YDECUMF%RMFDEPS, &
+(  159)  & RCPD=>YDCST%RCPD, RETV=>YDCST%RETV, RLSTT=>YDCST%RLSTT, RLVTT=>YDCST%RLVTT, &
+(  160)  & LPHYLIN=>YDEPHLI%LPHYLIN, RLPTRC=>YDEPHLI%RLPTRC)
+(  161) DO JL=KIDIA,KFDIA
+(  162)   LDDRAF(JL)=.FALSE.
+(  163)   KDTOP(JL)=KLEV+1
+(  164)   IKHSMIN(JL)=KLEV+1
+(  165)   ZHSMIN(JL)=1.E8_JPRB
+(  166) ENDDO
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:03      page 4
+
+(  167) 
+(  168) !orig IF(.NOT.LMFDD) GO TO 300
+(  169) IF(LMFDD) THEN
+(  170) 
+(  171) !----------------------------------------------------------------------
+(  172) 
+(  173) !     2.           DETERMINE LEVEL OF FREE SINKING:
+(  174) !                  DOWNDRAFTS SHALL START AT MODEL LEVEL OF MINIMUM
+(  175) !                  OF SATURATION MOIST STATIC ENERGY OR BELOW
+(  176) !                  RESPECTIVELY
+(  177) 
+(  178) !                  FOR EVERY POINT AND PROCEED AS FOLLOWS:
+(  179) 
+(  180) !                    (1) DETERMINE LEVEL OF MINIMUM OF HS
+(  181) !                    (2) DETERMINE WET BULB ENVIRONMENTAL T AND Q
+(  182) !                    (3) DO MIXING WITH CUMULUS CLOUD AIR
+(  183) !                    (4) CHECK FOR NEGATIVE BUOYANCY
+(  184) !                    (5) IF BUOYANCY>0 REPEAT (2) TO (4) FOR NEXT
+(  185) !                        LEVEL BELOW
+(  186) 
+(  187) !                  THE ASSUMPTION IS THAT AIR OF DOWNDRAFTS IS MIXTURE
+(  188) !                  OF 50% CLOUD AIR + 50% ENVIRONMENTAL AIR AT WET BULB
+(  189) !                  TEMPERATURE (I.E. WHICH BECAME SATURATED DUE TO
+(  190) !                  EVAPORATION OF RAIN AND CLOUD WATER)
+(  191) !                  ----------------------------------------------------
+(  192) 
+(  193)   DO JK=3,KLEV-2
+(  194) 
+(  195)     IF (LPHYLIN) THEN
+(  196) 
+(  197)       DO JL=KIDIA,KFDIA
+(  198)         ZTARG=PTEN(JL,JK)
+(  199)         ZOEALFA=MIN(1.0_JPRB,0.545_JPRB*(TANH(0.17_JPRB*(ZTARG-RLPTRC))+1.0_JPRB))
+(  200)         ZOELHM =ZOEALFA*RLVTT+(1.0_JPRB-ZOEALFA)*RLSTT
+(  201)         ZHSK=RCPD*PTEN(JL,JK)+PGEO(JL,JK)+ZOELHM*PQSEN(JL,JK)
+(  202)         IF(ZHSK < ZHSMIN(JL)) THEN
+(  203)           ZHSMIN(JL)=ZHSK
+(  204)           IKHSMIN(JL)=JK
+(  205)         ENDIF
+(  206)       ENDDO
+(  207) 
+(  208)     ELSE
+(  209) 
+(  210)       DO JL=KIDIA,KFDIA
+(  211)         ZHSK=RCPD*PTEN(JL,JK)+PGEO(JL,JK)+FOELHMCU(PTEN(JL,JK))*PQSEN(JL,JK)
+(  212)         IF(ZHSK < ZHSMIN(JL)) THEN
+(  213)           ZHSMIN(JL)=ZHSK
+(  214)           IKHSMIN(JL)=JK
+(  215)         ENDIF
+(  216)       ENDDO
+(  217) 
+(  218)     ENDIF
+(  219) 
+(  220)   ENDDO
+(  221)   IKE=KLEV-3
+(  222)   DO JK=3,IKE
+(  223) 
+(  224) !     2.1          CALCULATE WET-BULB TEMPERATURE AND MOISTURE
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:03      page 5
+
+(  225) !                  FOR ENVIRONMENTAL AIR IN *CUADJTQ*
+(  226) !                  -------------------------------------------
+(  227) 
+(  228)     IS=0
+(  229)     DO JL=KIDIA,KFDIA
+(  230)       ZTENWB(JL,JK)=PTENH(JL,JK)
+(  231)       ZQENWB(JL,JK)=PQENH(JL,JK)
+(  232)       ZPH(JL)=PAPH(JL,JK)
+(  233)       LLO2(JL)=LDCUM(JL).AND.PRFL(JL) > 0.0_JPRB.AND..NOT.LDDRAF(JL).AND.&
+(  234)        & (JK < KCBOT(JL).AND.JK > KCTOP(JL)).AND.&
+(  235)        & JK >= IKHSMIN(JL)  
+(  236)       IF(LLO2(JL))THEN
+(  237)         IS=IS+1
+(  238)       ENDIF
+(  239)     ENDDO
+(  240) !orig   IF(IS.EQ.0) GO TO 290
+(  241)     IF(IS == 0) CYCLE
+(  242) 
+(  243)     IK=JK
+(  244)     !$loki inline
+(  245)     CALL CUADJTQ &
+(  246)      & ( YDTHF, YDCST, YDEPHLI,  KIDIA,    KFDIA,    KLON,     KLEV,     IK,&
+(  247)      &   ZPH,      ZTENWB,   ZQENWB,   LLO2,     KCALL=2)  
+(  248) 
+(  249) !     2.2          DO MIXING OF CUMULUS AND ENVIRONMENTAL AIR
+(  250) !                  AND CHECK FOR NEGATIVE BUOYANCY.
+(  251) !                  THEN SET VALUES FOR DOWNDRAFT AT LFS.
+(  252) !                  ----------------------------------------
+(  253) 
+(  254) !DIR$ IVDEP
+(  255) !OCL NOVREC
+(  256)     DO JL=KIDIA,KFDIA
+(  257)       IF(LLO2(JL)) THEN
+(  258)         ZTTEST=0.5_JPRB*(PTU(JL,JK)+ZTENWB(JL,JK))
+(  259)         ZQTEST=0.5_JPRB*(PQU(JL,JK)+ZQENWB(JL,JK))
+(  260)         ZBUO=ZTTEST*(1.0_JPRB+RETV  *ZQTEST)-&
+(  261)          & PTENH(JL,JK)*(1.0_JPRB+RETV  *PQENH(JL,JK))  
+(  262)         ZCOND(JL)=PQENH(JL,JK)-ZQENWB(JL,JK)
+(  263)         ZMFTOP=-RMFDEPS*PMFUB(JL)
+(  264)         IF(ZBUO < 0.0_JPRB.AND.PRFL(JL) > 10._JPRB*ZMFTOP*ZCOND(JL)) THEN
+(  265)           KDTOP(JL)=JK
+(  266)           LDDRAF(JL)=.TRUE.
+(  267)           PTD(JL,JK)=ZTTEST
+(  268)           PQD(JL,JK)=ZQTEST
+(  269)           PMFD(JL,JK)=ZMFTOP
+(  270)           PMFDS(JL,JK)=PMFD(JL,JK)*(RCPD*PTD(JL,JK)+PGEOH(JL,JK))
+(  271)           PMFDQ(JL,JK)=PMFD(JL,JK)*PQD(JL,JK)
+(  272)           PDMFDP(JL,JK-1)=-0.5_JPRB*PMFD(JL,JK)*ZCOND(JL)
+(  273)           PRFL(JL)=PRFL(JL)+PDMFDP(JL,JK-1)
+(  274)         ENDIF
+(  275)       ENDIF
+(  276)     ENDDO
+(  277) 
+(  278) ! 290   continue
+(  279)   ENDDO
+(  280) 
+(  281) !300  CONTINUE
+(  282) ENDIF
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:03      page 6
+
+(  283) 
+(  284) END ASSOCIATE
+(  285) IF (LHOOK) CALL DR_HOOK('CUDLFSN',1,ZHOOK_HANDLE)
+(  286) END SUBROUTINE CUDLFSN
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:03      page 7
+
+(    1) # 1 "./cudlfsn.F90"
+(    1) SUBROUTINE CUDLFSN &
+(    2)  & (YDTHF, YDCST, YDEPHLI, YDECUMF,&
+(    3)  & KIDIA,    KFDIA,    KLON,    KLEV,&
+(    4)  & KCBOT,    KCTOP,    LDCUM,&
+(    5)  & PTENH,    PQENH,    PTEN,     PQSEN,    PGEO,&
+(    6)  & PGEOH,    PAPH,     PTU,      PQU,&
+(    7)  & PMFUB,    PRFL,&
+(    8)  & PTD,      PQD,&
+(    9)  & PMFD,     PMFDS,    PMFDQ,    PDMFDP,&
+(   10)  & KDTOP,    LDDRAF)  
+(   11) # 12 "./cudlfsn.F90"
+(   12) !          THIS ROUTINE CALCULATES LEVEL OF FREE SINKING FOR
+(   13) !          CUMULUS DOWNDRAFTS AND SPECIFIES T,Q,U AND V VALUES
+(   14) # 15 "./cudlfsn.F90"
+(   15) !          PURPOSE.
+(   16) !          --------
+(   17) !          TO PRODUCE LFS-VALUES FOR CUMULUS DOWNDRAFTS
+(   18) !          FOR MASSFLUX CUMULUS PARAMETERIZATION
+(   19) # 20 "./cudlfsn.F90"
+(   20) !          INTERFACE
+(   21) !          ---------
+(   22) !          THIS ROUTINE IS CALLED FROM *CUMASTR*.
+(   23) !          INPUT ARE ENVIRONMENTAL VALUES OF T,Q,U,V,P,PHI
+(   24) !          AND UPDRAFT VALUES T,Q,U AND V AND ALSO
+(   25) !          CLOUD BASE MASSFLUX AND CU-PRECIPITATION RATE.
+(   26) !          IT RETURNS T,Q,U AND V VALUES AND MASSFLUX AT LFS.
+(   27) # 28 "./cudlfsn.F90"
+(   28) !          METHOD.
+(   29) # 30 "./cudlfsn.F90"
+(   30) !          CHECK FOR NEGATIVE BUOYANCY OF AIR OF EQUAL PARTS OF
+(   31) !          MOIST ENVIRONMENTAL AIR AND CLOUD AIR.
+(   32) # 33 "./cudlfsn.F90"
+(   33) !     PARAMETER     DESCRIPTION                                   UNITS
+(   34) !     ---------     -----------                                   -----
+(   35) !     INPUT PARAMETERS (INTEGER):
+(   36) # 37 "./cudlfsn.F90"
+(   37) !    *KIDIA*        START POINT
+(   38) !    *KFDIA*        END POINT
+(   39) !    *KLON*         NUMBER OF GRID POINTS PER PACKET
+(   40) !    *KLEV*         NUMBER OF LEVELS
+(   41) !    *KCBOT*        CLOUD BASE LEVEL
+(   42) !    *KCTOP*        CLOUD TOP LEVEL
+(   43) # 44 "./cudlfsn.F90"
+(   44) !    INPUT PARAMETERS (LOGICAL):
+(   45) # 46 "./cudlfsn.F90"
+(   46) !    *LDCUM*        FLAG: .TRUE. FOR CONVECTIVE POINTS
+(   47) # 48 "./cudlfsn.F90"
+(   48) !    INPUT PARAMETERS (REAL):
+(   49) # 50 "./cudlfsn.F90"
+(   50) !    *PTENH*        ENV. TEMPERATURE (T+1) ON HALF LEVELS          K
+(   51) !    *PQENH*        ENV. SPEC. HUMIDITY (T+1) ON HALF LEVELS     KG/KG
+(   52) !    *PTEN*         PROVISIONAL ENVIRONMENT TEMPERATURE (T+1)       K
+(   53) !    *PQSEN*        ENVIRONMENT SPEC. SATURATION HUMIDITY (T+1)   KG/KG
+(   54) !    *PGEO*         GEOPOTENTIAL                                  M2/S2
+(   55) !    *PGEOH*        GEOPOTENTIAL ON HALF LEVELS                  M2/S2
+(   56) !    *PAPH*         PROVISIONAL PRESSURE ON HALF LEVELS           PA
+(   57) !    *PTU*          TEMPERATURE IN UPDRAFTS                        K
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:03      page 8
+
+(   58) !    *PQU*          SPEC. HUMIDITY IN UPDRAFTS                   KG/KG
+(   59) !    *PMFUB*        MASSFLUX IN UPDRAFTS AT CLOUD BASE           KG/(M2*S)
+(   60) # 61 "./cudlfsn.F90"
+(   61) !    UPDATED PARAMETERS (REAL):
+(   62) # 63 "./cudlfsn.F90"
+(   63) !    *PRFL*         PRECIPITATION RATE                           KG/(M2*S)
+(   64) # 65 "./cudlfsn.F90"
+(   65) !    OUTPUT PARAMETERS (REAL):
+(   66) # 67 "./cudlfsn.F90"
+(   67) !    *PTD*          TEMPERATURE IN DOWNDRAFTS                      K
+(   68) !    *PQD*          SPEC. HUMIDITY IN DOWNDRAFTS                 KG/KG
+(   69) !    *PMFD*         MASSFLUX IN DOWNDRAFTS                       KG/(M2*S)
+(   70) !    *PMFDS*        FLUX OF DRY STATIC ENERGY IN DOWNDRAFTS       J/(M2*S)
+(   71) !    *PMFDQ*        FLUX OF SPEC. HUMIDITY IN DOWNDRAFTS         KG/(M2*S)
+(   72) !    *PDMFDP*       FLUX DIFFERENCE OF PRECIP. IN DOWNDRAFTS     KG/(M2*S)
+(   73) # 74 "./cudlfsn.F90"
+(   74) !    OUTPUT PARAMETERS (INTEGER):
+(   75) # 76 "./cudlfsn.F90"
+(   76) !    *KDTOP*        TOP LEVEL OF DOWNDRAFTS
+(   77) # 78 "./cudlfsn.F90"
+(   78) !    OUTPUT PARAMETERS (LOGICAL):
+(   79) # 80 "./cudlfsn.F90"
+(   80) !    *LDDRAF*       .TRUE. IF DOWNDRAFTS EXIST
+(   81) # 82 "./cudlfsn.F90"
+(   82) !          EXTERNALS
+(   83) !          ---------
+(   84) !          *CUADJTQ* FOR CALCULATING WET BULB T AND Q AT LFS
+(   85) # 86 "./cudlfsn.F90"
+(   86) !     AUTHOR.
+(   87) !     -------
+(   88) !      M.TIEDTKE         E.C.M.W.F.    12/86 MODIF. 12/89
+(   89) # 90 "./cudlfsn.F90"
+(   90) !     MODIFICATIONS.
+(   91) !     --------------
+(   92) !      M.Hamrud      01-Oct-2003 CY28 Cleaning
+(   93) !      P. Lopez      20-Jun-2007 CY32R2 Bug correction in latent heat when LPHYLIN=T.
+(   94) !     R. El Khatib 22-Jun-2022 A contribution to simplify phasing after the refactoring of YOMCLI/YOMCST/YOETHF.
+(   95) !----------------------------------------------------------------------
+(   96) # 97 "./cudlfsn.F90"
+(   97) USE PARKIND1  ,ONLY : JPIM     ,JPRB
+(   98) USE YOMHOOK   ,ONLY : LHOOK,   DR_HOOK, JPHOOK
+(   99) # 100 "./cudlfsn.F90"
+(  100) USE YOMCST   , ONLY : TCST
+(  101) USE YOETHF   , ONLY : TTHF  
+(  102) USE YOECUMF  , ONLY : TECUMF
+(  103) USE YOEPHLI  , ONLY : TEPHLI
+(  104) # 105 "./cudlfsn.F90"
+(  105) IMPLICIT NONE
+(  106) # 107 "./cudlfsn.F90"
+(  107) TYPE(TTHF)        ,INTENT(IN)    :: YDTHF
+(  108) TYPE(TCST)        ,INTENT(IN)    :: YDCST
+(  109) TYPE(TECUMF)      ,INTENT(IN)    :: YDECUMF
+(  110) TYPE(TEPHLI)      ,INTENT(IN)    :: YDEPHLI
+(  111) INTEGER(KIND=JPIM),INTENT(IN)    :: KLON 
+(  112) INTEGER(KIND=JPIM),INTENT(IN)    :: KLEV 
+(  113) INTEGER(KIND=JPIM),INTENT(IN)    :: KIDIA 
+(  114) INTEGER(KIND=JPIM),INTENT(IN)    :: KFDIA 
+(  115) INTEGER(KIND=JPIM),INTENT(IN)    :: KCBOT(KLON)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:03      page 9
+
+(  116) INTEGER(KIND=JPIM),INTENT(IN)    :: KCTOP(KLON)
+(  117) LOGICAL           ,INTENT(IN)    :: LDCUM(KLON)
+(  118) REAL(KIND=JPRB)   ,INTENT(IN)    :: PTENH(KLON,KLEV) 
+(  119) REAL(KIND=JPRB)   ,INTENT(IN)    :: PQENH(KLON,KLEV) 
+(  120) REAL(KIND=JPRB)   ,INTENT(IN)    :: PTEN(KLON,KLEV) 
+(  121) REAL(KIND=JPRB)   ,INTENT(IN)    :: PQSEN(KLON,KLEV) 
+(  122) REAL(KIND=JPRB)   ,INTENT(IN)    :: PGEO(KLON,KLEV) 
+(  123) REAL(KIND=JPRB)   ,INTENT(IN)    :: PGEOH(KLON,KLEV+1) 
+(  124) REAL(KIND=JPRB)   ,INTENT(IN)    :: PAPH(KLON,KLEV+1) 
+(  125) REAL(KIND=JPRB)   ,INTENT(IN)    :: PTU(KLON,KLEV) 
+(  126) REAL(KIND=JPRB)   ,INTENT(IN)    :: PQU(KLON,KLEV) 
+(  127) REAL(KIND=JPRB)   ,INTENT(IN)    :: PMFUB(KLON) 
+(  128) REAL(KIND=JPRB)   ,INTENT(INOUT) :: PRFL(KLON) 
+(  129) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PTD(KLON,KLEV) 
+(  130) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PQD(KLON,KLEV) 
+(  131) REAL(KIND=JPRB)   ,INTENT(INOUT) :: PMFD(KLON,KLEV) 
+(  132) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PMFDS(KLON,KLEV) 
+(  133) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PMFDQ(KLON,KLEV) 
+(  134) REAL(KIND=JPRB)   ,INTENT(OUT)   :: PDMFDP(KLON,KLEV) 
+(  135) INTEGER(KIND=JPIM),INTENT(OUT)   :: KDTOP(KLON) 
+(  136) LOGICAL           ,INTENT(OUT)   :: LDDRAF(KLON) 
+(  137) INTEGER(KIND=JPIM) ::            IKHSMIN(KLON)
+(  138) REAL(KIND=JPRB) ::     ZTENWB(KLON,KLEV),      ZQENWB(KLON,KLEV),&
+(  139)  & ZCOND(KLON),            ZPH(KLON),&
+(  140)  & ZHSMIN(KLON)  
+(  141) LOGICAL ::  LLO2(KLON)
+(  142) # 143 "./cudlfsn.F90"
+(  143) INTEGER(KIND=JPIM) :: IK, IKE, IS, JK, JL
+(  144) # 145 "./cudlfsn.F90"
+(  145) REAL(KIND=JPRB) :: ZBUO, ZHSK, ZMFTOP, ZOEALFA,&
+(  146)  & ZOELHM, ZQTEST, ZTARG, ZTTEST  
+(  147) REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+(  148) # 149 "./cudlfsn.F90"
+(  149) # 1 "./cuadjtq.intfb.h"
+(    1) INTERFACE
+(    2) # 3 "./cuadjtq.intfb.h"
+(    3) SUBROUTINE CUADJTQ &
+(    4) & (YDTHF, YDCST, YDEPHLI,KIDIA,    KFDIA,    KLON,    KLEV,     KK,&
+(    5) &  PSP,      PT,       PQ,      LDFLAG,   KCALL,   LDOFLAG)
+(    6) USE PARKIND1 , ONLY : JPIM     ,JPRB
+(    7) USE YOMHOOK  , ONLY : LHOOK,   DR_HOOK, JPHOOK
+(    8) USE YOMCST   , ONLY : TCST
+(    9) USE YOETHF   , ONLY : TTHF
+(   10) USE YOEPHLI  , ONLY : TEPHLI
+(   11) IMPLICIT NONE
+(   12) TYPE(TTHF)         ,INTENT(IN)               :: YDTHF
+(   13) TYPE(TCST)         ,INTENT(IN)               :: YDCST
+(   14) TYPE(TEPHLI)       ,INTENT(IN)               :: YDEPHLI
+(   15) INTEGER(KIND=JPIM) ,INTENT(IN)               :: KIDIA
+(   16) INTEGER(KIND=JPIM) ,INTENT(IN)               :: KFDIA
+(   17) INTEGER(KIND=JPIM) ,INTENT(IN)               :: KLON
+(   18) INTEGER(KIND=JPIM) ,INTENT(IN)               :: KLEV
+(   19) INTEGER(KIND=JPIM) ,INTENT(IN)               :: KK
+(   20) REAL(KIND=JPRB)    ,INTENT(IN)               :: PSP(KLON)
+(   21) REAL(KIND=JPRB)    ,INTENT(INOUT)            :: PT(KLON,KLEV)
+(   22) REAL(KIND=JPRB)    ,INTENT(INOUT)            :: PQ(KLON,KLEV)
+(   23) LOGICAL            ,INTENT(IN)               :: LDFLAG(KLON)
+(   24) INTEGER(KIND=JPIM) ,INTENT(IN)               :: KCALL
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:03      page 10
+
+(   25) LOGICAL            ,INTENT(IN)    ,OPTIONAL  :: LDOFLAG(KLON)
+(   26) END SUBROUTINE CUADJTQ
+(   27) # 28 "./cuadjtq.intfb.h"
+(   28) END INTERFACE
+(   29) # 150 "./cudlfsn.F90"
+(  150) # 151 "./cudlfsn.F90"
+(  151) # 1 "./fcttre.func.h"
+(    1) ! (C) Copyright 1988- ECMWF.
+(    2) !
+(    3) ! This software is licensed under the terms of the Apache Licence Version 2.0
+(    4) ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+(    5) !
+(    6) ! In applying this licence, ECMWF does not waive the privileges and immunities
+(    7) ! granted to it by virtue of its status as an intergovernmental organisation
+(    8) ! nor does it submit to any jurisdiction.
+(    9) # 10 "./fcttre.func.h"
+(   10) !*
+(   11) !     ------------------------------------------------------------------
+(   12) # 13 "./fcttre.func.h"
+(   13) !     This COMDECK includes the Thermodynamical functions for the cy39
+(   14) !       ECMWF Physics package.
+(   15) !       Consistent with YOMCST Basic physics constants, assuming the
+(   16) !       partial pressure of water vapour is given by a first order
+(   17) !       Taylor expansion of Qs(T) w.r.t. to Temperature, using constants
+(   18) !       in YOETHF
+(   19) !       Two sets of functions are available. In the first set only the
+(   20) !       cases water or ice are distinguished by temperature.  This set 
+(   21) !       consists of the functions FOEDELTA,FOEEW,FOEDE and FOELH.
+(   22) !       The second set considers, besides the two cases water and ice 
+(   23) !       also a mix of both for the temperature range YDTHF%RTICE < T < YDTHF%RTWAT.
+(   24) !       This set contains FOEALFA,FOEEWM,FOEDEM,FOELDCPM and FOELHM.
+(   25) !       FKOOP modifies the ice saturation mixing ratio for homogeneous 
+(   26) !       nucleation. FOE_DEWM_DT provides an approximate first derivative
+(   27) !       of FOEEWM.
+(   28) # 29 "./fcttre.func.h"
+(   29) !       Depending on the consideration of mixed phases either the first 
+(   30) !       set (e.g. surface, post-processing) or the second set 
+(   31) !       (e.g. clouds, condensation, convection) should be used.
+(   32) # 33 "./fcttre.func.h"
+(   33) !     ------------------------------------------------------------------
+(   34) !     *****************************************************************
+(   35) # 36 "./fcttre.func.h"
+(   36) !                NO CONSIDERATION OF MIXED PHASES
+(   37) # 38 "./fcttre.func.h"
+(   38) !     *****************************************************************
+(   39) REAL(KIND=JPRB) :: FOEDELTA
+(   40) REAL(KIND=JPRB) :: PTARE
+(   41) FOEDELTA (PTARE) = MAX (0.0_JPRB,SIGN(1.0_JPRB,PTARE-YDCST%RTT))
+(   42) # 43 "./fcttre.func.h"
+(   43) !                  FOEDELTA = 1    water
+(   44) !                  FOEDELTA = 0    ice
+(   45) # 46 "./fcttre.func.h"
+(   46) !     THERMODYNAMICAL FUNCTIONS .
+(   47) # 48 "./fcttre.func.h"
+(   48) !     Pressure of water vapour at saturation
+(   49) !        INPUT : PTARE = TEMPERATURE
+(   50) REAL(KIND=JPRB) :: FOEEW,FOEDE,FOEDESU,FOELH,FOELDCP
+(   51) FOEEW ( PTARE ) = YDTHF%R2ES*EXP (&
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:03      page 11
+
+(   52)   &(YDTHF%R3LES*FOEDELTA(PTARE)+YDTHF%R3IES*(1.0_JPRB-FOEDELTA(PTARE)))*(PTARE-YDCST%RTT)&
+(   53) &/ (PTARE-(YDTHF%R4LES*FOEDELTA(PTARE)+YDTHF%R4IES*(1.0_JPRB-FOEDELTA(PTARE)))))
+(   54) # 55 "./fcttre.func.h"
+(   55) FOEDE ( PTARE ) = &
+(   56)   &(FOEDELTA(PTARE)*YDTHF%R5ALVCP+(1.0_JPRB-FOEDELTA(PTARE))*YDTHF%R5ALSCP)&
+(   57) &/ (PTARE-(YDTHF%R4LES*FOEDELTA(PTARE)+YDTHF%R4IES*(1.0_JPRB-FOEDELTA(PTARE))))**2
+(   58) # 59 "./fcttre.func.h"
+(   59) FOEDESU ( PTARE ) = &
+(   60)   &(FOEDELTA(PTARE)*YDTHF%R5LES+(1.0_JPRB-FOEDELTA(PTARE))*YDTHF%R5IES)&
+(   61) &/ (PTARE-(YDTHF%R4LES*FOEDELTA(PTARE)+YDTHF%R4IES*(1.0_JPRB-FOEDELTA(PTARE))))**2
+(   62) # 63 "./fcttre.func.h"
+(   63) FOELH ( PTARE ) =&
+(   64)          &FOEDELTA(PTARE)*YDCST%RLVTT + (1.0_JPRB-FOEDELTA(PTARE))*YDCST%RLSTT
+(   65) # 66 "./fcttre.func.h"
+(   66) FOELDCP ( PTARE ) = &
+(   67)          &FOEDELTA(PTARE)*YDTHF%RALVDCP + (1.0_JPRB-FOEDELTA(PTARE))*YDTHF%RALSDCP
+(   68) # 69 "./fcttre.func.h"
+(   69) !     *****************************************************************
+(   70) # 71 "./fcttre.func.h"
+(   71) !           CONSIDERATION OF MIXED PHASES
+(   72) # 73 "./fcttre.func.h"
+(   73) !     *****************************************************************
+(   74) # 75 "./fcttre.func.h"
+(   75) !     FOEALFA is calculated to distinguish the three cases:
+(   76) # 77 "./fcttre.func.h"
+(   77) !                       FOEALFA=1            water phase
+(   78) !                       FOEALFA=0            ice phase
+(   79) !                       0 < FOEALFA < 1      mixed phase
+(   80) # 81 "./fcttre.func.h"
+(   81) !               INPUT : PTARE = TEMPERATURE
+(   82) REAL(KIND=JPRB) :: FOEALFA
+(   83) FOEALFA (PTARE) = MIN(1.0_JPRB,((MAX(YDTHF%RTICE,MIN(YDTHF%RTWAT,PTARE))-YDTHF%RTICE)&
+(   84)  &*YDTHF%RTWAT_RTICE_R)**2) 
+(   85) # 87 "./fcttre.func.h"
+(   87) !     Pressure of water vapour at saturation
+(   88) !        INPUT : PTARE = TEMPERATURE
+(   89) REAL(KIND=JPRB) :: FOEEWM,FOEDEM,FOELDCPM,FOELHM,FOE_DEWM_DT
+(   90) FOEEWM ( PTARE ) = YDTHF%R2ES *&
+(   91)      &(FOEALFA(PTARE)*EXP(YDTHF%R3LES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4LES))+&
+(   92)   &(1.0_JPRB-FOEALFA(PTARE))*EXP(YDTHF%R3IES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4IES)))
+(   93) # 94 "./fcttre.func.h"
+(   94) FOE_DEWM_DT( PTARE ) = YDTHF%R2ES * ( &
+(   95)      & YDTHF%R3LES*FOEALFA(PTARE)*EXP(YDTHF%R3LES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4LES)) &
+(   96)      &    *(YDCST%RTT-YDTHF%R4LES)/(PTARE-YDTHF%R4LES)**2 + &
+(   97)      & YDTHF%R3IES*(1.0-FOEALFA(PTARE))*EXP(YDTHF%R3IES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4IES)) &
+(   98)      &    *(YDCST%RTT-YDTHF%R4IES)/(PTARE-YDTHF%R4IES)**2)
+(   99) # 100 "./fcttre.func.h"
+(  100) FOEDEM ( PTARE ) = FOEALFA(PTARE)*YDTHF%R5ALVCP*(1.0_JPRB/(PTARE-YDTHF%R4LES)**2)+&
+(  101)              &(1.0_JPRB-FOEALFA(PTARE))*YDTHF%R5ALSCP*(1.0_JPRB/(PTARE-YDTHF%R4IES)**2)
+(  102) # 103 "./fcttre.func.h"
+(  103) FOELDCPM ( PTARE ) = FOEALFA(PTARE)*YDTHF%RALVDCP+&
+(  104)             &(1.0_JPRB-FOEALFA(PTARE))*YDTHF%RALSDCP
+(  105) # 106 "./fcttre.func.h"
+(  106) FOELHM ( PTARE ) =&
+(  107)          &FOEALFA(PTARE)*YDCST%RLVTT+(1.0_JPRB-FOEALFA(PTARE))*YDCST%RLSTT
+(  108) # 110 "./fcttre.func.h"
+(  110) !     Temperature normalization for humidity background change of variable
+(  111) !        INPUT : PTARE = TEMPERATURE
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:03      page 12
+
+(  112) REAL(KIND=JPRB) :: FOETB
+(  113) FOETB ( PTARE )=FOEALFA(PTARE)*YDTHF%R3LES*(YDCST%RTT-YDTHF%R4LES)*(1.0_JPRB/(PTARE-YDTHF%R4LES)**2)+&
+(  114)              &(1.0_JPRB-FOEALFA(PTARE))*YDTHF%R3IES*(YDCST%RTT-YDTHF%R4IES)*(1.0_JPRB/(PTARE-YDTHF%R4IES)**2)
+(  115) # 116 "./fcttre.func.h"
+(  116) !     ------------------------------------------------------------------
+(  117) !     *****************************************************************
+(  118) # 119 "./fcttre.func.h"
+(  119) !           CONSIDERATION OF DIFFERENT MIXED PHASE FOR CONV
+(  120) # 121 "./fcttre.func.h"
+(  121) !     *****************************************************************
+(  122) # 123 "./fcttre.func.h"
+(  123) !     FOEALFCU is calculated to distinguish the three cases:
+(  124) # 125 "./fcttre.func.h"
+(  125) !                       FOEALFCU=1            water phase
+(  126) !                       FOEALFCU=0            ice phase
+(  127) !                       0 < FOEALFCU < 1      mixed phase
+(  128) # 129 "./fcttre.func.h"
+(  129) !               INPUT : PTARE = TEMPERATURE
+(  130) REAL(KIND=JPRB) :: FOEALFCU 
+(  131) FOEALFCU (PTARE) = MIN(1.0_JPRB,((MAX(YDTHF%RTICECU,MIN(YDTHF%RTWAT,PTARE))&
+(  132) &-YDTHF%RTICECU)*YDTHF%RTWAT_RTICECU_R)**2) 
+(  133) # 135 "./fcttre.func.h"
+(  135) !     Pressure of water vapour at saturation
+(  136) !        INPUT : PTARE = TEMPERATURE
+(  137) REAL(KIND=JPRB) :: FOEEWMCU,FOEDEMCU,FOELDCPMCU,FOELHMCU
+(  138) FOEEWMCU ( PTARE ) = YDTHF%R2ES *&
+(  139)      &(FOEALFCU(PTARE)*EXP(YDTHF%R3LES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4LES))+&
+(  140)   &(1.0_JPRB-FOEALFCU(PTARE))*EXP(YDTHF%R3IES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4IES)))
+(  141) # 142 "./fcttre.func.h"
+(  142) FOEDEMCU ( PTARE )=FOEALFCU(PTARE)*YDTHF%R5ALVCP*(1.0_JPRB/(PTARE-YDTHF%R4LES)**2)+&
+(  143)              &(1.0_JPRB-FOEALFCU(PTARE))*YDTHF%R5ALSCP*(1.0_JPRB/(PTARE-YDTHF%R4IES)**2)
+(  144) # 145 "./fcttre.func.h"
+(  145) FOELDCPMCU ( PTARE ) = FOEALFCU(PTARE)*YDTHF%RALVDCP+&
+(  146)             &(1.0_JPRB-FOEALFCU(PTARE))*YDTHF%RALSDCP
+(  147) # 148 "./fcttre.func.h"
+(  148) FOELHMCU ( PTARE ) =&
+(  149)          &FOEALFCU(PTARE)*YDCST%RLVTT+(1.0_JPRB-FOEALFCU(PTARE))*YDCST%RLSTT
+(  150) !     ------------------------------------------------------------------
+(  151) # 152 "./fcttre.func.h"
+(  152) !     Pressure of water vapour at saturation
+(  153) !     This one is for the WMO definition of saturation, i.e. always
+(  154) !     with respect to water.
+(  155) !     
+(  156) !     Duplicate to FOEELIQ and FOEEICE for separate ice variable
+(  157) !     FOEELIQ always respect to water 
+(  158) !     FOEEICE always respect to ice 
+(  159) !     FOEELIQ2ICE is the ratio of vapour pressures over water and ice 
+(  160) !       (analytically simplified to avoid a suspected Cray compiler bug and using a single call to exp)
+(  161) !     (could use FOEEW and FOEEWMO, but naming convention unclear)
+(  162) !     FOELSON returns e wrt liquid water using D Sonntag (1994, Met. Zeit.)
+(  163) !      - now recommended for use with radiosonde data (WMO CIMO guide, 2014)
+(  164) !      unlike the FOEE functions does not include 1/(YDCST%RETV+1.0_JPRB) factor
+(  165) # 166 "./fcttre.func.h"
+(  166) REAL(KIND=JPRB) :: FOEEWMO, FOEELIQ, FOEEICE, FOEELIQ2ICE, FOELSON 
+(  167) FOEEWMO( PTARE ) = YDTHF%R2ES*EXP(YDTHF%R3LES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4LES))
+(  168) FOEELIQ( PTARE ) = YDTHF%R2ES*EXP(YDTHF%R3LES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4LES))
+(  169) FOEEICE( PTARE ) = YDTHF%R2ES*EXP(YDTHF%R3IES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4IES))
+(  170) FOEELIQ2ICE( PTARE )  = EXP(      (PTARE-YDCST%RTT)*(YDTHF%R3LES/(PTARE-YDTHF%R4LES) - YDTHF%R3IES/(PTARE-YDTHF%R4IES)))
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:03      page 13
+
+(  171) FOELSON( PTARE ) = EXP( -6096.9385_JPRB/PTARE + 21.2409642_JPRB &
+(  172) 	             - 2.711193E-2_JPRB * PTARE    &
+(  173)                      + 1.673952E-5_JPRB * PTARE**2 &
+(  174) 		     + 2.433502_JPRB * LOG(PTARE))
+(  175) # 176 "./fcttre.func.h"
+(  176) REAL(KIND=JPRB) :: FOEEWM_V,FOEEWMCU_V,FOELES_V,FOEIES_V
+(  177) REAL(KIND=JPRB) :: EXP1,EXP2
+(  178)       FOELES_V(PTARE)=YDTHF%R3LES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4LES)
+(  179)       FOEIES_V(PTARE)=YDTHF%R3IES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4IES)
+(  180)       FOEEWM_V( PTARE,EXP1,EXP2 )=YDTHF%R2ES*(FOEALFA(PTARE)*EXP1+ &
+(  181)           & (1.0_JPRB-FOEALFA(PTARE))*EXP2)
+(  182)       FOEEWMCU_V ( PTARE,EXP1,EXP2 ) = YDTHF%R2ES*(FOEALFCU(PTARE)*EXP1+&
+(  183)           &(1.0_JPRB-FOEALFCU(PTARE))*EXP2)
+(  184) # 152 "./cudlfsn.F90"
+(  152) # 152 "./cudlfsn.F90"
+(  152) !----------------------------------------------------------------------
+(  153) # 154 "./cudlfsn.F90"
+(  154) !     1.           SET DEFAULT VALUES FOR DOWNDRAFTS
+(  155) !                  ---------------------------------
+(  156) # 157 "./cudlfsn.F90"
+(  157) IF (LHOOK) CALL DR_HOOK('CUDLFSN',0,ZHOOK_HANDLE)
+(  158) ASSOCIATE(LMFDD=>YDECUMF%LMFDD, RMFDEPS=>YDECUMF%RMFDEPS, &
+(  159)  & RCPD=>YDCST%RCPD, RETV=>YDCST%RETV, RLSTT=>YDCST%RLSTT, RLVTT=>YDCST%RLVTT, &
+(  160)  & LPHYLIN=>YDEPHLI%LPHYLIN, RLPTRC=>YDEPHLI%RLPTRC)
+(  161) DO JL=KIDIA,KFDIA
+(  162)   LDDRAF(JL)=.FALSE.
+(  163)   KDTOP(JL)=KLEV+1
+(  164)   IKHSMIN(JL)=KLEV+1
+(  165)   ZHSMIN(JL)=1.E8_JPRB
+(  166) ENDDO
+(  167) # 168 "./cudlfsn.F90"
+(  168) !orig IF(.NOT.LMFDD) GO TO 300
+(  169) IF(LMFDD) THEN
+(  170) # 171 "./cudlfsn.F90"
+(  171) !----------------------------------------------------------------------
+(  172) # 173 "./cudlfsn.F90"
+(  173) !     2.           DETERMINE LEVEL OF FREE SINKING:
+(  174) !                  DOWNDRAFTS SHALL START AT MODEL LEVEL OF MINIMUM
+(  175) !                  OF SATURATION MOIST STATIC ENERGY OR BELOW
+(  176) !                  RESPECTIVELY
+(  177) # 178 "./cudlfsn.F90"
+(  178) !                  FOR EVERY POINT AND PROCEED AS FOLLOWS:
+(  179) # 180 "./cudlfsn.F90"
+(  180) !                    (1) DETERMINE LEVEL OF MINIMUM OF HS
+(  181) !                    (2) DETERMINE WET BULB ENVIRONMENTAL T AND Q
+(  182) !                    (3) DO MIXING WITH CUMULUS CLOUD AIR
+(  183) !                    (4) CHECK FOR NEGATIVE BUOYANCY
+(  184) !                    (5) IF BUOYANCY>0 REPEAT (2) TO (4) FOR NEXT
+(  185) !                        LEVEL BELOW
+(  186) # 187 "./cudlfsn.F90"
+(  187) !                  THE ASSUMPTION IS THAT AIR OF DOWNDRAFTS IS MIXTURE
+(  188) !                  OF 50% CLOUD AIR + 50% ENVIRONMENTAL AIR AT WET BULB
+(  189) !                  TEMPERATURE (I.E. WHICH BECAME SATURATED DUE TO
+(  190) !                  EVAPORATION OF RAIN AND CLOUD WATER)
+(  191) !                  ----------------------------------------------------
+(  192) # 193 "./cudlfsn.F90"
+(  193)   DO JK=3,KLEV-2
+(  194) # 195 "./cudlfsn.F90"
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:03      page 14
+
+(  195)     IF (LPHYLIN) THEN
+(  196) # 197 "./cudlfsn.F90"
+(  197)       DO JL=KIDIA,KFDIA
+(  198)         ZTARG=PTEN(JL,JK)
+(  199)         ZOEALFA=MIN(1.0_JPRB,0.545_JPRB*(TANH(0.17_JPRB*(ZTARG-RLPTRC))+1.0_JPRB))
+(  200)         ZOELHM =ZOEALFA*RLVTT+(1.0_JPRB-ZOEALFA)*RLSTT
+(  201)         ZHSK=RCPD*PTEN(JL,JK)+PGEO(JL,JK)+ZOELHM*PQSEN(JL,JK)
+(  202)         IF(ZHSK < ZHSMIN(JL)) THEN
+(  203)           ZHSMIN(JL)=ZHSK
+(  204)           IKHSMIN(JL)=JK
+(  205)         ENDIF
+(  206)       ENDDO
+(  207) # 208 "./cudlfsn.F90"
+(  208)     ELSE
+(  209) # 210 "./cudlfsn.F90"
+(  210)       DO JL=KIDIA,KFDIA
+(  211)         ZHSK=RCPD*PTEN(JL,JK)+PGEO(JL,JK)+FOELHMCU(PTEN(JL,JK))*PQSEN(JL,JK)
+(  212)         IF(ZHSK < ZHSMIN(JL)) THEN
+(  213)           ZHSMIN(JL)=ZHSK
+(  214)           IKHSMIN(JL)=JK
+(  215)         ENDIF
+(  216)       ENDDO
+(  217) # 218 "./cudlfsn.F90"
+(  218)     ENDIF
+(  219) # 220 "./cudlfsn.F90"
+(  220)   ENDDO
+(  221)   IKE=KLEV-3
+(  222)   DO JK=3,IKE
+(  223) # 224 "./cudlfsn.F90"
+(  224) !     2.1          CALCULATE WET-BULB TEMPERATURE AND MOISTURE
+(  225) !                  FOR ENVIRONMENTAL AIR IN *CUADJTQ*
+(  226) !                  -------------------------------------------
+(  227) # 228 "./cudlfsn.F90"
+(  228)     IS=0
+(  229)     DO JL=KIDIA,KFDIA
+(  230)       ZTENWB(JL,JK)=PTENH(JL,JK)
+(  231)       ZQENWB(JL,JK)=PQENH(JL,JK)
+(  232)       ZPH(JL)=PAPH(JL,JK)
+(  233)       LLO2(JL)=LDCUM(JL).AND.PRFL(JL) > 0.0_JPRB.AND..NOT.LDDRAF(JL).AND.&
+(  234)        & (JK < KCBOT(JL).AND.JK > KCTOP(JL)).AND.&
+(  235)        & JK >= IKHSMIN(JL)  
+(  236)       IF(LLO2(JL))THEN
+(  237)         IS=IS+1
+(  238)       ENDIF
+(  239)     ENDDO
+(  240) !orig   IF(IS.EQ.0) GO TO 290
+(  241)     IF(IS == 0) CYCLE
+(  242) # 243 "./cudlfsn.F90"
+(  243)     IK=JK
+(  244)     !$loki inline
+(  245)     CALL CUADJTQ &
+(  246)      & ( YDTHF, YDCST, YDEPHLI,  KIDIA,    KFDIA,    KLON,     KLEV,     IK,&
+(  247)      &   ZPH,      ZTENWB,   ZQENWB,   LLO2,     KCALL=2)  
+(  248) # 249 "./cudlfsn.F90"
+(  249) !     2.2          DO MIXING OF CUMULUS AND ENVIRONMENTAL AIR
+(  250) !                  AND CHECK FOR NEGATIVE BUOYANCY.
+(  251) !                  THEN SET VALUES FOR DOWNDRAFT AT LFS.
+(  252) !                  ----------------------------------------
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:56:03      page 15
+
+(  253) # 254 "./cudlfsn.F90"
+(  254) !DIR$ IVDEP
+(  255) !OCL NOVREC
+(  256)     DO JL=KIDIA,KFDIA
+(  257)       IF(LLO2(JL)) THEN
+(  258)         ZTTEST=0.5_JPRB*(PTU(JL,JK)+ZTENWB(JL,JK))
+(  259)         ZQTEST=0.5_JPRB*(PQU(JL,JK)+ZQENWB(JL,JK))
+(  260)         ZBUO=ZTTEST*(1.0_JPRB+RETV  *ZQTEST)-&
+(  261)          & PTENH(JL,JK)*(1.0_JPRB+RETV  *PQENH(JL,JK))  
+(  262)         ZCOND(JL)=PQENH(JL,JK)-ZQENWB(JL,JK)
+(  263)         ZMFTOP=-RMFDEPS*PMFUB(JL)
+(  264)         IF(ZBUO < 0.0_JPRB.AND.PRFL(JL) > 10._JPRB*ZMFTOP*ZCOND(JL)) THEN
+(  265)           KDTOP(JL)=JK
+(  266)           LDDRAF(JL)=.TRUE.
+(  267)           PTD(JL,JK)=ZTTEST
+(  268)           PQD(JL,JK)=ZQTEST
+(  269)           PMFD(JL,JK)=ZMFTOP
+(  270)           PMFDS(JL,JK)=PMFD(JL,JK)*(RCPD*PTD(JL,JK)+PGEOH(JL,JK))
+(  271)           PMFDQ(JL,JK)=PMFD(JL,JK)*PQD(JL,JK)
+(  272)           PDMFDP(JL,JK-1)=-0.5_JPRB*PMFD(JL,JK)*ZCOND(JL)
+(  273)           PRFL(JL)=PRFL(JL)+PDMFDP(JL,JK-1)
+(  274)         ENDIF
+(  275)       ENDIF
+(  276)     ENDDO
+(  277) # 278 "./cudlfsn.F90"
+(  278) ! 290   continue
+(  279)   ENDDO
+(  280) # 281 "./cudlfsn.F90"
+(  281) !300  CONTINUE
+(  282) ENDIF
+(  283) # 284 "./cudlfsn.F90"
+(  284) END ASSOCIATE
+(  285) IF (LHOOK) CALL DR_HOOK('CUDLFSN',1,ZHOOK_HANDLE)
+(  286) END SUBROUTINE CUDLFSN

@@ -1,0 +1,207 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:25      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./par_gfl.F90
+
+(    1) ! (C) Copyright 2017- ECMWF.
+(    2) ! (C) Copyright 2017- Meteo-France.
+(    3) !
+(    4) ! This software is licensed under the terms of the Apache Licence Version 2.0
+(    5) ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+(    6) !
+(    7) ! In applying this licence, ECMWF does not waive the privileges and immunities
+(    8) ! granted to it by virtue of its status as an intergovernmental organisation
+(    9) ! nor does it submit to any jurisdiction.
+(   10) 
+(   11) MODULE PAR_GFL
+(   12) 
+(   13) USE PARKIND1 , ONLY : JPIM
+(   14) 
+(   15) IMPLICIT NONE
+(   16) 
+(   17) ! Parametars used by GFL (and elsewhere)
+(   18) 
+(   19) ! JPGFL : Max number of GFL fields
+(   20) ! JPNAMED_GFL : Number of currently pre-defined components of GFL
+(   21) ! JPGHG : Number of greenhouse gas fields
+(   22) ! JPCHEM : Number of chemical species
+(   23) ! JPAERO : Number of active aerosol fields
+(   24) ! JPAEROUT: Number of output aerosol fields
+(   25) ! JPAEROCLIM: Number of 3D climatological aerosol fields
+(   26) ! JPUVP : Number of output from UV processor
+(   27) ! JPERA40 : Number of ERA40 diagnostic fields
+(   28) ! JPCH4S  : Number of added fields related to methane
+(   29) ! JPNOGW  : Number of diagnostic fields for NORO GWD SCHEME
+(   30) ! JPSLDIA : Number of SL dynamics diagnostic fields
+(   31) ! JPCHEM_ASSIM : Maximum number of assimilated of chemical species
+(   32) ! JPGHG_ASSIM  : Maximum number of assimilated of GHG species
+(   33) ! JPFSD   : Number of cloud heterogeneity fields
+(   34) ! JPEDRP  : Maximum number of EDR Parameters diagnostic turbulence fields
+(   35) !-------------------------------------------------------------------------
+(   36) 
+(   37) INTEGER(KIND=JPIM), PARAMETER :: JPGFL=2163
+(   38) INTEGER(KIND=JPIM), PARAMETER :: JPNAMED_GFL=27
+(   39) INTEGER(KIND=JPIM), PARAMETER :: JPGHG=3
+(   40) INTEGER(KIND=JPIM), PARAMETER :: JPCHEM=220
+(   41) INTEGER(KIND=JPIM), PARAMETER :: JPGHG_ASSIM=2
+(   42) INTEGER(KIND=JPIM), PARAMETER :: JPCHEM_ASSIM=6
+(   43) INTEGER(KIND=JPIM), PARAMETER :: JPAERO=42
+(   44) INTEGER(KIND=JPIM), PARAMETER :: JPFORC=1100
+(   45) INTEGER(KIND=JPIM), PARAMETER :: JPERA40=14
+(   46) INTEGER(KIND=JPIM), PARAMETER :: JPSLDIA=7
+(   47) INTEGER(KIND=JPIM), PARAMETER :: JPEZDIAG=50
+(   48) INTEGER(KIND=JPIM), PARAMETER :: JPCH4S=1
+(   49) INTEGER(KIND=JPIM), PARAMETER :: JPNOGW=2
+(   50) INTEGER(KIND=JPIM), PARAMETER :: JPAEROUT=38
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:25      page 2
+
+(   51) INTEGER(KIND=JPIM), PARAMETER :: JPAEROCLIM=3
+(   52) INTEGER(KIND=JPIM), PARAMETER :: JPUVP=2
+(   53) INTEGER(KIND=JPIM), PARAMETER :: JPPHYS=9
+(   54) INTEGER(KIND=JPIM), PARAMETER :: JPPHYCTY=1
+(   55) INTEGER(KIND=JPIM), PARAMETER :: JPFSD=1
+(   56) INTEGER(KIND=JPIM), PARAMETER :: JPEDRP=2
+(   57) INTEGER(KIND=JPIM), PARAMETER :: JPLIMA=50
+(   58) INTEGER(KIND=JPIM), PARAMETER :: GRIB_CODE_GFL_PHYS=81  ! AJGDB hopefully harmless
+(   59) 
+(   60) END MODULE PAR_GFL
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:25      page 3
+
+(    1) # 1 "./par_gfl.F90"
+(    1) ! (C) Copyright 2017- ECMWF.
+(    2) ! (C) Copyright 2017- Meteo-France.
+(    3) !
+(    4) ! This software is licensed under the terms of the Apache Licence Version 2.0
+(    5) ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+(    6) !
+(    7) ! In applying this licence, ECMWF does not waive the privileges and immunities
+(    8) ! granted to it by virtue of its status as an intergovernmental organisation
+(    9) ! nor does it submit to any jurisdiction.
+(   10) # 11 "./par_gfl.F90"
+(   11) MODULE PAR_GFL
+(   12) # 13 "./par_gfl.F90"
+(   13) USE PARKIND1 , ONLY : JPIM
+(   14) # 15 "./par_gfl.F90"
+(   15) IMPLICIT NONE
+(   16) # 17 "./par_gfl.F90"
+(   17) ! Parametars used by GFL (and elsewhere)
+(   18) # 19 "./par_gfl.F90"
+(   19) ! JPGFL : Max number of GFL fields
+(   20) ! JPNAMED_GFL : Number of currently pre-defined components of GFL
+(   21) ! JPGHG : Number of greenhouse gas fields
+(   22) ! JPCHEM : Number of chemical species
+(   23) ! JPAERO : Number of active aerosol fields
+(   24) ! JPAEROUT: Number of output aerosol fields
+(   25) ! JPAEROCLIM: Number of 3D climatological aerosol fields
+(   26) ! JPUVP : Number of output from UV processor
+(   27) ! JPERA40 : Number of ERA40 diagnostic fields
+(   28) ! JPCH4S  : Number of added fields related to methane
+(   29) ! JPNOGW  : Number of diagnostic fields for NORO GWD SCHEME
+(   30) ! JPSLDIA : Number of SL dynamics diagnostic fields
+(   31) ! JPCHEM_ASSIM : Maximum number of assimilated of chemical species
+(   32) ! JPGHG_ASSIM  : Maximum number of assimilated of GHG species
+(   33) ! JPFSD   : Number of cloud heterogeneity fields
+(   34) ! JPEDRP  : Maximum number of EDR Parameters diagnostic turbulence fields
+(   35) !-------------------------------------------------------------------------
+(   36) # 37 "./par_gfl.F90"
+(   37) INTEGER(KIND=JPIM), PARAMETER :: JPGFL=2163
+(   38) INTEGER(KIND=JPIM), PARAMETER :: JPNAMED_GFL=27
+(   39) INTEGER(KIND=JPIM), PARAMETER :: JPGHG=3
+(   40) INTEGER(KIND=JPIM), PARAMETER :: JPCHEM=220
+(   41) INTEGER(KIND=JPIM), PARAMETER :: JPGHG_ASSIM=2
+(   42) INTEGER(KIND=JPIM), PARAMETER :: JPCHEM_ASSIM=6
+(   43) INTEGER(KIND=JPIM), PARAMETER :: JPAERO=42
+(   44) INTEGER(KIND=JPIM), PARAMETER :: JPFORC=1100
+(   45) INTEGER(KIND=JPIM), PARAMETER :: JPERA40=14
+(   46) INTEGER(KIND=JPIM), PARAMETER :: JPSLDIA=7
+(   47) INTEGER(KIND=JPIM), PARAMETER :: JPEZDIAG=50
+(   48) INTEGER(KIND=JPIM), PARAMETER :: JPCH4S=1
+(   49) INTEGER(KIND=JPIM), PARAMETER :: JPNOGW=2
+(   50) INTEGER(KIND=JPIM), PARAMETER :: JPAEROUT=38
+(   51) INTEGER(KIND=JPIM), PARAMETER :: JPAEROCLIM=3
+(   52) INTEGER(KIND=JPIM), PARAMETER :: JPUVP=2
+(   53) INTEGER(KIND=JPIM), PARAMETER :: JPPHYS=9
+(   54) INTEGER(KIND=JPIM), PARAMETER :: JPPHYCTY=1
+(   55) INTEGER(KIND=JPIM), PARAMETER :: JPFSD=1
+(   56) INTEGER(KIND=JPIM), PARAMETER :: JPEDRP=2
+(   57) INTEGER(KIND=JPIM), PARAMETER :: JPLIMA=50
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:25      page 4
+
+(   58) INTEGER(KIND=JPIM), PARAMETER :: GRIB_CODE_GFL_PHYS=81  ! AJGDB hopefully harmless
+(   59) # 60 "./par_gfl.F90"
+(   60) END MODULE PAR_GFL

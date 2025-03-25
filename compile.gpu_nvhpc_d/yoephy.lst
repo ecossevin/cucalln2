@@ -1,0 +1,745 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:20      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./yoephy.F90
+
+(    1) ! (C) Copyright 1991- ECMWF.
+(    2) !
+(    3) ! This software is licensed under the terms of the Apache Licence Version 2.0
+(    4) ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+(    5) !
+(    6) ! In applying this licence, ECMWF does not waive the privileges and immunities
+(    7) ! granted to it by virtue of its status as an intergovernmental organisation
+(    8) ! nor does it submit to any jurisdiction.
+(    9) 
+(   10) MODULE YOEPHY
+(   11) 
+(   12) USE PARKIND1, ONLY : JPRB, JPIM
+(   13) USE ISO_C_BINDING
+(   14) 
+(   15) IMPLICIT NONE
+(   16) 
+(   17) SAVE
+(   18) 
+(   19) !     -----------------------------------------------------------------
+(   20) !*    ** *YOEPHY* - SWITCHES RELATED TO DIABATIC PROCESSES
+(   21) !     -----------------------------------------------------------------
+(   22) 
+(   23) !        * E.C.M.W.F. PHYSICS PACKAGE *
+(   24) 
+(   25) TYPE :: TEPHY
+(   26) LOGICAL :: LEPHYS
+(   27) LOGICAL :: LECOND
+(   28) LOGICAL :: LECUMF
+(   29) LOGICAL :: LEDCLD
+(   30) LOGICAL :: LEEVAP
+(   31) LOGICAL :: LEGWDG
+(   32) LOGICAL :: LEGWWMS
+(   33) LOGICAL :: LEOZOC
+(   34) LOGICAL :: LEQNGT
+(   35) LOGICAL :: LERADI
+(   36) LOGICAL :: LERADIMPL
+(   37) LOGICAL :: LERADS
+(   38) LOGICAL :: LESICE
+(   39) LOGICAL :: LESURF
+(   40) LOGICAL :: LEVDIF
+(   41) LOGICAL :: LEVDIFSL
+(   42) LOGICAL :: LAGPHY
+(   43) LOGICAL :: LEPCLD
+(   44) LOGICAL :: LEO3CH
+(   45) LOGICAL :: LO3CH_SAFE
+(   46) LOGICAL :: LO3CH_OLDVER
+(   47) LOGICAL :: LO3CH_BMS
+(   48) LOGICAL :: LO3CH_HLO
+(   49) CHARACTER(LEN=4) :: CO3CHEM
+(   50) LOGICAL :: LNEEONLINE
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:20      page 2
+
+(   51) LOGICAL :: LWETONLINE
+(   52) LOGICAL :: LBUD23
+(   53) LOGICAL :: LPPTILES
+(   54) LOGICAL :: LBUDCYCLE
+(   55) LOGICAL :: LEXTRATEND
+(   56) LOGICAL :: LEMETHOX
+(   57) LOGICAL :: LECURR
+(   58) LOGICAL :: LESURFTRAJ
+(   59) LOGICAL :: LVDFTRAC
+(   60) LOGICAL :: LVDFNEWTRAC
+(   61) LOGICAL :: LMFTRAC
+(   62) LOGICAL :: LMFSCAV
+(   63) LOGICAL :: LERAIN
+(   64) LOGICAL :: LEMWAVE
+(   65) LOGICAL :: LEGBRAD
+(   66) LOGICAL :: LERAINGG
+(   67) LOGICAL :: LESMOS
+(   68) LOGICAL :: LESMAP
+(   69) LOGICAL :: LEOCWA
+(   70) LOGICAL :: LEOCCO
+(   71) LOGICAL :: LEOCSA
+(   72) LOGICAL :: LEOCLA
+(   73) LOGICAL :: LEVGEN
+(   74) LOGICAL :: LESSRO
+(   75) LOGICAL :: LEFLAKE
+(   76) LOGICAL :: LEOCML
+(   77) LOGICAL :: LEOBC
+(   78) LOGICAL :: LEOBCMAX
+(   79) REAL(KIND=JPRB) :: REOBCMAX
+(   80) LOGICAL :: LEOBCICE
+(   81) LOGICAL :: LEOCLAKE
+(   82) LOGICAL :: LEOLAKESST
+(   83) LOGICAL :: LOCMLTKE
+(   84) LOGICAL :: LECLIPQT0
+(   85) LOGICAL :: LECLIPCLDT0
+(   86) LOGICAL :: LDUCTDIA
+(   87) LOGICAL :: LDIAGTURB_EC
+(   88) LOGICAL :: LDIAGTURBGRAD_EC
+(   89) ! ----- split ECMWF physics:for split physics (one part at t-Dt, one part at t+Dt)
+(   90) LOGICAL :: LSLPHY ! Moved from YOMCT0 /MH
+(   91) LOGICAL :: LESN09
+(   92) LOGICAL :: LELAIV
+(   93) LOGICAL :: LECTESSEL
+(   94) LOGICAL :: LEAGS
+(   95) LOGICAL :: LEFARQUHAR
+(   96) LOGICAL :: LEOPTSURF
+(   97) LOGICAL :: LEC4MAP
+(   98) LOGICAL :: LEAIRCO2COUP 
+(   99) LOGICAL :: LELIGHT
+(  100) LOGICAL :: LVEXTRDYNACC  ! switches from instantaneous to cumulative extrdyn diags
+(  101) REAL(KIND=JPRB) :: RTHRFRTI
+(  102) REAL(KIND=JPRB) :: RCIMIN
+(  103) REAL(KIND=JPRB) :: RLAIINT
+(  104) INTEGER (KIND=JPIM) :: NPRACCL
+(  105) INTEGER (KIND=JPIM) :: NLIMODE
+(  106) LOGICAL :: LECLIM10D ! 10-day clim interpolation
+(  107) LOGICAL :: LESNML 
+(  108) LOGICAL :: LEURBAN
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:20      page 3
+
+(  109) INTEGER (KIND=JPIM) :: NSNMLWS
+(  110) 
+(  111) !VARIABLES FOR THE FLUX ADJUSTMENT OF GPP/RECO
+(  112) LOGICAL             :: LBFASCO2
+(  113) 
+(  114) ! SOME VARIABLES RELATED TO THE DIFFERENT NBF CO2 CLIMATOLOGIES
+(  115) 
+(  116) ! NCO2CLIMYY1    ===> First year in the NBF CO2 climatology
+(  117) ! NCO2CLIMYY2    ===> Last year in the NBF CO2 climatology
+(  118) ! NCO2CLIMN1     ===> starting time for the diurnally variable fluxes (in minutes)
+(  119) ! NCO2CLIMN2     ===> end time for the diurnally variable fluxes (in minutes)
+(  120) ! NCO2CLIMFRQ    ===> time frequency at which the diurnal cycle is provided (in minutes)
+(  121) 
+(  122) INTEGER(KIND=JPIM) :: NCO2CLIMYY1
+(  123) INTEGER(KIND=JPIM) :: NCO2CLIMYY2
+(  124) INTEGER(KIND=JPIM) :: NCO2CLIMN1
+(  125) INTEGER(KIND=JPIM) :: NCO2CLIMN2
+(  126) INTEGER(KIND=JPIM) :: NCO2CLIMFRQ
+(  127) 
+(  128) ! Surface albedo and emissivity scheme for radiation (needs to be
+(  129) ! defined here rather than in yoerad because NALBEDOSCHEME controls
+(  130) ! what albedo climatology fields are read in, which is done before
+(  131) ! yoerad is initialized).
+(  132) INTEGER(KIND=JPIM) :: NALBEDOSCHEME
+(  133) INTEGER(KIND=JPIM) :: NEMISSSCHEME
+(  134) 
+(  135) ! Albedo of permanent snow, used in Antarctica and on glaciers
+(  136) REAL(KIND=JPRB) :: RALFMINPSN
+(  137) 
+(  138) !     REFERENCE.
+(  139) !     ----------
+(  140) 
+(  141) !     F Vitart      E.C.M.W.F.      06/08/10
+(  142) 
+(  143) ! RNORTHML : northern limit domain
+(  144) ! RSOUTHML : southern limit
+(  145) ! RWESTML : western limit
+(  146) ! REASTML : eastern limit
+(  147) ! INVML:  =true: ML is applied inside the domain, =false: ML is applied outside the domain
+(  148) 
+(  149) REAL(KIND=JPRB) :: RNORTHML
+(  150) REAL(KIND=JPRB) :: RSOUTHML
+(  151) REAL(KIND=JPRB) :: RWESTML
+(  152) REAL(KIND=JPRB) :: REASTML
+(  153) 
+(  154) LOGICAL :: INVML
+(  155) LOGICAL :: LFPOS_EC_PHYS = .FALSE.
+(  156) LOGICAL :: LFPOS_ACC_RESET
+(  157) 
+(  158) ! LRAD_CLOUD_INHOMOG: Logical:Use regime-dependent value of fractional 
+(  159) ! standard deviation (FSD) of condensate in radiation scheme. 
+(  160) ! Required to set up GFL variable to carry FSD from cloudsc to radiation
+(  161) LOGICAL :: LRAD_CLOUD_INHOMOG
+(  162) 
+(  163) ! YSURF :  Pointer to surface package configuration
+(  164) 
+(  165) TYPE(C_PTR) :: YSURF
+(  166) !----------------------------------------------------------------------------
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:20      page 4
+
+(  167) 
+(  168) CONTAINS
+(  169) 
+(  170) END TYPE TEPHY
+(  171) 
+(  172) TYPE(TEPHY), POINTER :: YREPHY => NULL()
+(  173) 
+(  174) !     REFERENCE.
+(  175) !     ----------
+(  176) 
+(  177) !     J.-J. MORCRETTE       E.C.M.W.F.      91/07/14
+(  178) 
+(  179) !     MODIFICATIONS
+(  180) !     -------------
+(  181) 
+(  182) !     P. Viterbo   ECMWF   03-12-2004  Include user-defined RTHRFRTI
+(  183) !     G. Balsamo   ECMWF   14-03-2007  Include LEVGEN, LESSRO switches
+(  184) !     G. Balsamo   ECMWF   07-04-2008  Include LEFLAKE switch
+(  185) !     G. Balsamo   ECMWF   13-10-2008  Include LEOCML switch
+(  186) !     F. Vitart    ECMWF   21-01-2013  Include LEOBC switch
+(  187) !     G. Balsamo   ECMWF   13-10-2008  Include LESNWD switch
+(  188) !     P. Lopez     ECMWF   24-01-2009  Include LDUCTDIA switch
+(  189) !     G. Balsamo   ECMWF   24-02-2009  Include full set of SNOW switches
+(  190) !     Y. Takaya    ECMWF   21-08-2009  Include LEOCLA switch
+(  191) !     S. Boussetta/G.Balsamo May 2009  Include variable LAI switch LELAIV 
+(  192) !     E. Dutra             18-11-2009  snow 2009 cleaning of logicals - LESN09 to activate all 
+(  193) !     Y. Takaya/P. de Rosnay May 2020  SSS for SMOS
+(  194) !     P. Lopez     ECMWF   14-08-2009  Include LEGBRAD switch and NPRACCL
+(  195) !     S.Boussetta/G.Balsamo  Nov 2010  Include land carbon switch LECTESSEL
+(  196) !     G.Balsamo    ECMWF   21-06-2011  Include LEAGS switch (CO2&Evap modularity)
+(  197) !     P. Lopez     ECMWF   22-08-2012  Include LERAINGG switch for rain gauge assim.
+(  198) !     S.Boussetta  Nov 2013  Include 10-day clim interpolation switch LECLIM10D
+(  199) !     F. Vana & M. Kharoutdinov 06-Feb-2015  Super-parametrization scheme.
+(  200) !     A. Agusti-Panareda   09-08-2013  Add flag for GPP/REC flux adjustment (LBFASCO2)
+(  201) !     P. Lopez     ECMWF   24-07-2015  Added LELIGHT and NLIMODE for lightning parameterization.
+(  202) !     E.Dutra/G.Arduini    Jan 2018: Include LESNML switch turn on/off snow multi-layer
+(  203) !     R. Hogan     ECMWF   14-01-2019  Replace LE4ALB with NALBEDOSCHEME, add NEMISSSCHEME
+(  204) !     P. Bechtold  ECMWF   21-02-2019  Add LDIAGTURB_EC switch for 3D Turb EDRP diagnostics
+(  205) !     R. Hogan     ECMWF   07-03-2019  Add RALFMINPSN: albedo of permanent snow
+(  206) !     M. Diamantakis       Jan 2020    Add LVEXTRDYNACC flag for accumulating in time extra diags
+(  207) !     A. Agusti-Panareda ECMWF 09-04-2021  Include LEAIRCO2COUP switch (CAMSCO2&GPP modularity)
+(  208) !     A.Agusti-Panareda  ECMWF 06-07-2021 Include LEC4MAP switch (C4 photosynthesis)
+(  209) !     A.Agusti-Panareda  ECMWF 06-07-2021 Include LEFARQUHAR switch (Farquhar photosynthesis model)
+(  210) !     ------------------------------------------------------------------
+(  211) 
+(  212) !  NAME     TYPE     PURPOSE
+(  213) !  ----  :  ----   : ---------------------------------------------------
+(  214) ! LEPHYS : LOGICAL : SWITCH THE FULL E.C.M.W.F. PHYSICS PACKAGE ON
+(  215) ! LAGPHY : LOGICAL : IF TRUE, PHYSICS PACKAGE CALLED IN LAGGED MODE
+(  216) ! LECOND : LOGICAL : TURN THE LARGE-SCALE CONDENSATION ON
+(  217) ! LECUMF : LOGICAL : TURN THE MASS-FLUX CUMULUS CONVECTION SCHEME ON
+(  218) ! LEDCLD : LOGICAL : TURN THE DIAGNOSTIC CLOUD SCHEME ON
+(  219) ! LEPCLD : LOGICAL : TURN THE PROGNOSTIC CLOUD SCHEME ON
+(  220) ! LEEVAP : LOGICAL : TURN THE EVAPORATION OF PRECIPITATION ON
+(  221) ! LEGWDG : LOGICAL : TURN THE GRAVITY WAVE DRAG ON
+(  222) ! LEGWWMS: LOGICAL : TURN THE WARNER-MCINTYRE-SCINOCCA NON-OROGRAPHIC GRAVITY WAVE SCHEME ON
+(  223) ! LEOZOC : LOGICAL : TURN THE CLIMATOLOGICAL OZONE ON
+(  224) ! LEQNGT : LOGICAL : TURN THE NEGATIVE HUMIDITY FIXER ON
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:20      page 5
+
+(  225) ! LERADI : LOGICAL : TURN THE RADIATION SCHEME ON
+(  226) ! LERADIMPL : LOGICAL : TURN THE RADIATION SCHEME TO BECOME IMPLICIT (VALID AT t+dt)
+(  227) ! LERADS : LOGICAL : TURN THE INTERACTIVE SURFACE RADIATIVE PROPERTIESON
+(  228) ! LESICE : LOGICAL : TURN THE INTERACTIVE SEA ICE PROCESSES ON
+(  229) ! LESURF : LOGICAL : TURN THE INTERACTIVE SURFACE PROCESSES ON
+(  230) ! LEVDIF : LOGICAL : TURN THE VERTICAL DIFFUSION ON
+(  231) ! LEVDIFSL  : LOGICAL : USE THE UPDATED STATE FOR VERTICAL DIFFUSION
+(  232) ! LEO3CH : LOGICAL : TURN THE O3 CHEMISTRY ON (for EC prog. ozone)
+(  233) ! LO3CH_SAFE : LOGICAL : TURN INCREASED RELAXATION TO O3 TERM 
+(  234) ! LO3CH_HLO  : LOGICAL : USE HYBRID LINEAR OZONE SCHEME
+(  235) ! CO3CHEM    : CHARACTER(LEN=4) : OZONE CHEMISTRY VERSION
+(  236) ! LO3CH_OLDVER : LOGICAL : USE OLD VERSION (v2.3) OF OZONE CHEMISTRY
+(  237) ! LNEEONLINE: LOGICAL: USE ON-LINE CTESSEL IF TRUE 
+(  238) ! LWETONLINE: LOGICAL: USE ON-LINE CTESSEL IF TRUE 
+(  239) ! LBFASCO2 : LOGICAL : APPLY THE FLUX ADJUSTMENT TO GPP AND REC IN CTESSEL
+(  240) ! LBUD23 : LOGICAL : SWITCH FOR 3 AND 2 DIMENSIONAL BUDGETS 
+(  241) ! LPPTILES : LOGICAL : SWITCH FOR TILE POST-PROCESSING
+(  242) ! LBUDCYCLE: LOGICL: SWITCH FOR DIURNAL CYCLE DIAGNOSTICS
+(  243) ! LEXTRATEND: LOGICAL: SWITCH FOR EXTRA TENDENCY DIAGNOSTICS (ENS)
+(  244) ! LEMETHOX: LOGICAL: TURN THE METHANE OXIDATION ON
+(  245) ! LECURR : LOGICAL : IF TRUE, OCEAN CURRENT BOUNDARY CONDITION IS USED
+(  246) ! LVDFTRAC: LOGICAL: TURN TRACER TRANSPORT BY VERTICAL DIFFUSION ON 
+(  247) ! LVDFNEWTRAC: LOGICAL: TURN TRACER TRANSPORT BY VERTICAL DIFFUSION ON (NEW VERSION)
+(  248) ! LMFTRAC: LOGICAL : TURN TRACER TRANSPORT BY MASS FLUX CONVECTION ON
+(  249) ! LMFSCAV:LOGICAL  : TURN TRACER WET SCAAVENGING IN CUMULUS CONVECTION SCHEME ON
+(  250) ! LERAIN : LOGICAL : RAIN ASSIMILATION
+(  251) ! LEMWAVE : LOGICAL : ALL-SKY RADIANCE ASSIMILATION
+(  252) ! LEOCWA : LOGICAL : WARM OCEAN LAYER PARAMETRIZATION
+(  253) ! LEOBC  : LOGICAL : SST CORRECTION
+(  254) ! LEOBCMAX : LOGICAL : REMOVE ANY SST CORRECTIONS LARGER THAN REOBCMAX
+(  255) ! REOBCMAX : REAL : SST CORRECTIONS ABS(VALUES) LARGER THAN THIS VALUE IS IGNORED IF LEOBCCHK
+(  256) ! LEOBCICE : LOGICAL : ICE CORRECTION (IMPLIED IF LEOBC)
+(  257) ! LEOCCO : LOGICAL : COOL OCEAN SKIN PARAMETRIZATION
+(  258) ! LEOCSA : LOGICAL : SALINTY EFFECT ON SATURATION AT OCEAN SURFACE
+(  259) ! LEOCLA : LOGICAL : LANGMUIR CIRCULATION EFFECT IN SKIN LAYER SCHEME
+(  260) ! RTHRFRTI : INTEGER : MINIMUM FRACTION FOR ALL SURFACE TILES
+(  261) ! PRCIMIN : REAL : MINIMUM ICE FRACTION
+(  262) ! LEVGEN : LOGICAL  : VAN GENUCHTEN HYDROLOGY (with SOIL TYPE field)
+(  263) ! LESSRO : LOGICAL  : OROGRAPHIC (VIC-TYPE) RUNOFF
+(  264) ! LEFLAKE : LOGICAL  : LAKE MODEL FLAKE
+(  265) ! LEOCML : LOGICAL  : OCEAN MIX LAYER MODEL
+(  266) ! LEOCLAKE : LOGICAL  : PERSISTED LAKE SST and ICE
+(  267) ! LEOLAKESST : LOGICAL : USE LAKES TEMPERATURE AND ICE AS SST AND ICE ON LAKE POINTS
+(  268) ! LOCMLTKE : LOGICAL  : IF TRUE JANSSEN'S VERSION OF THE MELLOR-YAMADA SCHEME IS RUN.
+(  269) ! LECLIPQT0: LOGICAL: REMOVE NEGATIVE Q AND SUPERSATURATION AT INITIAL TIME
+(  270) ! LECLIPCLDT0: LOGICAL: REMOVE NEGATIVE CLOUD WATER/ICE AND BOUND CLOUD COVER AT INITIAL TIME
+(  271) ! LDUCTDIA : LOGICAL  : COMPUTATIONS AND ARCHIVING OF DUCTING DIAGNOSTICS
+(  272) ! LDIAGTURB_EC : LOGICAL  : ACTIVATE 3D TURBULENCE EDR PARAMETERS FOR CAT AND MWT
+(  273) ! LDIAGTURBGRAD_EC : LOGICAL  : ACTIVATE HORIZONTAL GRADIENTS FOR  3D TURBULENCE EDR PARAMETERS
+(  274) ! LESN09 : LOGICAL  : IF true use the snow 2009 scheme (liquid water, density, snow cover fraction, exposed and forest albed
+(  275) ! LELAIV : LOGICAL  : IF FALSE OVERWRITE CLIMATE LAI FIELDS WITH LUT VALUES
+(  276) ! LECTESSEL : LOGICAL : LAND CARBON (CTESSEL) USED FOR CO2 FLUXES
+(  277) ! LEAGS   : LOGICAL : LAND CARBON (CTESSEL) USED FOR CO2 AND EVAP FLUXES
+(  278) ! LEFARQUHAR   : LOGICAL : FARQUHAR PHOTOSYNTHESIS MODEL (CTESSEL) USED FOR CO2 AND EVAP FLUXES
+(  279) ! LEOPTSURF   : LOGICAL : USE FARQUHAR'S OPTIMIZED PARAMETERS FROM NAMELIST
+(  280) ! LEC4MAP : LOGICAL : C4 PHOTOSYNTHESIS MAP (CTESSEL) USED FOR CO2 AND EVAP FLUXES
+(  281) ! LEAIRCO2COUP : LOGICAL : CAMS CO2 USED FOR LAND SURFACE MODEL PHOTOSYNTHESIS
+(  282) ! RLAIINT : REAL    : INTERACTIVE LAI CLIM RELAXATION (1=interactive ; 0=clim)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:20      page 6
+
+(  283) ! LEGBRAD : LOGICAL : ACTIVATE RADAR PRECIPITATION OBSERVATION OPERATOR
+(  284) ! NPRACCL : INTEGER : ACCUMULATION LENGTH FOR RADAR PRECIPITATION OBSERVATION ASSIMILATION
+(  285) ! LERAINGG : LOGICAL : ACTIVATE RAIN GAUGE OBSERVATION OPERATOR
+(  286) ! LECLIM10D: Logical: IF TRUE interpolate between 10-day climate values (for albedo and LAI) 
+(  287) ! LELIGHT : LOGICAL : ACTIVATES LIGHTNING PARAMETRIZATION.
+(  288) ! NLIMODE : LOGICAL : SELECTION OF LIGHTNING PARAMETRIZATION (see CULIGHT routine).
+(  289) ! RALFMINPSN : REAL : Albedo of permanent snow, used in Antarctica and on glaciers
+(  290) ! NALBEDOSCHEME : INTEGER :   Surface shortwave albedo:
+(  291) !                             0: ERBE
+(  292) !                             1: MODIS 4 comp. (UV-Vis+NIR)x(direct+diffuse), nearest neigh to SW bands
+(  293) !                             2: MODIS 6 component, weighting to SW bands
+(  294) !                             3: MODIS 2 compoent (diffuse albedo for everything, weighting to SW bands
+(  295) ! NEMISSSCHEME  : INTEGER :   Surface longwave emissivity scheme:
+(  296) !                             0: 2-interval (infrared window and everything else)
+(  297) !                             1: 6-interval scheme
+(  298) ! LVEXTRDYNACC  : LOGICAL :   Make extra dyn diags cumulative rather instantaneous
+(  299) 
+(  300) !     -----------------------------------------------------------------
+(  301) 
+(  302) END MODULE YOEPHY
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:20      page 7
+
+(    1) # 1 "./yoephy.F90"
+(    1) ! (C) Copyright 1991- ECMWF.
+(    2) !
+(    3) ! This software is licensed under the terms of the Apache Licence Version 2.0
+(    4) ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+(    5) !
+(    6) ! In applying this licence, ECMWF does not waive the privileges and immunities
+(    7) ! granted to it by virtue of its status as an intergovernmental organisation
+(    8) ! nor does it submit to any jurisdiction.
+(    9) # 10 "./yoephy.F90"
+(   10) MODULE YOEPHY
+(   11) # 12 "./yoephy.F90"
+(   12) USE PARKIND1, ONLY : JPRB, JPIM
+(   13) USE ISO_C_BINDING
+(   14) # 15 "./yoephy.F90"
+(   15) IMPLICIT NONE
+(   16) # 17 "./yoephy.F90"
+(   17) SAVE
+(   18) # 19 "./yoephy.F90"
+(   19) !     -----------------------------------------------------------------
+(   20) !*    ** *YOEPHY* - SWITCHES RELATED TO DIABATIC PROCESSES
+(   21) !     -----------------------------------------------------------------
+(   22) # 23 "./yoephy.F90"
+(   23) !        * E.C.M.W.F. PHYSICS PACKAGE *
+(   24) # 25 "./yoephy.F90"
+(   25) TYPE :: TEPHY
+(   26) LOGICAL :: LEPHYS
+(   27) LOGICAL :: LECOND
+(   28) LOGICAL :: LECUMF
+(   29) LOGICAL :: LEDCLD
+(   30) LOGICAL :: LEEVAP
+(   31) LOGICAL :: LEGWDG
+(   32) LOGICAL :: LEGWWMS
+(   33) LOGICAL :: LEOZOC
+(   34) LOGICAL :: LEQNGT
+(   35) LOGICAL :: LERADI
+(   36) LOGICAL :: LERADIMPL
+(   37) LOGICAL :: LERADS
+(   38) LOGICAL :: LESICE
+(   39) LOGICAL :: LESURF
+(   40) LOGICAL :: LEVDIF
+(   41) LOGICAL :: LEVDIFSL
+(   42) LOGICAL :: LAGPHY
+(   43) LOGICAL :: LEPCLD
+(   44) LOGICAL :: LEO3CH
+(   45) LOGICAL :: LO3CH_SAFE
+(   46) LOGICAL :: LO3CH_OLDVER
+(   47) LOGICAL :: LO3CH_BMS
+(   48) LOGICAL :: LO3CH_HLO
+(   49) CHARACTER(LEN=4) :: CO3CHEM
+(   50) LOGICAL :: LNEEONLINE
+(   51) LOGICAL :: LWETONLINE
+(   52) LOGICAL :: LBUD23
+(   53) LOGICAL :: LPPTILES
+(   54) LOGICAL :: LBUDCYCLE
+(   55) LOGICAL :: LEXTRATEND
+(   56) LOGICAL :: LEMETHOX
+(   57) LOGICAL :: LECURR
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:20      page 8
+
+(   58) LOGICAL :: LESURFTRAJ
+(   59) LOGICAL :: LVDFTRAC
+(   60) LOGICAL :: LVDFNEWTRAC
+(   61) LOGICAL :: LMFTRAC
+(   62) LOGICAL :: LMFSCAV
+(   63) LOGICAL :: LERAIN
+(   64) LOGICAL :: LEMWAVE
+(   65) LOGICAL :: LEGBRAD
+(   66) LOGICAL :: LERAINGG
+(   67) LOGICAL :: LESMOS
+(   68) LOGICAL :: LESMAP
+(   69) LOGICAL :: LEOCWA
+(   70) LOGICAL :: LEOCCO
+(   71) LOGICAL :: LEOCSA
+(   72) LOGICAL :: LEOCLA
+(   73) LOGICAL :: LEVGEN
+(   74) LOGICAL :: LESSRO
+(   75) LOGICAL :: LEFLAKE
+(   76) LOGICAL :: LEOCML
+(   77) LOGICAL :: LEOBC
+(   78) LOGICAL :: LEOBCMAX
+(   79) REAL(KIND=JPRB) :: REOBCMAX
+(   80) LOGICAL :: LEOBCICE
+(   81) LOGICAL :: LEOCLAKE
+(   82) LOGICAL :: LEOLAKESST
+(   83) LOGICAL :: LOCMLTKE
+(   84) LOGICAL :: LECLIPQT0
+(   85) LOGICAL :: LECLIPCLDT0
+(   86) LOGICAL :: LDUCTDIA
+(   87) LOGICAL :: LDIAGTURB_EC
+(   88) LOGICAL :: LDIAGTURBGRAD_EC
+(   89) ! ----- split ECMWF physics:for split physics (one part at t-Dt, one part at t+Dt)
+(   90) LOGICAL :: LSLPHY ! Moved from YOMCT0 /MH
+(   91) LOGICAL :: LESN09
+(   92) LOGICAL :: LELAIV
+(   93) LOGICAL :: LECTESSEL
+(   94) LOGICAL :: LEAGS
+(   95) LOGICAL :: LEFARQUHAR
+(   96) LOGICAL :: LEOPTSURF
+(   97) LOGICAL :: LEC4MAP
+(   98) LOGICAL :: LEAIRCO2COUP 
+(   99) LOGICAL :: LELIGHT
+(  100) LOGICAL :: LVEXTRDYNACC  ! switches from instantaneous to cumulative extrdyn diags
+(  101) REAL(KIND=JPRB) :: RTHRFRTI
+(  102) REAL(KIND=JPRB) :: RCIMIN
+(  103) REAL(KIND=JPRB) :: RLAIINT
+(  104) INTEGER (KIND=JPIM) :: NPRACCL
+(  105) INTEGER (KIND=JPIM) :: NLIMODE
+(  106) LOGICAL :: LECLIM10D ! 10-day clim interpolation
+(  107) LOGICAL :: LESNML 
+(  108) LOGICAL :: LEURBAN
+(  109) INTEGER (KIND=JPIM) :: NSNMLWS
+(  110) # 111 "./yoephy.F90"
+(  111) !VARIABLES FOR THE FLUX ADJUSTMENT OF GPP/RECO
+(  112) LOGICAL             :: LBFASCO2
+(  113) # 114 "./yoephy.F90"
+(  114) ! SOME VARIABLES RELATED TO THE DIFFERENT NBF CO2 CLIMATOLOGIES
+(  115) # 116 "./yoephy.F90"
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:20      page 9
+
+(  116) ! NCO2CLIMYY1    ===> First year in the NBF CO2 climatology
+(  117) ! NCO2CLIMYY2    ===> Last year in the NBF CO2 climatology
+(  118) ! NCO2CLIMN1     ===> starting time for the diurnally variable fluxes (in minutes)
+(  119) ! NCO2CLIMN2     ===> end time for the diurnally variable fluxes (in minutes)
+(  120) ! NCO2CLIMFRQ    ===> time frequency at which the diurnal cycle is provided (in minutes)
+(  121) # 122 "./yoephy.F90"
+(  122) INTEGER(KIND=JPIM) :: NCO2CLIMYY1
+(  123) INTEGER(KIND=JPIM) :: NCO2CLIMYY2
+(  124) INTEGER(KIND=JPIM) :: NCO2CLIMN1
+(  125) INTEGER(KIND=JPIM) :: NCO2CLIMN2
+(  126) INTEGER(KIND=JPIM) :: NCO2CLIMFRQ
+(  127) # 128 "./yoephy.F90"
+(  128) ! Surface albedo and emissivity scheme for radiation (needs to be
+(  129) ! defined here rather than in yoerad because NALBEDOSCHEME controls
+(  130) ! what albedo climatology fields are read in, which is done before
+(  131) ! yoerad is initialized).
+(  132) INTEGER(KIND=JPIM) :: NALBEDOSCHEME
+(  133) INTEGER(KIND=JPIM) :: NEMISSSCHEME
+(  134) # 135 "./yoephy.F90"
+(  135) ! Albedo of permanent snow, used in Antarctica and on glaciers
+(  136) REAL(KIND=JPRB) :: RALFMINPSN
+(  137) # 138 "./yoephy.F90"
+(  138) !     REFERENCE.
+(  139) !     ----------
+(  140) # 141 "./yoephy.F90"
+(  141) !     F Vitart      E.C.M.W.F.      06/08/10
+(  142) # 143 "./yoephy.F90"
+(  143) ! RNORTHML : northern limit domain
+(  144) ! RSOUTHML : southern limit
+(  145) ! RWESTML : western limit
+(  146) ! REASTML : eastern limit
+(  147) ! INVML:  =true: ML is applied inside the domain, =false: ML is applied outside the domain
+(  148) # 149 "./yoephy.F90"
+(  149) REAL(KIND=JPRB) :: RNORTHML
+(  150) REAL(KIND=JPRB) :: RSOUTHML
+(  151) REAL(KIND=JPRB) :: RWESTML
+(  152) REAL(KIND=JPRB) :: REASTML
+(  153) # 154 "./yoephy.F90"
+(  154) LOGICAL :: INVML
+(  155) LOGICAL :: LFPOS_EC_PHYS = .FALSE.
+(  156) LOGICAL :: LFPOS_ACC_RESET
+(  157) # 158 "./yoephy.F90"
+(  158) ! LRAD_CLOUD_INHOMOG: Logical:Use regime-dependent value of fractional 
+(  159) ! standard deviation (FSD) of condensate in radiation scheme. 
+(  160) ! Required to set up GFL variable to carry FSD from cloudsc to radiation
+(  161) LOGICAL :: LRAD_CLOUD_INHOMOG
+(  162) # 163 "./yoephy.F90"
+(  163) ! YSURF :  Pointer to surface package configuration
+(  164) # 165 "./yoephy.F90"
+(  165) TYPE(C_PTR) :: YSURF
+(  166) !----------------------------------------------------------------------------
+(  167) # 168 "./yoephy.F90"
+(  168) CONTAINS
+(  169) # 170 "./yoephy.F90"
+(  170) END TYPE TEPHY
+(  171) # 172 "./yoephy.F90"
+(  172) TYPE(TEPHY), POINTER :: YREPHY => NULL()
+(  173) # 174 "./yoephy.F90"
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:20      page 10
+
+(  174) !     REFERENCE.
+(  175) !     ----------
+(  176) # 177 "./yoephy.F90"
+(  177) !     J.-J. MORCRETTE       E.C.M.W.F.      91/07/14
+(  178) # 179 "./yoephy.F90"
+(  179) !     MODIFICATIONS
+(  180) !     -------------
+(  181) # 182 "./yoephy.F90"
+(  182) !     P. Viterbo   ECMWF   03-12-2004  Include user-defined RTHRFRTI
+(  183) !     G. Balsamo   ECMWF   14-03-2007  Include LEVGEN, LESSRO switches
+(  184) !     G. Balsamo   ECMWF   07-04-2008  Include LEFLAKE switch
+(  185) !     G. Balsamo   ECMWF   13-10-2008  Include LEOCML switch
+(  186) !     F. Vitart    ECMWF   21-01-2013  Include LEOBC switch
+(  187) !     G. Balsamo   ECMWF   13-10-2008  Include LESNWD switch
+(  188) !     P. Lopez     ECMWF   24-01-2009  Include LDUCTDIA switch
+(  189) !     G. Balsamo   ECMWF   24-02-2009  Include full set of SNOW switches
+(  190) !     Y. Takaya    ECMWF   21-08-2009  Include LEOCLA switch
+(  191) !     S. Boussetta/G.Balsamo May 2009  Include variable LAI switch LELAIV 
+(  192) !     E. Dutra             18-11-2009  snow 2009 cleaning of logicals - LESN09 to activate all 
+(  193) !     Y. Takaya/P. de Rosnay May 2020  SSS for SMOS
+(  194) !     P. Lopez     ECMWF   14-08-2009  Include LEGBRAD switch and NPRACCL
+(  195) !     S.Boussetta/G.Balsamo  Nov 2010  Include land carbon switch LECTESSEL
+(  196) !     G.Balsamo    ECMWF   21-06-2011  Include LEAGS switch (CO2&Evap modularity)
+(  197) !     P. Lopez     ECMWF   22-08-2012  Include LERAINGG switch for rain gauge assim.
+(  198) !     S.Boussetta  Nov 2013  Include 10-day clim interpolation switch LECLIM10D
+(  199) !     F. Vana & M. Kharoutdinov 06-Feb-2015  Super-parametrization scheme.
+(  200) !     A. Agusti-Panareda   09-08-2013  Add flag for GPP/REC flux adjustment (LBFASCO2)
+(  201) !     P. Lopez     ECMWF   24-07-2015  Added LELIGHT and NLIMODE for lightning parameterization.
+(  202) !     E.Dutra/G.Arduini    Jan 2018: Include LESNML switch turn on/off snow multi-layer
+(  203) !     R. Hogan     ECMWF   14-01-2019  Replace LE4ALB with NALBEDOSCHEME, add NEMISSSCHEME
+(  204) !     P. Bechtold  ECMWF   21-02-2019  Add LDIAGTURB_EC switch for 3D Turb EDRP diagnostics
+(  205) !     R. Hogan     ECMWF   07-03-2019  Add RALFMINPSN: albedo of permanent snow
+(  206) !     M. Diamantakis       Jan 2020    Add LVEXTRDYNACC flag for accumulating in time extra diags
+(  207) !     A. Agusti-Panareda ECMWF 09-04-2021  Include LEAIRCO2COUP switch (CAMSCO2&GPP modularity)
+(  208) !     A.Agusti-Panareda  ECMWF 06-07-2021 Include LEC4MAP switch (C4 photosynthesis)
+(  209) !     A.Agusti-Panareda  ECMWF 06-07-2021 Include LEFARQUHAR switch (Farquhar photosynthesis model)
+(  210) !     ------------------------------------------------------------------
+(  211) # 212 "./yoephy.F90"
+(  212) !  NAME     TYPE     PURPOSE
+(  213) !  ----  :  ----   : ---------------------------------------------------
+(  214) ! LEPHYS : LOGICAL : SWITCH THE FULL E.C.M.W.F. PHYSICS PACKAGE ON
+(  215) ! LAGPHY : LOGICAL : IF TRUE, PHYSICS PACKAGE CALLED IN LAGGED MODE
+(  216) ! LECOND : LOGICAL : TURN THE LARGE-SCALE CONDENSATION ON
+(  217) ! LECUMF : LOGICAL : TURN THE MASS-FLUX CUMULUS CONVECTION SCHEME ON
+(  218) ! LEDCLD : LOGICAL : TURN THE DIAGNOSTIC CLOUD SCHEME ON
+(  219) ! LEPCLD : LOGICAL : TURN THE PROGNOSTIC CLOUD SCHEME ON
+(  220) ! LEEVAP : LOGICAL : TURN THE EVAPORATION OF PRECIPITATION ON
+(  221) ! LEGWDG : LOGICAL : TURN THE GRAVITY WAVE DRAG ON
+(  222) ! LEGWWMS: LOGICAL : TURN THE WARNER-MCINTYRE-SCINOCCA NON-OROGRAPHIC GRAVITY WAVE SCHEME ON
+(  223) ! LEOZOC : LOGICAL : TURN THE CLIMATOLOGICAL OZONE ON
+(  224) ! LEQNGT : LOGICAL : TURN THE NEGATIVE HUMIDITY FIXER ON
+(  225) ! LERADI : LOGICAL : TURN THE RADIATION SCHEME ON
+(  226) ! LERADIMPL : LOGICAL : TURN THE RADIATION SCHEME TO BECOME IMPLICIT (VALID AT t+dt)
+(  227) ! LERADS : LOGICAL : TURN THE INTERACTIVE SURFACE RADIATIVE PROPERTIESON
+(  228) ! LESICE : LOGICAL : TURN THE INTERACTIVE SEA ICE PROCESSES ON
+(  229) ! LESURF : LOGICAL : TURN THE INTERACTIVE SURFACE PROCESSES ON
+(  230) ! LEVDIF : LOGICAL : TURN THE VERTICAL DIFFUSION ON
+(  231) ! LEVDIFSL  : LOGICAL : USE THE UPDATED STATE FOR VERTICAL DIFFUSION
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:20      page 11
+
+(  232) ! LEO3CH : LOGICAL : TURN THE O3 CHEMISTRY ON (for EC prog. ozone)
+(  233) ! LO3CH_SAFE : LOGICAL : TURN INCREASED RELAXATION TO O3 TERM 
+(  234) ! LO3CH_HLO  : LOGICAL : USE HYBRID LINEAR OZONE SCHEME
+(  235) ! CO3CHEM    : CHARACTER(LEN=4) : OZONE CHEMISTRY VERSION
+(  236) ! LO3CH_OLDVER : LOGICAL : USE OLD VERSION (v2.3) OF OZONE CHEMISTRY
+(  237) ! LNEEONLINE: LOGICAL: USE ON-LINE CTESSEL IF TRUE 
+(  238) ! LWETONLINE: LOGICAL: USE ON-LINE CTESSEL IF TRUE 
+(  239) ! LBFASCO2 : LOGICAL : APPLY THE FLUX ADJUSTMENT TO GPP AND REC IN CTESSEL
+(  240) ! LBUD23 : LOGICAL : SWITCH FOR 3 AND 2 DIMENSIONAL BUDGETS 
+(  241) ! LPPTILES : LOGICAL : SWITCH FOR TILE POST-PROCESSING
+(  242) ! LBUDCYCLE: LOGICL: SWITCH FOR DIURNAL CYCLE DIAGNOSTICS
+(  243) ! LEXTRATEND: LOGICAL: SWITCH FOR EXTRA TENDENCY DIAGNOSTICS (ENS)
+(  244) ! LEMETHOX: LOGICAL: TURN THE METHANE OXIDATION ON
+(  245) ! LECURR : LOGICAL : IF TRUE, OCEAN CURRENT BOUNDARY CONDITION IS USED
+(  246) ! LVDFTRAC: LOGICAL: TURN TRACER TRANSPORT BY VERTICAL DIFFUSION ON 
+(  247) ! LVDFNEWTRAC: LOGICAL: TURN TRACER TRANSPORT BY VERTICAL DIFFUSION ON (NEW VERSION)
+(  248) ! LMFTRAC: LOGICAL : TURN TRACER TRANSPORT BY MASS FLUX CONVECTION ON
+(  249) ! LMFSCAV:LOGICAL  : TURN TRACER WET SCAAVENGING IN CUMULUS CONVECTION SCHEME ON
+(  250) ! LERAIN : LOGICAL : RAIN ASSIMILATION
+(  251) ! LEMWAVE : LOGICAL : ALL-SKY RADIANCE ASSIMILATION
+(  252) ! LEOCWA : LOGICAL : WARM OCEAN LAYER PARAMETRIZATION
+(  253) ! LEOBC  : LOGICAL : SST CORRECTION
+(  254) ! LEOBCMAX : LOGICAL : REMOVE ANY SST CORRECTIONS LARGER THAN REOBCMAX
+(  255) ! REOBCMAX : REAL : SST CORRECTIONS ABS(VALUES) LARGER THAN THIS VALUE IS IGNORED IF LEOBCCHK
+(  256) ! LEOBCICE : LOGICAL : ICE CORRECTION (IMPLIED IF LEOBC)
+(  257) ! LEOCCO : LOGICAL : COOL OCEAN SKIN PARAMETRIZATION
+(  258) ! LEOCSA : LOGICAL : SALINTY EFFECT ON SATURATION AT OCEAN SURFACE
+(  259) ! LEOCLA : LOGICAL : LANGMUIR CIRCULATION EFFECT IN SKIN LAYER SCHEME
+(  260) ! RTHRFRTI : INTEGER : MINIMUM FRACTION FOR ALL SURFACE TILES
+(  261) ! PRCIMIN : REAL : MINIMUM ICE FRACTION
+(  262) ! LEVGEN : LOGICAL  : VAN GENUCHTEN HYDROLOGY (with SOIL TYPE field)
+(  263) ! LESSRO : LOGICAL  : OROGRAPHIC (VIC-TYPE) RUNOFF
+(  264) ! LEFLAKE : LOGICAL  : LAKE MODEL FLAKE
+(  265) ! LEOCML : LOGICAL  : OCEAN MIX LAYER MODEL
+(  266) ! LEOCLAKE : LOGICAL  : PERSISTED LAKE SST and ICE
+(  267) ! LEOLAKESST : LOGICAL : USE LAKES TEMPERATURE AND ICE AS SST AND ICE ON LAKE POINTS
+(  268) ! LOCMLTKE : LOGICAL  : IF TRUE JANSSEN'S VERSION OF THE MELLOR-YAMADA SCHEME IS RUN.
+(  269) ! LECLIPQT0: LOGICAL: REMOVE NEGATIVE Q AND SUPERSATURATION AT INITIAL TIME
+(  270) ! LECLIPCLDT0: LOGICAL: REMOVE NEGATIVE CLOUD WATER/ICE AND BOUND CLOUD COVER AT INITIAL TIME
+(  271) ! LDUCTDIA : LOGICAL  : COMPUTATIONS AND ARCHIVING OF DUCTING DIAGNOSTICS
+(  272) ! LDIAGTURB_EC : LOGICAL  : ACTIVATE 3D TURBULENCE EDR PARAMETERS FOR CAT AND MWT
+(  273) ! LDIAGTURBGRAD_EC : LOGICAL  : ACTIVATE HORIZONTAL GRADIENTS FOR  3D TURBULENCE EDR PARAMETERS
+(  274) ! LESN09 : LOGICAL  : IF true use the snow 2009 scheme (liquid water, density, snow cover fraction, exposed and forest albedo)
+(  275) ! LELAIV : LOGICAL  : IF FALSE OVERWRITE CLIMATE LAI FIELDS WITH LUT VALUES
+(  276) ! LECTESSEL : LOGICAL : LAND CARBON (CTESSEL) USED FOR CO2 FLUXES
+(  277) ! LEAGS   : LOGICAL : LAND CARBON (CTESSEL) USED FOR CO2 AND EVAP FLUXES
+(  278) ! LEFARQUHAR   : LOGICAL : FARQUHAR PHOTOSYNTHESIS MODEL (CTESSEL) USED FOR CO2 AND EVAP FLUXES
+(  279) ! LEOPTSURF   : LOGICAL : USE FARQUHAR'S OPTIMIZED PARAMETERS FROM NAMELIST
+(  280) ! LEC4MAP : LOGICAL : C4 PHOTOSYNTHESIS MAP (CTESSEL) USED FOR CO2 AND EVAP FLUXES
+(  281) ! LEAIRCO2COUP : LOGICAL : CAMS CO2 USED FOR LAND SURFACE MODEL PHOTOSYNTHESIS
+(  282) ! RLAIINT : REAL    : INTERACTIVE LAI CLIM RELAXATION (1=interactive ; 0=clim)
+(  283) ! LEGBRAD : LOGICAL : ACTIVATE RADAR PRECIPITATION OBSERVATION OPERATOR
+(  284) ! NPRACCL : INTEGER : ACCUMULATION LENGTH FOR RADAR PRECIPITATION OBSERVATION ASSIMILATION
+(  285) ! LERAINGG : LOGICAL : ACTIVATE RAIN GAUGE OBSERVATION OPERATOR
+(  286) ! LECLIM10D: Logical: IF TRUE interpolate between 10-day climate values (for albedo and LAI) 
+(  287) ! LELIGHT : LOGICAL : ACTIVATES LIGHTNING PARAMETRIZATION.
+(  288) ! NLIMODE : LOGICAL : SELECTION OF LIGHTNING PARAMETRIZATION (see CULIGHT routine).
+(  289) ! RALFMINPSN : REAL : Albedo of permanent snow, used in Antarctica and on glaciers
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:20      page 12
+
+(  290) ! NALBEDOSCHEME : INTEGER :   Surface shortwave albedo:
+(  291) !                             0: ERBE
+(  292) !                             1: MODIS 4 comp. (UV-Vis+NIR)x(direct+diffuse), nearest neigh to SW bands
+(  293) !                             2: MODIS 6 component, weighting to SW bands
+(  294) !                             3: MODIS 2 compoent (diffuse albedo for everything, weighting to SW bands
+(  295) ! NEMISSSCHEME  : INTEGER :   Surface longwave emissivity scheme:
+(  296) !                             0: 2-interval (infrared window and everything else)
+(  297) !                             1: 6-interval scheme
+(  298) ! LVEXTRDYNACC  : LOGICAL :   Make extra dyn diags cumulative rather instantaneous
+(  299) # 300 "./yoephy.F90"
+(  300) !     -----------------------------------------------------------------
+(  301) # 302 "./yoephy.F90"
+(  302) END MODULE YOEPHY

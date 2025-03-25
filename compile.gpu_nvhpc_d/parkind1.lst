@@ -1,0 +1,112 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:20      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./parkind1.F90
+
+(    1) MODULE PARKIND1
+(    2) !
+(    3) !     *** Define usual kinds for strong typing ***
+(    4) !
+(    5) IMPLICIT NONE
+(    6) SAVE
+(    7) !
+(    8) !     Integer Kinds
+(    9) !     -------------
+(   10) !
+(   11) INTEGER, PARAMETER :: JPIT = SELECTED_INT_KIND(2)
+(   12) INTEGER, PARAMETER :: JPIS = SELECTED_INT_KIND(4)
+(   13) INTEGER, PARAMETER :: JPIM = SELECTED_INT_KIND(9)
+(   14) INTEGER, PARAMETER :: JPIB = SELECTED_INT_KIND(12)
+(   15) 
+(   16) !Special integer type to be used for sensative adress calculations
+(   17) !should be *8 for a machine with 8byte adressing for optimum performance
+(   18) #ifdef ADDRESS64
+(   19) INTEGER, PARAMETER :: JPIA = JPIB
+(   20) #else
+(   21) INTEGER, PARAMETER :: JPIA = JPIM
+(   22) #endif
+(   23) 
+(   24) !
+(   25) !     Real Kinds
+(   26) !     ----------
+(   27) !
+(   28) INTEGER, PARAMETER :: JPRT = SELECTED_REAL_KIND(2,1)
+(   29) INTEGER, PARAMETER :: JPRS = SELECTED_REAL_KIND(4,2)
+(   30) INTEGER, PARAMETER :: JPRM = SELECTED_REAL_KIND(6,37)
+(   31) #ifdef PARKIND1_SINGLE
+(   32) INTEGER, PARAMETER :: JPRB = SELECTED_REAL_KIND(6,37)
+(   33) #else
+(   34) INTEGER, PARAMETER :: JPRB = SELECTED_REAL_KIND(13,300)
+(   35) #endif
+(   36) 
+(   37) ! Double real for C code and special places requiring 
+(   38) !    higher precision. 
+(   39) INTEGER, PARAMETER :: JPRD = SELECTED_REAL_KIND(13,300)
+(   40) 
+(   41) 
+(   42) ! Logical Kinds for RTTOV....
+(   43) 
+(   44) INTEGER, PARAMETER :: JPLM = JPIM   !Standard logical type
+(   45) 
+(   46) END MODULE PARKIND1
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:20      page 2
+
+(    1) # 1 "./parkind1.F90"
+(    1) MODULE PARKIND1
+(    2) !
+(    3) !     *** Define usual kinds for strong typing ***
+(    4) !
+(    5) IMPLICIT NONE
+(    6) SAVE
+(    7) !
+(    8) !     Integer Kinds
+(    9) !     -------------
+(   10) !
+(   11) INTEGER, PARAMETER :: JPIT = SELECTED_INT_KIND(2)
+(   12) INTEGER, PARAMETER :: JPIS = SELECTED_INT_KIND(4)
+(   13) INTEGER, PARAMETER :: JPIM = SELECTED_INT_KIND(9)
+(   14) INTEGER, PARAMETER :: JPIB = SELECTED_INT_KIND(12)
+(   15) # 16 "./parkind1.F90"
+(   16) !Special integer type to be used for sensative adress calculations
+(   17) !should be *8 for a machine with 8byte adressing for optimum performance
+(   18) # 21 "./parkind1.F90"
+(   21) INTEGER, PARAMETER :: JPIA = JPIM
+(   22) # 24 "./parkind1.F90"
+(   24) !
+(   25) !     Real Kinds
+(   26) !     ----------
+(   27) !
+(   28) INTEGER, PARAMETER :: JPRT = SELECTED_REAL_KIND(2,1)
+(   29) INTEGER, PARAMETER :: JPRS = SELECTED_REAL_KIND(4,2)
+(   30) INTEGER, PARAMETER :: JPRM = SELECTED_REAL_KIND(6,37)
+(   31) # 34 "./parkind1.F90"
+(   34) INTEGER, PARAMETER :: JPRB = SELECTED_REAL_KIND(13,300)
+(   35) # 37 "./parkind1.F90"
+(   37) ! Double real for C code and special places requiring 
+(   38) !    higher precision. 
+(   39) INTEGER, PARAMETER :: JPRD = SELECTED_REAL_KIND(13,300)
+(   40) # 42 "./parkind1.F90"
+(   42) ! Logical Kinds for RTTOV....
+(   43) # 44 "./parkind1.F90"
+(   44) INTEGER, PARAMETER :: JPLM = JPIM   !Standard logical type
+(   45) # 46 "./parkind1.F90"
+(   46) END MODULE PARKIND1

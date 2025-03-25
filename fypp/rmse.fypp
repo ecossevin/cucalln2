@@ -1,0 +1,111 @@
+MODULE YOMALLOC
+
+USE PARKIND1
+
+IMPLICIT NONE
+
+#:set kinds = ['LM', 'RD', 'RM', 'IM']
+#:set ranks = [0, 1, 2, 3, 4, 5]
+
+INTERFACE ALLOC
+#:for kind in kinds
+#:for rank in ranks
+MODULE PROCEDURE :: ALLOC${kind}$${rank}$
+#:endfor
+#:endfor
+END INTERFACE
+
+CONTAINS
+
+#:for kind in kinds
+#:for rank in ranks
+
+#:if kind[0:1] == "L"
+  #:set type = "LOGICAL"
+#:elif kind[0:1] == "R"
+  #:set type = "REAL"
+#:elif kind[0:1] == "I"
+  #:set type = "INTEGER"
+#:endif
+
+#:if rank == 0
+
+SUBROUTINE ALLOC${kind}$${rank}$ (P, Z)
+
+${type}$ (KIND=JP${kind}$), POINTER :: P
+${type}$ (KIND=JP${kind}$), POINTER :: Z
+P=Z
+END SUBROUTINE
+
+#:else
+
+SUBROUTINE ALLOC${kind}$${rank}$ (P, Z)
+
+${type}$ (KIND=JP${kind}$), POINTER :: P(${','.join ([':'] * rank)}$)
+${type}$ (KIND=JP${kind}$), POINTER :: Z(${','.join ([':'] * rank)}$)
+
+INTEGER :: ILBOUND(${rank}$)
+INTEGER :: IUBOUND(${rank}$)
+
+ILBOUND = LBOUND(Z)
+IUBOUND = UBOUND(Z)
+
+#:set shape = ','.join (list (map (lambda i: "ILBOUND (" + str (i) + "):IUBOUND (" + str (i) + ")", range (1, rank+1))))
+
+ALLOCATE (P (${shape}$))
+
+P=Z
+
+END SUBROUTINE
+
+SUBROUTINE RMSE${kind}$${rank}$ (CDNAME, P1, KLUN, YDD)
+CHARACTER (LEN=*) :: CDNAME
+${type}$ (KIND=JP${kind}$), INTENT (IN) :: P1(${','.join ([':'] * rank)}$)
+${type}$ (KIND=JP${kind}$) :: S
+INTEGER, INTENT (IN) :: KLUN
+TYPE (DD12), INTENT (IN) :: YDD
+${type}$ (KIND=JP${kind}$), POINTER, INTENT (IN) :: Z2(${','.join ([':'] * rank)}$)
+INTEGER :: I
+#:set ind = ','.join (list (map (lambda i: "I" + str (i), range (1, rank+1))))
+
+INTEGER :: ${ind}$
+ILUNFO = 79
+OPEN (ILUNFO, NAME=TRIM (CLCASE_IN)//'/CUCALLN_MF.OUT.dat', FORM='UNFORMATTED')
+
+CALL LOAD (KLUN, Z2, KLBOUND=LBOUND (P1)) ! LBOUND (P1) = [1, 1, ...]
+
+#:if rank >= 2
+  IF (PRESENT (YDD)) THEN
+    CALL YDD%SHUFFLE (Z2)
+  ENDIF
+#:endif
+
+#:for i in range (1, rank+1)
+IF (SIZE (P1, ${i}$) /= SIZE (Z2, ${i}$)) STOP 1
+#:endfor
+
+S = 0.0
+
+#:for i in range (rank)
+DO I${rank-i}$ = 1, SIZE (P1, ${rank-i}$)
+#:endfor
+        S = S + (P1(${ind}$) - Z2(${ind}$))**2       
+
+#:for i in range (rank)
+ENDDO
+#:endfor
+
+WRITE (0, *) '===>', 'RMSE:', CDNAME, '<==='
+WRITE (0, *) __FILE__, ':', __LINE__
+WRITE (0, *) 'RMSE:', CDNAME, '=', S
+
+
+CLOSE (ILUNFO)
+
+END SUBROUTINE
+
+#:endif
+#:endfor
+#:endfor
+
+END

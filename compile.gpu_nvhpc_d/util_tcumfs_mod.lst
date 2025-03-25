@@ -1,0 +1,455 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:37      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./util_tcumfs_mod.F90
+
+(    1) MODULE UTIL_TCUMFS_MOD
+(    2) 
+(    3) USE YOMCUMFS, ONLY : TCUMFS
+(    4) 
+(    5) INTERFACE SAVE
+(    6) MODULE PROCEDURE SAVE_TCUMFS
+(    7) END INTERFACE
+(    8) 
+(    9) INTERFACE LOAD
+(   10) MODULE PROCEDURE LOAD_TCUMFS
+(   11) END INTERFACE
+(   12) 
+(   13) INTERFACE COPY
+(   14) MODULE PROCEDURE COPY_TCUMFS
+(   15) END INTERFACE
+(   16) 
+(   17) INTERFACE HOST
+(   18) MODULE PROCEDURE HOST_TCUMFS
+(   19) END INTERFACE
+(   20) 
+(   21)      
+(   22) INTERFACE CRC64
+(   23) MODULE PROCEDURE CRC64_TCUMFS
+(   24) END INTERFACE
+(   25) 
+(   26) INTERFACE WIPE
+(   27) MODULE PROCEDURE WIPE_TCUMFS
+(   28) END INTERFACE
+(   29) 
+(   30) INTERFACE SIZE
+(   31) MODULE PROCEDURE SIZE_TCUMFS
+(   32) END INTERFACE
+(   33) 
+(   34) 
+(   35) CONTAINS
+(   36) 
+(   37) SUBROUTINE SAVE_TCUMFS (KLUN, YD)
+(   38) 
+(   39) IMPLICIT NONE
+(   40) INTEGER, INTENT (IN) :: KLUN
+(   41) TYPE (TCUMFS), INTENT (IN), TARGET :: YD
+(   42) 
+(   43) WRITE (KLUN) YD%LECUMFS
+(   44) WRITE (KLUN) YD%LREGCV
+(   45) WRITE (KLUN) YD%LMFCFL2_SHSTEP
+(   46) END SUBROUTINE
+(   47) 
+(   48) SUBROUTINE LOAD_TCUMFS (KLUN, YD)
+(   49) 
+(   50) IMPLICIT NONE
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:37      page 2
+
+(   51) INTEGER, INTENT (IN) :: KLUN
+(   52) TYPE (TCUMFS), INTENT (OUT), TARGET :: YD
+(   53) 
+(   54) READ (KLUN) YD%LECUMFS
+(   55) READ (KLUN) YD%LREGCV
+(   56) READ (KLUN) YD%LMFCFL2_SHSTEP
+(   57) END SUBROUTINE
+(   58) 
+(   59) 
+(   60) SUBROUTINE COPY_TCUMFS (YD, LDCREATED, LDFIELDAPI)
+(   61) 
+(   62) IMPLICIT NONE
+(   63) TYPE (TCUMFS), INTENT (IN), TARGET :: YD
+(   64) LOGICAL, OPTIONAL, INTENT (IN) :: LDCREATED, LDFIELDAPI
+(   65) LOGICAL :: LLCREATED
+(   66) LOGICAL :: LLFIELDAPI
+(   67) 
+(   68) LLFIELDAPI = .FALSE.
+(   69) IF (PRESENT (LDFIELDAPI)) THEN
+(   70)   LLFIELDAPI = LDFIELDAPI
+(   71) ENDIF
+(   72) LLCREATED = .FALSE.
+(   73) IF (PRESENT (LDCREATED)) THEN
+(   74)   LLCREATED = LDCREATED
+(   75) ENDIF
+(   76) IF (.NOT. LLCREATED) THEN
+(   77)   !$acc enter data create (YD)
+(   78)   !$acc update device (YD)
+(   79) ENDIF
+(   80) 
+(   81) 
+(   82) 
+(   83) END SUBROUTINE
+(   84) 
+(   85) SUBROUTINE HOST_TCUMFS (YD)
+(   86) 
+(   87) IMPLICIT NONE
+(   88) TYPE (TCUMFS), TARGET :: YD
+(   89) 
+(   90) 
+(   91) 
+(   92) 
+(   93) END SUBROUTINE
+(   94) 
+(   95)      
+(   96) 
+(   97) SUBROUTINE CRC64_TCUMFS (YD, KLUN, CDPATH)
+(   98) USE CRC64_INTRINSIC
+(   99) 
+(  100) IMPLICIT NONE
+(  101) TYPE (TCUMFS), TARGET :: YD
+(  102) INTEGER, INTENT (IN) :: KLUN
+(  103) CHARACTER(LEN=*), INTENT (IN) :: CDPATH
+(  104) CHARACTER(LEN=128) :: CLIND
+(  105) 
+(  106) WRITE (KLUN, '(Z16.16," ",A)') CRC64 (YD%LECUMFS), CDPATH//'%LECUMFS'
+(  107) 
+(  108) WRITE (KLUN, '(Z16.16," ",A)') CRC64 (YD%LREGCV), CDPATH//'%LREGCV'
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:37      page 3
+
+(  109) 
+(  110) WRITE (KLUN, '(Z16.16," ",A)') CRC64 (YD%LMFCFL2_SHSTEP), CDPATH//'%LMFCFL2_SHSTEP'
+(  111) 
+(  112) END SUBROUTINE
+(  113) 
+(  114) SUBROUTINE WIPE_TCUMFS (YD, LDDELETED, LDFIELDAPI)
+(  115) 
+(  116) IMPLICIT NONE
+(  117) TYPE (TCUMFS), INTENT (IN), TARGET :: YD
+(  118) LOGICAL, OPTIONAL, INTENT (IN) :: LDDELETED, LDFIELDAPI
+(  119) LOGICAL :: LLDELETED
+(  120) LOGICAL :: LLFIELDAPI
+(  121) 
+(  122) LLFIELDAPI = .FALSE.
+(  123) IF (PRESENT (LDFIELDAPI)) THEN
+(  124)   LLFIELDAPI = LDFIELDAPI
+(  125) ENDIF
+(  126) 
+(  127) 
+(  128) 
+(  129) LLDELETED = .FALSE.
+(  130) IF (PRESENT (LDDELETED)) THEN
+(  131)   LLDELETED = LDDELETED
+(  132) ENDIF
+(  133) IF (.NOT. LLDELETED) THEN
+(  134)   !$acc exit data delete (YD)
+(  135) ENDIF
+(  136) END SUBROUTINE
+(  137) 
+(  138) INTEGER*8 FUNCTION SIZE_TCUMFS (YD, CDPATH, LDPRINT) RESULT (KSIZE)
+(  139) 
+(  140) IMPLICIT NONE
+(  141) TYPE (TCUMFS),     INTENT (IN), TARGET :: YD
+(  142) CHARACTER(LEN=*), INTENT (IN), OPTIONAL :: CDPATH
+(  143) LOGICAL,          INTENT (IN), OPTIONAL :: LDPRINT
+(  144) INTEGER*8 :: ISIZE, JSIZE
+(  145) LOGICAL :: LLPRINT
+(  146) CHARACTER(LEN=128) :: CLPATH
+(  147) 
+(  148) LLPRINT = .FALSE.
+(  149) IF (PRESENT (LDPRINT)) THEN
+(  150)   LLPRINT = LDPRINT
+(  151) ENDIF
+(  152) CLPATH=''
+(  153) IF (PRESENT (CDPATH)) THEN
+(  154)   CLPATH = CDPATH
+(  155) ENDIF
+(  156) KSIZE = 0
+(  157) ISIZE = KIND (YD%LECUMFS)
+(  158) IF (LLPRINT) THEN
+(  159)   WRITE (*, '(I10," ")', ADVANCE='NO') ISIZE
+(  160)   WRITE (*, *) TRIM (CLPATH)//'%LECUMFS'
+(  161) ENDIF
+(  162) KSIZE = KSIZE + ISIZE
+(  163) ISIZE = KIND (YD%LREGCV)
+(  164) IF (LLPRINT) THEN
+(  165)   WRITE (*, '(I10," ")', ADVANCE='NO') ISIZE
+(  166)   WRITE (*, *) TRIM (CLPATH)//'%LREGCV'
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:37      page 4
+
+(  167) ENDIF
+(  168) KSIZE = KSIZE + ISIZE
+(  169) ISIZE = KIND (YD%LMFCFL2_SHSTEP)
+(  170) IF (LLPRINT) THEN
+(  171)   WRITE (*, '(I10," ")', ADVANCE='NO') ISIZE
+(  172)   WRITE (*, *) TRIM (CLPATH)//'%LMFCFL2_SHSTEP'
+(  173) ENDIF
+(  174) KSIZE = KSIZE + ISIZE
+(  175) END FUNCTION
+(  176) 
+(  177) END MODULE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:37      page 5
+
+(    1) # 1 "./util_tcumfs_mod.F90"
+(    1) MODULE UTIL_TCUMFS_MOD
+(    2) # 3 "./util_tcumfs_mod.F90"
+(    3) USE YOMCUMFS, ONLY : TCUMFS
+(    4) # 5 "./util_tcumfs_mod.F90"
+(    5) INTERFACE SAVE
+(    6) MODULE PROCEDURE SAVE_TCUMFS
+(    7) END INTERFACE
+(    8) # 9 "./util_tcumfs_mod.F90"
+(    9) INTERFACE LOAD
+(   10) MODULE PROCEDURE LOAD_TCUMFS
+(   11) END INTERFACE
+(   12) # 13 "./util_tcumfs_mod.F90"
+(   13) INTERFACE COPY
+(   14) MODULE PROCEDURE COPY_TCUMFS
+(   15) END INTERFACE
+(   16) # 17 "./util_tcumfs_mod.F90"
+(   17) INTERFACE HOST
+(   18) MODULE PROCEDURE HOST_TCUMFS
+(   19) END INTERFACE
+(   20) # 21 "./util_tcumfs_mod.F90"
+(   21)      
+(   22) INTERFACE CRC64
+(   23) MODULE PROCEDURE CRC64_TCUMFS
+(   24) END INTERFACE
+(   25) # 26 "./util_tcumfs_mod.F90"
+(   26) INTERFACE WIPE
+(   27) MODULE PROCEDURE WIPE_TCUMFS
+(   28) END INTERFACE
+(   29) # 30 "./util_tcumfs_mod.F90"
+(   30) INTERFACE SIZE
+(   31) MODULE PROCEDURE SIZE_TCUMFS
+(   32) END INTERFACE
+(   33) # 35 "./util_tcumfs_mod.F90"
+(   35) CONTAINS
+(   36) # 37 "./util_tcumfs_mod.F90"
+(   37) SUBROUTINE SAVE_TCUMFS (KLUN, YD)
+(   38) # 39 "./util_tcumfs_mod.F90"
+(   39) IMPLICIT NONE
+(   40) INTEGER, INTENT (IN) :: KLUN
+(   41) TYPE (TCUMFS), INTENT (IN), TARGET :: YD
+(   42) # 43 "./util_tcumfs_mod.F90"
+(   43) WRITE (KLUN) YD%LECUMFS
+(   44) WRITE (KLUN) YD%LREGCV
+(   45) WRITE (KLUN) YD%LMFCFL2_SHSTEP
+(   46) END SUBROUTINE
+(   47) # 48 "./util_tcumfs_mod.F90"
+(   48) SUBROUTINE LOAD_TCUMFS (KLUN, YD)
+(   49) # 50 "./util_tcumfs_mod.F90"
+(   50) IMPLICIT NONE
+(   51) INTEGER, INTENT (IN) :: KLUN
+(   52) TYPE (TCUMFS), INTENT (OUT), TARGET :: YD
+(   53) # 54 "./util_tcumfs_mod.F90"
+(   54) READ (KLUN) YD%LECUMFS
+(   55) READ (KLUN) YD%LREGCV
+(   56) READ (KLUN) YD%LMFCFL2_SHSTEP
+(   57) END SUBROUTINE
+(   58) # 60 "./util_tcumfs_mod.F90"
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:37      page 6
+
+(   60) SUBROUTINE COPY_TCUMFS (YD, LDCREATED, LDFIELDAPI)
+(   61) # 62 "./util_tcumfs_mod.F90"
+(   62) IMPLICIT NONE
+(   63) TYPE (TCUMFS), INTENT (IN), TARGET :: YD
+(   64) LOGICAL, OPTIONAL, INTENT (IN) :: LDCREATED, LDFIELDAPI
+(   65) LOGICAL :: LLCREATED
+(   66) LOGICAL :: LLFIELDAPI
+(   67) # 68 "./util_tcumfs_mod.F90"
+(   68) LLFIELDAPI = .FALSE.
+(   69) IF (PRESENT (LDFIELDAPI)) THEN
+(   70)   LLFIELDAPI = LDFIELDAPI
+(   71) ENDIF
+(   72) LLCREATED = .FALSE.
+(   73) IF (PRESENT (LDCREATED)) THEN
+(   74)   LLCREATED = LDCREATED
+(   75) ENDIF
+(   76) IF (.NOT. LLCREATED) THEN
+(   77)   !$acc enter data create (YD)
+(   78)   !$acc update device (YD)
+(   79) ENDIF
+(   80) # 83 "./util_tcumfs_mod.F90"
+(   83) END SUBROUTINE
+(   84) # 85 "./util_tcumfs_mod.F90"
+(   85) SUBROUTINE HOST_TCUMFS (YD)
+(   86) # 87 "./util_tcumfs_mod.F90"
+(   87) IMPLICIT NONE
+(   88) TYPE (TCUMFS), TARGET :: YD
+(   89) # 93 "./util_tcumfs_mod.F90"
+(   93) END SUBROUTINE
+(   94) # 95 "./util_tcumfs_mod.F90"
+(   95)      
+(   96) # 97 "./util_tcumfs_mod.F90"
+(   97) SUBROUTINE CRC64_TCUMFS (YD, KLUN, CDPATH)
+(   98) USE CRC64_INTRINSIC
+(   99) # 100 "./util_tcumfs_mod.F90"
+(  100) IMPLICIT NONE
+(  101) TYPE (TCUMFS), TARGET :: YD
+(  102) INTEGER, INTENT (IN) :: KLUN
+(  103) CHARACTER(LEN=*), INTENT (IN) :: CDPATH
+(  104) CHARACTER(LEN=128) :: CLIND
+(  105) # 106 "./util_tcumfs_mod.F90"
+(  106) WRITE (KLUN, '(Z16.16," ",A)') CRC64 (YD%LECUMFS), CDPATH//'%LECUMFS'
+(  107) # 108 "./util_tcumfs_mod.F90"
+(  108) WRITE (KLUN, '(Z16.16," ",A)') CRC64 (YD%LREGCV), CDPATH//'%LREGCV'
+(  109) # 110 "./util_tcumfs_mod.F90"
+(  110) WRITE (KLUN, '(Z16.16," ",A)') CRC64 (YD%LMFCFL2_SHSTEP), CDPATH//'%LMFCFL2_SHSTEP'
+(  111) # 112 "./util_tcumfs_mod.F90"
+(  112) END SUBROUTINE
+(  113) # 114 "./util_tcumfs_mod.F90"
+(  114) SUBROUTINE WIPE_TCUMFS (YD, LDDELETED, LDFIELDAPI)
+(  115) # 116 "./util_tcumfs_mod.F90"
+(  116) IMPLICIT NONE
+(  117) TYPE (TCUMFS), INTENT (IN), TARGET :: YD
+(  118) LOGICAL, OPTIONAL, INTENT (IN) :: LDDELETED, LDFIELDAPI
+(  119) LOGICAL :: LLDELETED
+(  120) LOGICAL :: LLFIELDAPI
+(  121) # 122 "./util_tcumfs_mod.F90"
+(  122) LLFIELDAPI = .FALSE.
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:37      page 7
+
+(  123) IF (PRESENT (LDFIELDAPI)) THEN
+(  124)   LLFIELDAPI = LDFIELDAPI
+(  125) ENDIF
+(  126) # 129 "./util_tcumfs_mod.F90"
+(  129) LLDELETED = .FALSE.
+(  130) IF (PRESENT (LDDELETED)) THEN
+(  131)   LLDELETED = LDDELETED
+(  132) ENDIF
+(  133) IF (.NOT. LLDELETED) THEN
+(  134)   !$acc exit data delete (YD)
+(  135) ENDIF
+(  136) END SUBROUTINE
+(  137) # 138 "./util_tcumfs_mod.F90"
+(  138) INTEGER*8 FUNCTION SIZE_TCUMFS (YD, CDPATH, LDPRINT) RESULT (KSIZE)
+(  139) # 140 "./util_tcumfs_mod.F90"
+(  140) IMPLICIT NONE
+(  141) TYPE (TCUMFS),     INTENT (IN), TARGET :: YD
+(  142) CHARACTER(LEN=*), INTENT (IN), OPTIONAL :: CDPATH
+(  143) LOGICAL,          INTENT (IN), OPTIONAL :: LDPRINT
+(  144) INTEGER*8 :: ISIZE, JSIZE
+(  145) LOGICAL :: LLPRINT
+(  146) CHARACTER(LEN=128) :: CLPATH
+(  147) # 148 "./util_tcumfs_mod.F90"
+(  148) LLPRINT = .FALSE.
+(  149) IF (PRESENT (LDPRINT)) THEN
+(  150)   LLPRINT = LDPRINT
+(  151) ENDIF
+(  152) CLPATH=''
+(  153) IF (PRESENT (CDPATH)) THEN
+(  154)   CLPATH = CDPATH
+(  155) ENDIF
+(  156) KSIZE = 0
+(  157) ISIZE = KIND (YD%LECUMFS)
+(  158) IF (LLPRINT) THEN
+(  159)   WRITE (*, '(I10," ")', ADVANCE='NO') ISIZE
+(  160)   WRITE (*, *) TRIM (CLPATH)//'%LECUMFS'
+(  161) ENDIF
+(  162) KSIZE = KSIZE + ISIZE
+(  163) ISIZE = KIND (YD%LREGCV)
+(  164) IF (LLPRINT) THEN
+(  165)   WRITE (*, '(I10," ")', ADVANCE='NO') ISIZE
+(  166)   WRITE (*, *) TRIM (CLPATH)//'%LREGCV'
+(  167) ENDIF
+(  168) KSIZE = KSIZE + ISIZE
+(  169) ISIZE = KIND (YD%LMFCFL2_SHSTEP)
+(  170) IF (LLPRINT) THEN
+(  171)   WRITE (*, '(I10," ")', ADVANCE='NO') ISIZE
+(  172)   WRITE (*, *) TRIM (CLPATH)//'%LMFCFL2_SHSTEP'
+(  173) ENDIF
+(  174) KSIZE = KSIZE + ISIZE
+(  175) END FUNCTION
+(  176) # 177 "./util_tcumfs_mod.F90"
+(  177) END MODULE

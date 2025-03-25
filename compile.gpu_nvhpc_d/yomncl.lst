@@ -1,0 +1,99 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:24      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./yomncl.F90
+
+(    1) MODULE YOMNCL
+(    2) 
+(    3) USE PARKIND1  ,ONLY : JPRB
+(    4) 
+(    5) IMPLICIT NONE
+(    6) 
+(    7) SAVE
+(    8) 
+(    9) ! ------ CLOUD CHARACTERISTICS FOR SIMPLIFIED SCHEME
+(   10) 
+(   11) ! LNCLIN   : .TRUE. IF (A,L,I) grid-point upper air fields to be read
+(   12) !            on input for new cloud scheme of the linearized model
+(   13) ! LREGCL   : .TRUE. if the regularization in the cloud scheme is used
+(   14) 
+(   15) TYPE :: TNCL
+(   16) LOGICAL :: LNCLIN
+(   17) LOGICAL :: LREGCL
+(   18) !----------------------------------------------------------------------------
+(   19) CONTAINS
+(   20) END TYPE TNCL
+(   21) !============================================================================
+(   22) 
+(   23) !!TYPE(TNCL), POINTER :: YRNCL => NULL()
+(   24) 
+(   25) !     ------------------------------------------------------------------
+(   26) END MODULE YOMNCL
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:24      page 2
+
+(    1) # 1 "./yomncl.F90"
+(    1) MODULE YOMNCL
+(    2) # 3 "./yomncl.F90"
+(    3) USE PARKIND1  ,ONLY : JPRB
+(    4) # 5 "./yomncl.F90"
+(    5) IMPLICIT NONE
+(    6) # 7 "./yomncl.F90"
+(    7) SAVE
+(    8) # 9 "./yomncl.F90"
+(    9) ! ------ CLOUD CHARACTERISTICS FOR SIMPLIFIED SCHEME
+(   10) # 11 "./yomncl.F90"
+(   11) ! LNCLIN   : .TRUE. IF (A,L,I) grid-point upper air fields to be read
+(   12) !            on input for new cloud scheme of the linearized model
+(   13) ! LREGCL   : .TRUE. if the regularization in the cloud scheme is used
+(   14) # 15 "./yomncl.F90"
+(   15) TYPE :: TNCL
+(   16) LOGICAL :: LNCLIN
+(   17) LOGICAL :: LREGCL
+(   18) !----------------------------------------------------------------------------
+(   19) CONTAINS
+(   20) END TYPE TNCL
+(   21) !============================================================================
+(   22) # 23 "./yomncl.F90"
+(   23) !!TYPE(TNCL), POINTER :: YRNCL => NULL()
+(   24) # 25 "./yomncl.F90"
+(   25) !     ------------------------------------------------------------------
+(   26) END MODULE YOMNCL

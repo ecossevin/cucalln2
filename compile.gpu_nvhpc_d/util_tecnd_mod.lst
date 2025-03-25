@@ -1,0 +1,448 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:30      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./util_tecnd_mod.F90
+
+(    1) MODULE UTIL_TECND_MOD
+(    2) 
+(    3) USE YOECND, ONLY : TECND
+(    4) 
+(    5) INTERFACE SAVE
+(    6) MODULE PROCEDURE SAVE_TECND
+(    7) END INTERFACE
+(    8) 
+(    9) INTERFACE LOAD
+(   10) MODULE PROCEDURE LOAD_TECND
+(   11) END INTERFACE
+(   12) 
+(   13) INTERFACE COPY
+(   14) MODULE PROCEDURE COPY_TECND
+(   15) END INTERFACE
+(   16) 
+(   17) INTERFACE HOST
+(   18) MODULE PROCEDURE HOST_TECND
+(   19) END INTERFACE
+(   20) 
+(   21)      
+(   22) INTERFACE CRC64
+(   23) MODULE PROCEDURE CRC64_TECND
+(   24) END INTERFACE
+(   25) 
+(   26) INTERFACE WIPE
+(   27) MODULE PROCEDURE WIPE_TECND
+(   28) END INTERFACE
+(   29) 
+(   30) INTERFACE SIZE
+(   31) MODULE PROCEDURE SIZE_TECND
+(   32) END INTERFACE
+(   33) 
+(   34) 
+(   35) CONTAINS
+(   36) 
+(   37) SUBROUTINE SAVE_TECND (KLUN, YD)
+(   38) 
+(   39) IMPLICIT NONE
+(   40) INTEGER, INTENT (IN) :: KLUN
+(   41) TYPE (TECND), INTENT (IN), TARGET :: YD
+(   42) 
+(   43) WRITE (KLUN) YD%REPFLM
+(   44) WRITE (KLUN) YD%REPQMI
+(   45) END SUBROUTINE
+(   46) 
+(   47) SUBROUTINE LOAD_TECND (KLUN, YD)
+(   48) USE PARKIND1, ONLY : JPRD
+(   49) 
+(   50) IMPLICIT NONE
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:30      page 2
+
+(   51) INTEGER, INTENT (IN) :: KLUN
+(   52) TYPE (TECND), INTENT (OUT), TARGET :: YD
+(   53) REAL(KIND=JPRD) :: ZTMP0
+(   54) READ (KLUN) ZTMP0
+(   55) YD%REPFLM = ZTMP0
+(   56) READ (KLUN) ZTMP0
+(   57) YD%REPQMI = ZTMP0
+(   58) END SUBROUTINE
+(   59) 
+(   60) 
+(   61) SUBROUTINE COPY_TECND (YD, LDCREATED, LDFIELDAPI)
+(   62) 
+(   63) IMPLICIT NONE
+(   64) TYPE (TECND), INTENT (IN), TARGET :: YD
+(   65) LOGICAL, OPTIONAL, INTENT (IN) :: LDCREATED, LDFIELDAPI
+(   66) LOGICAL :: LLCREATED
+(   67) LOGICAL :: LLFIELDAPI
+(   68) 
+(   69) LLFIELDAPI = .FALSE.
+(   70) IF (PRESENT (LDFIELDAPI)) THEN
+(   71)   LLFIELDAPI = LDFIELDAPI
+(   72) ENDIF
+(   73) LLCREATED = .FALSE.
+(   74) IF (PRESENT (LDCREATED)) THEN
+(   75)   LLCREATED = LDCREATED
+(   76) ENDIF
+(   77) IF (.NOT. LLCREATED) THEN
+(   78)   !$acc enter data create (YD)
+(   79)   !$acc update device (YD)
+(   80) ENDIF
+(   81) 
+(   82) 
+(   83) END SUBROUTINE
+(   84) 
+(   85) SUBROUTINE HOST_TECND (YD)
+(   86) 
+(   87) IMPLICIT NONE
+(   88) TYPE (TECND), TARGET :: YD
+(   89) 
+(   90) 
+(   91) 
+(   92) END SUBROUTINE
+(   93) 
+(   94)      
+(   95) 
+(   96) SUBROUTINE CRC64_TECND (YD, KLUN, CDPATH)
+(   97) USE CRC64_INTRINSIC
+(   98) 
+(   99) IMPLICIT NONE
+(  100) TYPE (TECND), TARGET :: YD
+(  101) INTEGER, INTENT (IN) :: KLUN
+(  102) CHARACTER(LEN=*), INTENT (IN) :: CDPATH
+(  103) CHARACTER(LEN=128) :: CLIND
+(  104) 
+(  105) WRITE (KLUN, '(Z16.16," ",A)') CRC64 (YD%REPFLM), CDPATH//'%REPFLM'
+(  106) 
+(  107) WRITE (KLUN, '(Z16.16," ",A)') CRC64 (YD%REPQMI), CDPATH//'%REPQMI'
+(  108) 
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:30      page 3
+
+(  109) END SUBROUTINE
+(  110) 
+(  111) SUBROUTINE WIPE_TECND (YD, LDDELETED, LDFIELDAPI)
+(  112) 
+(  113) IMPLICIT NONE
+(  114) TYPE (TECND), INTENT (IN), TARGET :: YD
+(  115) LOGICAL, OPTIONAL, INTENT (IN) :: LDDELETED, LDFIELDAPI
+(  116) LOGICAL :: LLDELETED
+(  117) LOGICAL :: LLFIELDAPI
+(  118) 
+(  119) LLFIELDAPI = .FALSE.
+(  120) IF (PRESENT (LDFIELDAPI)) THEN
+(  121)   LLFIELDAPI = LDFIELDAPI
+(  122) ENDIF
+(  123) 
+(  124) 
+(  125) LLDELETED = .FALSE.
+(  126) IF (PRESENT (LDDELETED)) THEN
+(  127)   LLDELETED = LDDELETED
+(  128) ENDIF
+(  129) IF (.NOT. LLDELETED) THEN
+(  130)   !$acc exit data delete (YD)
+(  131) ENDIF
+(  132) END SUBROUTINE
+(  133) 
+(  134) INTEGER*8 FUNCTION SIZE_TECND (YD, CDPATH, LDPRINT) RESULT (KSIZE)
+(  135) 
+(  136) IMPLICIT NONE
+(  137) TYPE (TECND),     INTENT (IN), TARGET :: YD
+(  138) CHARACTER(LEN=*), INTENT (IN), OPTIONAL :: CDPATH
+(  139) LOGICAL,          INTENT (IN), OPTIONAL :: LDPRINT
+(  140) INTEGER*8 :: ISIZE, JSIZE
+(  141) LOGICAL :: LLPRINT
+(  142) CHARACTER(LEN=128) :: CLPATH
+(  143) 
+(  144) LLPRINT = .FALSE.
+(  145) IF (PRESENT (LDPRINT)) THEN
+(  146)   LLPRINT = LDPRINT
+(  147) ENDIF
+(  148) CLPATH=''
+(  149) IF (PRESENT (CDPATH)) THEN
+(  150)   CLPATH = CDPATH
+(  151) ENDIF
+(  152) KSIZE = 0
+(  153) ISIZE = KIND (YD%REPFLM)
+(  154) IF (LLPRINT) THEN
+(  155)   WRITE (*, '(I10," ")', ADVANCE='NO') ISIZE
+(  156)   WRITE (*, *) TRIM (CLPATH)//'%REPFLM'
+(  157) ENDIF
+(  158) KSIZE = KSIZE + ISIZE
+(  159) ISIZE = KIND (YD%REPQMI)
+(  160) IF (LLPRINT) THEN
+(  161)   WRITE (*, '(I10," ")', ADVANCE='NO') ISIZE
+(  162)   WRITE (*, *) TRIM (CLPATH)//'%REPQMI'
+(  163) ENDIF
+(  164) KSIZE = KSIZE + ISIZE
+(  165) END FUNCTION
+(  166) 
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:30      page 4
+
+(  167) END MODULE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:30      page 5
+
+(    1) # 1 "./util_tecnd_mod.F90"
+(    1) MODULE UTIL_TECND_MOD
+(    2) # 3 "./util_tecnd_mod.F90"
+(    3) USE YOECND, ONLY : TECND
+(    4) # 5 "./util_tecnd_mod.F90"
+(    5) INTERFACE SAVE
+(    6) MODULE PROCEDURE SAVE_TECND
+(    7) END INTERFACE
+(    8) # 9 "./util_tecnd_mod.F90"
+(    9) INTERFACE LOAD
+(   10) MODULE PROCEDURE LOAD_TECND
+(   11) END INTERFACE
+(   12) # 13 "./util_tecnd_mod.F90"
+(   13) INTERFACE COPY
+(   14) MODULE PROCEDURE COPY_TECND
+(   15) END INTERFACE
+(   16) # 17 "./util_tecnd_mod.F90"
+(   17) INTERFACE HOST
+(   18) MODULE PROCEDURE HOST_TECND
+(   19) END INTERFACE
+(   20) # 21 "./util_tecnd_mod.F90"
+(   21)      
+(   22) INTERFACE CRC64
+(   23) MODULE PROCEDURE CRC64_TECND
+(   24) END INTERFACE
+(   25) # 26 "./util_tecnd_mod.F90"
+(   26) INTERFACE WIPE
+(   27) MODULE PROCEDURE WIPE_TECND
+(   28) END INTERFACE
+(   29) # 30 "./util_tecnd_mod.F90"
+(   30) INTERFACE SIZE
+(   31) MODULE PROCEDURE SIZE_TECND
+(   32) END INTERFACE
+(   33) # 35 "./util_tecnd_mod.F90"
+(   35) CONTAINS
+(   36) # 37 "./util_tecnd_mod.F90"
+(   37) SUBROUTINE SAVE_TECND (KLUN, YD)
+(   38) # 39 "./util_tecnd_mod.F90"
+(   39) IMPLICIT NONE
+(   40) INTEGER, INTENT (IN) :: KLUN
+(   41) TYPE (TECND), INTENT (IN), TARGET :: YD
+(   42) # 43 "./util_tecnd_mod.F90"
+(   43) WRITE (KLUN) YD%REPFLM
+(   44) WRITE (KLUN) YD%REPQMI
+(   45) END SUBROUTINE
+(   46) # 47 "./util_tecnd_mod.F90"
+(   47) SUBROUTINE LOAD_TECND (KLUN, YD)
+(   48) USE PARKIND1, ONLY : JPRD
+(   49) # 50 "./util_tecnd_mod.F90"
+(   50) IMPLICIT NONE
+(   51) INTEGER, INTENT (IN) :: KLUN
+(   52) TYPE (TECND), INTENT (OUT), TARGET :: YD
+(   53) REAL(KIND=JPRD) :: ZTMP0
+(   54) READ (KLUN) ZTMP0
+(   55) YD%REPFLM = ZTMP0
+(   56) READ (KLUN) ZTMP0
+(   57) YD%REPQMI = ZTMP0
+(   58) END SUBROUTINE
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:30      page 6
+
+(   59) # 61 "./util_tecnd_mod.F90"
+(   61) SUBROUTINE COPY_TECND (YD, LDCREATED, LDFIELDAPI)
+(   62) # 63 "./util_tecnd_mod.F90"
+(   63) IMPLICIT NONE
+(   64) TYPE (TECND), INTENT (IN), TARGET :: YD
+(   65) LOGICAL, OPTIONAL, INTENT (IN) :: LDCREATED, LDFIELDAPI
+(   66) LOGICAL :: LLCREATED
+(   67) LOGICAL :: LLFIELDAPI
+(   68) # 69 "./util_tecnd_mod.F90"
+(   69) LLFIELDAPI = .FALSE.
+(   70) IF (PRESENT (LDFIELDAPI)) THEN
+(   71)   LLFIELDAPI = LDFIELDAPI
+(   72) ENDIF
+(   73) LLCREATED = .FALSE.
+(   74) IF (PRESENT (LDCREATED)) THEN
+(   75)   LLCREATED = LDCREATED
+(   76) ENDIF
+(   77) IF (.NOT. LLCREATED) THEN
+(   78)   !$acc enter data create (YD)
+(   79)   !$acc update device (YD)
+(   80) ENDIF
+(   81) # 83 "./util_tecnd_mod.F90"
+(   83) END SUBROUTINE
+(   84) # 85 "./util_tecnd_mod.F90"
+(   85) SUBROUTINE HOST_TECND (YD)
+(   86) # 87 "./util_tecnd_mod.F90"
+(   87) IMPLICIT NONE
+(   88) TYPE (TECND), TARGET :: YD
+(   89) # 92 "./util_tecnd_mod.F90"
+(   92) END SUBROUTINE
+(   93) # 94 "./util_tecnd_mod.F90"
+(   94)      
+(   95) # 96 "./util_tecnd_mod.F90"
+(   96) SUBROUTINE CRC64_TECND (YD, KLUN, CDPATH)
+(   97) USE CRC64_INTRINSIC
+(   98) # 99 "./util_tecnd_mod.F90"
+(   99) IMPLICIT NONE
+(  100) TYPE (TECND), TARGET :: YD
+(  101) INTEGER, INTENT (IN) :: KLUN
+(  102) CHARACTER(LEN=*), INTENT (IN) :: CDPATH
+(  103) CHARACTER(LEN=128) :: CLIND
+(  104) # 105 "./util_tecnd_mod.F90"
+(  105) WRITE (KLUN, '(Z16.16," ",A)') CRC64 (YD%REPFLM), CDPATH//'%REPFLM'
+(  106) # 107 "./util_tecnd_mod.F90"
+(  107) WRITE (KLUN, '(Z16.16," ",A)') CRC64 (YD%REPQMI), CDPATH//'%REPQMI'
+(  108) # 109 "./util_tecnd_mod.F90"
+(  109) END SUBROUTINE
+(  110) # 111 "./util_tecnd_mod.F90"
+(  111) SUBROUTINE WIPE_TECND (YD, LDDELETED, LDFIELDAPI)
+(  112) # 113 "./util_tecnd_mod.F90"
+(  113) IMPLICIT NONE
+(  114) TYPE (TECND), INTENT (IN), TARGET :: YD
+(  115) LOGICAL, OPTIONAL, INTENT (IN) :: LDDELETED, LDFIELDAPI
+(  116) LOGICAL :: LLDELETED
+(  117) LOGICAL :: LLFIELDAPI
+(  118) # 119 "./util_tecnd_mod.F90"
+(  119) LLFIELDAPI = .FALSE.
+(  120) IF (PRESENT (LDFIELDAPI)) THEN
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:30      page 7
+
+(  121)   LLFIELDAPI = LDFIELDAPI
+(  122) ENDIF
+(  123) # 125 "./util_tecnd_mod.F90"
+(  125) LLDELETED = .FALSE.
+(  126) IF (PRESENT (LDDELETED)) THEN
+(  127)   LLDELETED = LDDELETED
+(  128) ENDIF
+(  129) IF (.NOT. LLDELETED) THEN
+(  130)   !$acc exit data delete (YD)
+(  131) ENDIF
+(  132) END SUBROUTINE
+(  133) # 134 "./util_tecnd_mod.F90"
+(  134) INTEGER*8 FUNCTION SIZE_TECND (YD, CDPATH, LDPRINT) RESULT (KSIZE)
+(  135) # 136 "./util_tecnd_mod.F90"
+(  136) IMPLICIT NONE
+(  137) TYPE (TECND),     INTENT (IN), TARGET :: YD
+(  138) CHARACTER(LEN=*), INTENT (IN), OPTIONAL :: CDPATH
+(  139) LOGICAL,          INTENT (IN), OPTIONAL :: LDPRINT
+(  140) INTEGER*8 :: ISIZE, JSIZE
+(  141) LOGICAL :: LLPRINT
+(  142) CHARACTER(LEN=128) :: CLPATH
+(  143) # 144 "./util_tecnd_mod.F90"
+(  144) LLPRINT = .FALSE.
+(  145) IF (PRESENT (LDPRINT)) THEN
+(  146)   LLPRINT = LDPRINT
+(  147) ENDIF
+(  148) CLPATH=''
+(  149) IF (PRESENT (CDPATH)) THEN
+(  150)   CLPATH = CDPATH
+(  151) ENDIF
+(  152) KSIZE = 0
+(  153) ISIZE = KIND (YD%REPFLM)
+(  154) IF (LLPRINT) THEN
+(  155)   WRITE (*, '(I10," ")', ADVANCE='NO') ISIZE
+(  156)   WRITE (*, *) TRIM (CLPATH)//'%REPFLM'
+(  157) ENDIF
+(  158) KSIZE = KSIZE + ISIZE
+(  159) ISIZE = KIND (YD%REPQMI)
+(  160) IF (LLPRINT) THEN
+(  161)   WRITE (*, '(I10," ")', ADVANCE='NO') ISIZE
+(  162)   WRITE (*, *) TRIM (CLPATH)//'%REPQMI'
+(  163) ENDIF
+(  164) KSIZE = KSIZE + ISIZE
+(  165) END FUNCTION
+(  166) # 167 "./util_tecnd_mod.F90"
+(  167) END MODULE

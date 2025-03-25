@@ -1,0 +1,379 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:38      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./util_tncl_mod.F90
+
+(    1) MODULE UTIL_TNCL_MOD
+(    2) 
+(    3) USE YOMNCL, ONLY : TNCL
+(    4) 
+(    5) INTERFACE SAVE
+(    6) MODULE PROCEDURE SAVE_TNCL
+(    7) END INTERFACE
+(    8) 
+(    9) INTERFACE LOAD
+(   10) MODULE PROCEDURE LOAD_TNCL
+(   11) END INTERFACE
+(   12) 
+(   13) INTERFACE COPY
+(   14) MODULE PROCEDURE COPY_TNCL
+(   15) END INTERFACE
+(   16) 
+(   17) INTERFACE HOST
+(   18) MODULE PROCEDURE HOST_TNCL
+(   19) END INTERFACE
+(   20) 
+(   21)      
+(   22) INTERFACE CRC64
+(   23) MODULE PROCEDURE CRC64_TNCL
+(   24) END INTERFACE
+(   25) 
+(   26) INTERFACE WIPE
+(   27) MODULE PROCEDURE WIPE_TNCL
+(   28) END INTERFACE
+(   29) 
+(   30) INTERFACE SIZE
+(   31) MODULE PROCEDURE SIZE_TNCL
+(   32) END INTERFACE
+(   33) 
+(   34) 
+(   35) CONTAINS
+(   36) 
+(   37) SUBROUTINE SAVE_TNCL (KLUN, YD)
+(   38) 
+(   39) IMPLICIT NONE
+(   40) INTEGER, INTENT (IN) :: KLUN
+(   41) TYPE (TNCL), INTENT (IN), TARGET :: YD
+(   42) 
+(   43) WRITE (KLUN) YD%LNCLIN
+(   44) WRITE (KLUN) YD%LREGCL
+(   45) END SUBROUTINE
+(   46) 
+(   47) SUBROUTINE LOAD_TNCL (KLUN, YD)
+(   48) 
+(   49) IMPLICIT NONE
+(   50) INTEGER, INTENT (IN) :: KLUN
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:38      page 2
+
+(   51) TYPE (TNCL), INTENT (OUT), TARGET :: YD
+(   52) 
+(   53) READ (KLUN) YD%LNCLIN
+(   54) READ (KLUN) YD%LREGCL
+(   55) END SUBROUTINE
+(   56) 
+(   57) 
+(   58) SUBROUTINE COPY_TNCL (YD, LDCREATED, LDFIELDAPI)
+(   59) 
+(   60) IMPLICIT NONE
+(   61) TYPE (TNCL), INTENT (IN), TARGET :: YD
+(   62) LOGICAL, OPTIONAL, INTENT (IN) :: LDCREATED, LDFIELDAPI
+(   63) LOGICAL :: LLCREATED
+(   64) LOGICAL :: LLFIELDAPI
+(   65) 
+(   66) LLFIELDAPI = .FALSE.
+(   67) IF (PRESENT (LDFIELDAPI)) THEN
+(   68)   LLFIELDAPI = LDFIELDAPI
+(   69) ENDIF
+(   70) LLCREATED = .FALSE.
+(   71) IF (PRESENT (LDCREATED)) THEN
+(   72)   LLCREATED = LDCREATED
+(   73) ENDIF
+(   74) IF (.NOT. LLCREATED) THEN
+(   75)   !$acc enter data create (YD)
+(   76)   !$acc update device (YD)
+(   77) ENDIF
+(   78) 
+(   79) 
+(   80) END SUBROUTINE
+(   81) 
+(   82) SUBROUTINE HOST_TNCL (YD)
+(   83) 
+(   84) IMPLICIT NONE
+(   85) TYPE (TNCL), TARGET :: YD
+(   86) 
+(   87) 
+(   88) 
+(   89) END SUBROUTINE
+(   90) 
+(   91)      
+(   92) 
+(   93) SUBROUTINE CRC64_TNCL (YD, KLUN, CDPATH)
+(   94) USE CRC64_INTRINSIC
+(   95) 
+(   96) IMPLICIT NONE
+(   97) TYPE (TNCL), TARGET :: YD
+(   98) INTEGER, INTENT (IN) :: KLUN
+(   99) CHARACTER(LEN=*), INTENT (IN) :: CDPATH
+(  100) CHARACTER(LEN=128) :: CLIND
+(  101) 
+(  102) WRITE (KLUN, '(Z16.16," ",A)') CRC64 (YD%LNCLIN), CDPATH//'%LNCLIN'
+(  103) 
+(  104) WRITE (KLUN, '(Z16.16," ",A)') CRC64 (YD%LREGCL), CDPATH//'%LREGCL'
+(  105) 
+(  106) END SUBROUTINE
+(  107) 
+(  108) SUBROUTINE WIPE_TNCL (YD, LDDELETED, LDFIELDAPI)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:38      page 3
+
+(  109) 
+(  110) IMPLICIT NONE
+(  111) TYPE (TNCL), INTENT (IN), TARGET :: YD
+(  112) LOGICAL, OPTIONAL, INTENT (IN) :: LDDELETED, LDFIELDAPI
+(  113) LOGICAL :: LLDELETED
+(  114) LOGICAL :: LLFIELDAPI
+(  115) 
+(  116) LLFIELDAPI = .FALSE.
+(  117) IF (PRESENT (LDFIELDAPI)) THEN
+(  118)   LLFIELDAPI = LDFIELDAPI
+(  119) ENDIF
+(  120) 
+(  121) 
+(  122) LLDELETED = .FALSE.
+(  123) IF (PRESENT (LDDELETED)) THEN
+(  124)   LLDELETED = LDDELETED
+(  125) ENDIF
+(  126) IF (.NOT. LLDELETED) THEN
+(  127)   !$acc exit data delete (YD)
+(  128) ENDIF
+(  129) END SUBROUTINE
+(  130) 
+(  131) INTEGER*8 FUNCTION SIZE_TNCL (YD, CDPATH, LDPRINT) RESULT (KSIZE)
+(  132) 
+(  133) IMPLICIT NONE
+(  134) TYPE (TNCL),     INTENT (IN), TARGET :: YD
+(  135) CHARACTER(LEN=*), INTENT (IN), OPTIONAL :: CDPATH
+(  136) LOGICAL,          INTENT (IN), OPTIONAL :: LDPRINT
+(  137) INTEGER*8 :: ISIZE, JSIZE
+(  138) LOGICAL :: LLPRINT
+(  139) CHARACTER(LEN=128) :: CLPATH
+(  140) 
+(  141) LLPRINT = .FALSE.
+(  142) IF (PRESENT (LDPRINT)) THEN
+(  143)   LLPRINT = LDPRINT
+(  144) ENDIF
+(  145) CLPATH=''
+(  146) IF (PRESENT (CDPATH)) THEN
+(  147)   CLPATH = CDPATH
+(  148) ENDIF
+(  149) KSIZE = 0
+(  150) ISIZE = KIND (YD%LNCLIN)
+(  151) IF (LLPRINT) THEN
+(  152)   WRITE (*, '(I10," ")', ADVANCE='NO') ISIZE
+(  153)   WRITE (*, *) TRIM (CLPATH)//'%LNCLIN'
+(  154) ENDIF
+(  155) KSIZE = KSIZE + ISIZE
+(  156) ISIZE = KIND (YD%LREGCL)
+(  157) IF (LLPRINT) THEN
+(  158)   WRITE (*, '(I10," ")', ADVANCE='NO') ISIZE
+(  159)   WRITE (*, *) TRIM (CLPATH)//'%LREGCL'
+(  160) ENDIF
+(  161) KSIZE = KSIZE + ISIZE
+(  162) END FUNCTION
+(  163) 
+(  164) END MODULE
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:38      page 4
+
+(    1) # 1 "./util_tncl_mod.F90"
+(    1) MODULE UTIL_TNCL_MOD
+(    2) # 3 "./util_tncl_mod.F90"
+(    3) USE YOMNCL, ONLY : TNCL
+(    4) # 5 "./util_tncl_mod.F90"
+(    5) INTERFACE SAVE
+(    6) MODULE PROCEDURE SAVE_TNCL
+(    7) END INTERFACE
+(    8) # 9 "./util_tncl_mod.F90"
+(    9) INTERFACE LOAD
+(   10) MODULE PROCEDURE LOAD_TNCL
+(   11) END INTERFACE
+(   12) # 13 "./util_tncl_mod.F90"
+(   13) INTERFACE COPY
+(   14) MODULE PROCEDURE COPY_TNCL
+(   15) END INTERFACE
+(   16) # 17 "./util_tncl_mod.F90"
+(   17) INTERFACE HOST
+(   18) MODULE PROCEDURE HOST_TNCL
+(   19) END INTERFACE
+(   20) # 21 "./util_tncl_mod.F90"
+(   21)      
+(   22) INTERFACE CRC64
+(   23) MODULE PROCEDURE CRC64_TNCL
+(   24) END INTERFACE
+(   25) # 26 "./util_tncl_mod.F90"
+(   26) INTERFACE WIPE
+(   27) MODULE PROCEDURE WIPE_TNCL
+(   28) END INTERFACE
+(   29) # 30 "./util_tncl_mod.F90"
+(   30) INTERFACE SIZE
+(   31) MODULE PROCEDURE SIZE_TNCL
+(   32) END INTERFACE
+(   33) # 35 "./util_tncl_mod.F90"
+(   35) CONTAINS
+(   36) # 37 "./util_tncl_mod.F90"
+(   37) SUBROUTINE SAVE_TNCL (KLUN, YD)
+(   38) # 39 "./util_tncl_mod.F90"
+(   39) IMPLICIT NONE
+(   40) INTEGER, INTENT (IN) :: KLUN
+(   41) TYPE (TNCL), INTENT (IN), TARGET :: YD
+(   42) # 43 "./util_tncl_mod.F90"
+(   43) WRITE (KLUN) YD%LNCLIN
+(   44) WRITE (KLUN) YD%LREGCL
+(   45) END SUBROUTINE
+(   46) # 47 "./util_tncl_mod.F90"
+(   47) SUBROUTINE LOAD_TNCL (KLUN, YD)
+(   48) # 49 "./util_tncl_mod.F90"
+(   49) IMPLICIT NONE
+(   50) INTEGER, INTENT (IN) :: KLUN
+(   51) TYPE (TNCL), INTENT (OUT), TARGET :: YD
+(   52) # 53 "./util_tncl_mod.F90"
+(   53) READ (KLUN) YD%LNCLIN
+(   54) READ (KLUN) YD%LREGCL
+(   55) END SUBROUTINE
+(   56) # 58 "./util_tncl_mod.F90"
+(   58) SUBROUTINE COPY_TNCL (YD, LDCREATED, LDFIELDAPI)
+(   59) # 60 "./util_tncl_mod.F90"
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:38      page 5
+
+(   60) IMPLICIT NONE
+(   61) TYPE (TNCL), INTENT (IN), TARGET :: YD
+(   62) LOGICAL, OPTIONAL, INTENT (IN) :: LDCREATED, LDFIELDAPI
+(   63) LOGICAL :: LLCREATED
+(   64) LOGICAL :: LLFIELDAPI
+(   65) # 66 "./util_tncl_mod.F90"
+(   66) LLFIELDAPI = .FALSE.
+(   67) IF (PRESENT (LDFIELDAPI)) THEN
+(   68)   LLFIELDAPI = LDFIELDAPI
+(   69) ENDIF
+(   70) LLCREATED = .FALSE.
+(   71) IF (PRESENT (LDCREATED)) THEN
+(   72)   LLCREATED = LDCREATED
+(   73) ENDIF
+(   74) IF (.NOT. LLCREATED) THEN
+(   75)   !$acc enter data create (YD)
+(   76)   !$acc update device (YD)
+(   77) ENDIF
+(   78) # 80 "./util_tncl_mod.F90"
+(   80) END SUBROUTINE
+(   81) # 82 "./util_tncl_mod.F90"
+(   82) SUBROUTINE HOST_TNCL (YD)
+(   83) # 84 "./util_tncl_mod.F90"
+(   84) IMPLICIT NONE
+(   85) TYPE (TNCL), TARGET :: YD
+(   86) # 89 "./util_tncl_mod.F90"
+(   89) END SUBROUTINE
+(   90) # 91 "./util_tncl_mod.F90"
+(   91)      
+(   92) # 93 "./util_tncl_mod.F90"
+(   93) SUBROUTINE CRC64_TNCL (YD, KLUN, CDPATH)
+(   94) USE CRC64_INTRINSIC
+(   95) # 96 "./util_tncl_mod.F90"
+(   96) IMPLICIT NONE
+(   97) TYPE (TNCL), TARGET :: YD
+(   98) INTEGER, INTENT (IN) :: KLUN
+(   99) CHARACTER(LEN=*), INTENT (IN) :: CDPATH
+(  100) CHARACTER(LEN=128) :: CLIND
+(  101) # 102 "./util_tncl_mod.F90"
+(  102) WRITE (KLUN, '(Z16.16," ",A)') CRC64 (YD%LNCLIN), CDPATH//'%LNCLIN'
+(  103) # 104 "./util_tncl_mod.F90"
+(  104) WRITE (KLUN, '(Z16.16," ",A)') CRC64 (YD%LREGCL), CDPATH//'%LREGCL'
+(  105) # 106 "./util_tncl_mod.F90"
+(  106) END SUBROUTINE
+(  107) # 108 "./util_tncl_mod.F90"
+(  108) SUBROUTINE WIPE_TNCL (YD, LDDELETED, LDFIELDAPI)
+(  109) # 110 "./util_tncl_mod.F90"
+(  110) IMPLICIT NONE
+(  111) TYPE (TNCL), INTENT (IN), TARGET :: YD
+(  112) LOGICAL, OPTIONAL, INTENT (IN) :: LDDELETED, LDFIELDAPI
+(  113) LOGICAL :: LLDELETED
+(  114) LOGICAL :: LLFIELDAPI
+(  115) # 116 "./util_tncl_mod.F90"
+(  116) LLFIELDAPI = .FALSE.
+(  117) IF (PRESENT (LDFIELDAPI)) THEN
+(  118)   LLFIELDAPI = LDFIELDAPI
+(  119) ENDIF
+(  120) # 122 "./util_tncl_mod.F90"
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:38      page 6
+
+(  122) LLDELETED = .FALSE.
+(  123) IF (PRESENT (LDDELETED)) THEN
+(  124)   LLDELETED = LDDELETED
+(  125) ENDIF
+(  126) IF (.NOT. LLDELETED) THEN
+(  127)   !$acc exit data delete (YD)
+(  128) ENDIF
+(  129) END SUBROUTINE
+(  130) # 131 "./util_tncl_mod.F90"
+(  131) INTEGER*8 FUNCTION SIZE_TNCL (YD, CDPATH, LDPRINT) RESULT (KSIZE)
+(  132) # 133 "./util_tncl_mod.F90"
+(  133) IMPLICIT NONE
+(  134) TYPE (TNCL),     INTENT (IN), TARGET :: YD
+(  135) CHARACTER(LEN=*), INTENT (IN), OPTIONAL :: CDPATH
+(  136) LOGICAL,          INTENT (IN), OPTIONAL :: LDPRINT
+(  137) INTEGER*8 :: ISIZE, JSIZE
+(  138) LOGICAL :: LLPRINT
+(  139) CHARACTER(LEN=128) :: CLPATH
+(  140) # 141 "./util_tncl_mod.F90"
+(  141) LLPRINT = .FALSE.
+(  142) IF (PRESENT (LDPRINT)) THEN
+(  143)   LLPRINT = LDPRINT
+(  144) ENDIF
+(  145) CLPATH=''
+(  146) IF (PRESENT (CDPATH)) THEN
+(  147)   CLPATH = CDPATH
+(  148) ENDIF
+(  149) KSIZE = 0
+(  150) ISIZE = KIND (YD%LNCLIN)
+(  151) IF (LLPRINT) THEN
+(  152)   WRITE (*, '(I10," ")', ADVANCE='NO') ISIZE
+(  153)   WRITE (*, *) TRIM (CLPATH)//'%LNCLIN'
+(  154) ENDIF
+(  155) KSIZE = KSIZE + ISIZE
+(  156) ISIZE = KIND (YD%LREGCL)
+(  157) IF (LLPRINT) THEN
+(  158)   WRITE (*, '(I10," ")', ADVANCE='NO') ISIZE
+(  159)   WRITE (*, *) TRIM (CLPATH)//'%LREGCL'
+(  160) ENDIF
+(  161) KSIZE = KSIZE + ISIZE
+(  162) END FUNCTION
+(  163) # 164 "./util_tncl_mod.F90"
+(  164) END MODULE

@@ -1,0 +1,1701 @@
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./parkind1.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./yoephy.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./yoecld.F90
+print_configuration:
+    105, sum reduction inlined
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./yomhook.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./yoecldp.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./yoecnd.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./yoecumf.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./yoe_cuconvca.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./yoegwd.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./yoegwwms.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./yoethf.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./model_physics_ecmwf_mod.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./yoephli.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./yomcumfs.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./yoegwdwms.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./yoecumf2.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./yophlc.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./yophnc.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./yomncl.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./yomsrftlad.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./yomsphyhist.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./model_physics_simplinear_mod.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./yoe_spectral_planck.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./yoerad.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./yoe_aerodiag.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./par_gfl.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./yom_ygfl.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./yomchem.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./spp_gen_mod.F90
+get_active_spp_perts:
+    284, count reduction inlined
+    292, any reduction inlined
+    297, Conflict or overlap between sm%pn and sm
+modify_spp_perts:
+    396, sum reduction inlined
+    397, sum reduction inlined
+    400, sum reduction inlined
+    401, sum reduction inlined
+active_spp_pn:
+    490, any reduction inlined
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./spp_def_mod.F90
+define_spp_arpege:
+    241, count reduction inlined
+define_spp_ifs:
+    327, count reduction inlined
+define_spp_lam:
+    392, count reduction inlined
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./spp_mod.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./yomcst.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./yompertpar.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./crc64_intrinsic.F90
+crc64_2rd:
+    212, Possible copy in and copy out of p in call to crc64
+crc64_2rm:
+    228, Possible copy in and copy out of p in call to crc64
+crc64_2im:
+    244, Possible copy in and copy out of p in call to crc64
+crc64_2lm:
+    260, Possible copy in and copy out of p in call to crc64
+crc64_2ch:
+    276, Possible copy in and copy out of p in call to crc64
+crc64_3rd:
+    292, Possible copy in and copy out of p in call to crc64
+crc64_3rm:
+    308, Possible copy in and copy out of p in call to crc64
+crc64_3im:
+    324, Possible copy in and copy out of p in call to crc64
+crc64_3lm:
+    340, Possible copy in and copy out of p in call to crc64
+crc64_3ch:
+    356, Possible copy in and copy out of p in call to crc64
+crc64_4rd:
+    372, Possible copy in and copy out of p in call to crc64
+crc64_4rm:
+    388, Possible copy in and copy out of p in call to crc64
+crc64_4im:
+    404, Possible copy in and copy out of p in call to crc64
+crc64_4lm:
+    420, Possible copy in and copy out of p in call to crc64
+crc64_4ch:
+    436, Possible copy in and copy out of p in call to crc64
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./util_tecldp_mod.F90
+copy_tecldp:
+    510, Generating enter data create(yd)
+    511, Generating update device(yd)
+wipe_tecldp:
+   1317, Generating exit data delete(yd)
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./util_tecld_mod.F90
+copy_tecld:
+    167, Generating enter data create(yd)
+    168, Generating update device(yd)
+    172, Generating enter data create(yd%ceta(:))
+    173, Generating update device(yd%ceta(:))
+    174, Generating enter data attach(yd%ceta)
+wipe_tecld:
+    317, Generating enter data detach(yd%ceta)
+    318, Generating exit data delete(yd%ceta(:))
+    351, Generating exit data delete(yd)
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./util_tecnd_mod.F90
+copy_tecnd:
+     78, Generating enter data create(yd)
+     79, Generating update device(yd)
+wipe_tecnd:
+    130, Generating exit data delete(yd)
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./util_tecuconvca_mod.F90
+copy_tecuconvca:
+    511, Generating enter data create(yd)
+    512, Generating update device(yd)
+    519, Generating enter data create(yd%ncellcu(:,:))
+    520, Generating update device(yd%ncellcu(:,:))
+    521, Generating enter data attach(yd%ncellcu)
+    526, Generating enter data create(yd%nfertcu(:,:))
+    527, Generating update device(yd%nfertcu(:,:))
+    528, Generating enter data attach(yd%nfertcu)
+    533, Generating enter data create(yd%nbls(:,:))
+    534, Generating update device(yd%nbls(:,:))
+    535, Generating enter data attach(yd%nbls)
+    540, Generating enter data create(yd%nbss(:,:,:,:))
+    541, Generating update device(yd%nbss(:,:,:,:))
+    542, Generating enter data attach(yd%nbss)
+    547, Generating enter data create(yd%nrnbls(:))
+    548, Generating update device(yd%nrnbls(:))
+    549, Generating enter data attach(yd%nrnbls)
+    554, Generating enter data create(yd%nrnbss(:,:))
+    555, Generating update device(yd%nrnbss(:,:))
+    556, Generating enter data attach(yd%nrnbss)
+    561, Generating enter data create(yd%nbew(:,:,:))
+    562, Generating update device(yd%nbew(:,:,:))
+    563, Generating enter data attach(yd%nbew)
+    568, Generating enter data create(yd%nbns(:,:,:))
+    569, Generating update device(yd%nbns(:,:,:))
+    570, Generating enter data attach(yd%nbns)
+    575, Generating enter data create(yd%rcuconvca(:))
+    576, Generating update device(yd%rcuconvca(:))
+    577, Generating enter data attach(yd%rcuconvca)
+    582, Generating enter data create(yd%rnlconvca(:))
+    583, Generating update device(yd%rnlconvca(:))
+    584, Generating enter data attach(yd%rnlconvca)
+    589, Generating enter data create(yd%rcapeconvca(:))
+    590, Generating update device(yd%rcapeconvca(:))
+    591, Generating enter data attach(yd%rcapeconvca)
+    596, Generating enter data create(yd%rwasalive(:))
+    597, Generating update device(yd%rwasalive(:))
+    598, Generating enter data attach(yd%rwasalive)
+    603, Generating enter data create(yd%rwghtcu(:))
+    604, Generating update device(yd%rwghtcu(:))
+    605, Generating enter data attach(yd%rwghtcu)
+    610, Generating enter data create(yd%rlatlonnbls(:,:,:))
+    611, Generating update device(yd%rlatlonnbls(:,:,:))
+    612, Generating enter data attach(yd%rlatlonnbls)
+    617, Generating enter data create(yd%rlatlonnbss(:,:,:,:))
+    618, Generating update device(yd%rlatlonnbss(:,:,:,:))
+    619, Generating enter data attach(yd%rlatlonnbss)
+    630, Generating enter data create(yd%rlondep(:,:,:))
+    631, Generating update device(yd%rlondep(:,:,:))
+    632, Generating enter data attach(yd%rlondep)
+    637, Generating enter data create(yd%rlatdep(:,:,:))
+    638, Generating update device(yd%rlatdep(:,:,:))
+    639, Generating enter data attach(yd%rlatdep)
+    663, Generating enter data create(yd%sllong(:))
+    664, Generating update device(yd%sllong(:))
+    665, Generating enter data attach(yd%sllong)
+    670, Generating enter data create(yd%sllat(:))
+    671, Generating update device(yd%sllat(:))
+    672, Generating enter data attach(yd%sllat)
+    677, Generating enter data create(yd%sldlong(:))
+    678, Generating update device(yd%sldlong(:))
+    679, Generating enter data attach(yd%sldlong)
+    684, Generating enter data create(yd%sldlat(:))
+    685, Generating update device(yd%sldlat(:))
+    686, Generating enter data attach(yd%sldlat)
+    691, Generating enter data create(yd%slddlat(:))
+    692, Generating update device(yd%slddlat(:))
+    693, Generating enter data attach(yd%slddlat)
+wipe_tecuconvca:
+    892, Generating enter data detach(yd%ncellcu)
+    893, Generating exit data delete(yd%ncellcu(:,:))
+    898, Generating enter data detach(yd%nfertcu)
+    899, Generating exit data delete(yd%nfertcu(:,:))
+    904, Generating enter data detach(yd%nbls)
+    905, Generating exit data delete(yd%nbls(:,:))
+    910, Generating enter data detach(yd%nbss)
+    911, Generating exit data delete(yd%nbss(:,:,:,:))
+    916, Generating enter data detach(yd%nrnbls)
+    917, Generating exit data delete(yd%nrnbls(:))
+    922, Generating enter data detach(yd%nrnbss)
+    923, Generating exit data delete(yd%nrnbss(:,:))
+    928, Generating enter data detach(yd%nbew)
+    929, Generating exit data delete(yd%nbew(:,:,:))
+    934, Generating enter data detach(yd%nbns)
+    935, Generating exit data delete(yd%nbns(:,:,:))
+    940, Generating enter data detach(yd%rcuconvca)
+    941, Generating exit data delete(yd%rcuconvca(:))
+    946, Generating enter data detach(yd%rnlconvca)
+    947, Generating exit data delete(yd%rnlconvca(:))
+    952, Generating enter data detach(yd%rcapeconvca)
+    953, Generating exit data delete(yd%rcapeconvca(:))
+    958, Generating enter data detach(yd%rwasalive)
+    959, Generating exit data delete(yd%rwasalive(:))
+    964, Generating enter data detach(yd%rwghtcu)
+    965, Generating exit data delete(yd%rwghtcu(:))
+    970, Generating enter data detach(yd%rlatlonnbls)
+    971, Generating exit data delete(yd%rlatlonnbls(:,:,:))
+    976, Generating enter data detach(yd%rlatlonnbss)
+    977, Generating exit data delete(yd%rlatlonnbss(:,:,:,:))
+    988, Generating enter data detach(yd%rlondep)
+    989, Generating exit data delete(yd%rlondep(:,:,:))
+    994, Generating enter data detach(yd%rlatdep)
+    995, Generating exit data delete(yd%rlatdep(:,:,:))
+   1019, Generating enter data detach(yd%sllong)
+   1020, Generating exit data delete(yd%sllong(:))
+   1025, Generating enter data detach(yd%sllat)
+   1026, Generating exit data delete(yd%sllat(:))
+   1031, Generating enter data detach(yd%sldlong)
+   1032, Generating exit data delete(yd%sldlong(:))
+   1037, Generating enter data detach(yd%sldlat)
+   1038, Generating exit data delete(yd%sldlat(:))
+   1043, Generating enter data detach(yd%slddlat)
+   1044, Generating exit data delete(yd%slddlat(:))
+   1052, Generating exit data delete(yd)
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./util_tecumf_mod.F90
+copy_tecumf:
+    237, Generating enter data create(yd)
+    238, Generating update device(yd)
+wipe_tecumf:
+    594, Generating exit data delete(yd)
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./util_tegwd_mod.F90
+copy_tegwd:
+    111, Generating enter data create(yd)
+    112, Generating update device(yd)
+wipe_tegwd:
+    228, Generating exit data delete(yd)
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./util_tegwwms_mod.F90
+copy_tegwwms:
+    124, Generating enter data create(yd)
+    125, Generating update device(yd)
+wipe_tegwwms:
+    256, Generating exit data delete(yd)
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./util_tephy_mod.F90
+copy_tephy:
+    281, Generating enter data create(yd)
+    282, Generating update device(yd)
+wipe_tephy:
+    823, Generating exit data delete(yd)
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./util_tthf_mod.F90
+copy_tthf:
+    141, Generating enter data create(yd)
+    142, Generating update device(yd)
+wipe_tthf:
+    298, Generating exit data delete(yd)
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./util_model_physics_ecmwf_type_mod.F90
+copy_model_physics_ecmwf_type:
+    114, Generating enter data create(yd)
+    115, Generating update device(yd)
+wipe_model_physics_ecmwf_type:
+    263, Generating exit data delete(yd)
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./util_sphys_hist_type_mod.F90
+copy_sphys_hist_type:
+    246, Generating enter data create(yd)
+    247, Generating update device(yd)
+    251, Generating enter data create(yd%ya5(:,:))
+    252, Generating update device(yd%ya5(:,:))
+    253, Generating enter data attach(yd%ya5)
+    258, Generating enter data create(yd%yl5(:,:))
+    259, Generating update device(yd%yl5(:,:))
+    260, Generating enter data attach(yd%yl5)
+    265, Generating enter data create(yd%yi5(:,:))
+    266, Generating update device(yd%yi5(:,:))
+    267, Generating enter data attach(yd%yi5)
+    272, Generating enter data create(yd%radlwm(:,:))
+    273, Generating update device(yd%radlwm(:,:))
+    274, Generating enter data attach(yd%radlwm)
+    279, Generating enter data create(yd%radlwm5(:,:))
+    280, Generating update device(yd%radlwm5(:,:))
+    281, Generating enter data attach(yd%radlwm5)
+    286, Generating enter data create(yd%tgwdwmsu(:,:))
+    287, Generating update device(yd%tgwdwmsu(:,:))
+    288, Generating enter data attach(yd%tgwdwmsu)
+    293, Generating enter data create(yd%tgwdwmsu5(:,:))
+    294, Generating update device(yd%tgwdwmsu5(:,:))
+    295, Generating enter data attach(yd%tgwdwmsu5)
+    300, Generating enter data create(yd%tgwdwmsv(:,:))
+    301, Generating update device(yd%tgwdwmsv(:,:))
+    302, Generating enter data attach(yd%tgwdwmsv)
+    307, Generating enter data create(yd%tgwdwmsv5(:,:))
+    308, Generating update device(yd%tgwdwmsv5(:,:))
+    309, Generating enter data attach(yd%tgwdwmsv5)
+crc64_sphys_hist_type:
+    341, Possible copy in and copy out of ya5 in call to crc64_2rd
+    343, Possible copy in and copy out of yl5 in call to crc64_2rd
+    345, Possible copy in and copy out of yi5 in call to crc64_2rd
+    347, Possible copy in and copy out of radlwm in call to crc64_2rd
+    349, Possible copy in and copy out of radlwm5 in call to crc64_2rd
+    351, Possible copy in and copy out of tgwdwmsu in call to crc64_2rd
+    353, Possible copy in and copy out of tgwdwmsu5 in call to crc64_2rd
+    355, Possible copy in and copy out of tgwdwmsv in call to crc64_2rd
+    357, Possible copy in and copy out of tgwdwmsv5 in call to crc64_2rd
+wipe_sphys_hist_type:
+    376, Generating enter data detach(yd%ya5)
+    377, Generating exit data delete(yd%ya5(:,:))
+    382, Generating enter data detach(yd%yl5)
+    383, Generating exit data delete(yd%yl5(:,:))
+    388, Generating enter data detach(yd%yi5)
+    389, Generating exit data delete(yd%yi5(:,:))
+    394, Generating enter data detach(yd%radlwm)
+    395, Generating exit data delete(yd%radlwm(:,:))
+    400, Generating enter data detach(yd%radlwm5)
+    401, Generating exit data delete(yd%radlwm5(:,:))
+    406, Generating enter data detach(yd%tgwdwmsu)
+    407, Generating exit data delete(yd%tgwdwmsu(:,:))
+    412, Generating enter data detach(yd%tgwdwmsu5)
+    413, Generating exit data delete(yd%tgwdwmsu5(:,:))
+    418, Generating enter data detach(yd%tgwdwmsv)
+    419, Generating exit data delete(yd%tgwdwmsv(:,:))
+    424, Generating enter data detach(yd%tgwdwmsv5)
+    425, Generating exit data delete(yd%tgwdwmsv5(:,:))
+    433, Generating exit data delete(yd)
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./util_tcumfs_mod.F90
+copy_tcumfs:
+     77, Generating enter data create(yd)
+     78, Generating update device(yd)
+wipe_tcumfs:
+    134, Generating exit data delete(yd)
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./util_tecumf2_mod.F90
+copy_tecumf2:
+    166, Generating enter data create(yd)
+    167, Generating update device(yd)
+wipe_tecumf2:
+    383, Generating exit data delete(yd)
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./util_tegwdwms_mod.F90
+copy_tegwdwms:
+     73, Generating enter data create(yd)
+     74, Generating update device(yd)
+wipe_tegwdwms:
+    120, Generating exit data delete(yd)
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./util_tephli_mod.F90
+copy_tephli:
+    119, Generating enter data create(yd)
+    120, Generating update device(yd)
+wipe_tephli:
+    251, Generating exit data delete(yd)
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./util_tncl_mod.F90
+copy_tncl:
+     75, Generating enter data create(yd)
+     76, Generating update device(yd)
+wipe_tncl:
+    127, Generating exit data delete(yd)
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./util_tphlc_mod.F90
+copy_tphlc:
+    104, Generating enter data create(yd)
+    105, Generating update device(yd)
+wipe_tphlc:
+    211, Generating exit data delete(yd)
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./util_tphnc_mod.F90
+copy_tphnc:
+    121, Generating enter data create(yd)
+    122, Generating update device(yd)
+wipe_tphnc:
+    288, Generating exit data delete(yd)
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./util_tsrftlad_mod.F90
+copy_tsrftlad:
+    113, Generating enter data create(yd)
+    114, Generating update device(yd)
+    118, Generating enter data create(yd%gptskin0(:,:,:))
+    119, Generating update device(yd%gptskin0(:,:,:))
+    120, Generating enter data attach(yd%gptskin0)
+    125, Generating enter data create(yd%gptskin9(:,:,:))
+    126, Generating update device(yd%gptskin9(:,:,:))
+    127, Generating enter data attach(yd%gptskin9)
+wipe_tsrftlad:
+    181, Generating enter data detach(yd%gptskin0)
+    182, Generating exit data delete(yd%gptskin0(:,:,:))
+    187, Generating enter data detach(yd%gptskin9)
+    188, Generating exit data delete(yd%gptskin9(:,:,:))
+    198, Generating exit data delete(yd)
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./util_model_physics_simplinear_type_mod.F90
+copy_model_physics_simplinear_type:
+    137, Generating enter data create(yd)
+    138, Generating update device(yd)
+    158, Generating enter data create(yd%gphist(:))
+    159, Generating update device(yd%gphist(:))
+    163, Generating enter data attach(yd%gphist)
+wipe_model_physics_simplinear_type:
+    303, Generating enter data detach(yd%gphist)
+    307, Generating exit data delete(yd%gphist(:))
+    315, Generating exit data delete(yd)
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./util_tspectralplanck_mod.F90
+copy_tspectralplanck:
+    135, Generating enter data create(yd)
+    136, Generating update device(yd)
+    144, Generating enter data create(yd%planck_lut(:,:))
+    145, Generating update device(yd%planck_lut(:,:))
+    146, Generating enter data attach(yd%planck_lut)
+    151, Generating enter data create(yd%wavlen_bound(:))
+    152, Generating update device(yd%wavlen_bound(:))
+    153, Generating enter data attach(yd%wavlen_bound)
+    158, Generating enter data create(yd%interval_map(:))
+    159, Generating update device(yd%interval_map(:))
+    160, Generating enter data attach(yd%interval_map)
+wipe_tspectralplanck:
+    225, Generating enter data detach(yd%planck_lut)
+    226, Generating exit data delete(yd%planck_lut(:,:))
+    231, Generating enter data detach(yd%wavlen_bound)
+    232, Generating exit data delete(yd%wavlen_bound(:))
+    237, Generating enter data detach(yd%interval_map)
+    238, Generating exit data delete(yd%interval_map(:))
+    246, Generating exit data delete(yd)
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./util_terad_mod.F90
+copy_terad:
+    478, Generating enter data create(yd)
+    479, Generating update device(yd)
+    622, Generating enter data create(yd%cvdaess(:))
+    623, Generating update device(yd%cvdaess(:))
+    624, Generating enter data attach(yd%cvdaess)
+    629, Generating enter data create(yd%cvdaedu(:))
+    630, Generating update device(yd%cvdaedu(:))
+    631, Generating enter data attach(yd%cvdaedu)
+    636, Generating enter data create(yd%cvdaeom(:))
+    637, Generating update device(yd%cvdaeom(:))
+    638, Generating enter data attach(yd%cvdaeom)
+    643, Generating enter data create(yd%cvdaebc(:))
+    644, Generating update device(yd%cvdaebc(:))
+    645, Generating enter data attach(yd%cvdaebc)
+    650, Generating enter data create(yd%cvdaesu(:))
+    651, Generating update device(yd%cvdaesu(:))
+    652, Generating enter data attach(yd%cvdaesu)
+wipe_terad:
+   1284, Generating enter data detach(yd%cvdaess)
+   1285, Generating exit data delete(yd%cvdaess(:))
+   1290, Generating enter data detach(yd%cvdaedu)
+   1291, Generating exit data delete(yd%cvdaedu(:))
+   1296, Generating enter data detach(yd%cvdaeom)
+   1297, Generating exit data delete(yd%cvdaeom(:))
+   1302, Generating enter data detach(yd%cvdaebc)
+   1303, Generating exit data delete(yd%cvdaebc(:))
+   1308, Generating enter data detach(yd%cvdaesu)
+   1309, Generating exit data delete(yd%cvdaesu(:))
+   1322, Generating exit data delete(yd)
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./util_type_aero_wvl_diag_mod.F90
+copy_type_aero_wvl_diag:
+     78, Generating enter data create(yd)
+     79, Generating update device(yd)
+wipe_type_aero_wvl_diag:
+    140, Generating exit data delete(yd)
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./util_type_gfl_comp_mod.F90
+copy_type_gfl_comp:
+    231, Generating enter data create(yd)
+    232, Generating update device(yd)
+wipe_type_gfl_comp:
+    713, Generating exit data delete(yd)
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./util_type_gfl_naml_mod.F90
+copy_type_gfl_naml:
+    185, Generating enter data create(yd)
+    186, Generating update device(yd)
+wipe_type_gfl_naml:
+    541, Generating exit data delete(yd)
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./util_type_gfld_mod.F90
+copy_type_gfld:
+   1425, Generating enter data create(yd)
+   1426, Generating update device(yd)
+   1522, Generating enter data create(yd%ylastcomp)
+   1523, Generating update device(yd%ylastcomp)
+   1525, Generating enter data attach(yd%ylastcomp)
+   1530, Generating enter data create(yd%yq)
+   1531, Generating update device(yd%yq)
+   1533, Generating enter data attach(yd%yq)
+   1538, Generating enter data create(yd%yi)
+   1539, Generating update device(yd%yi)
+   1541, Generating enter data attach(yd%yi)
+   1546, Generating enter data create(yd%yl)
+   1547, Generating update device(yd%yl)
+   1549, Generating enter data attach(yd%yl)
+   1554, Generating enter data create(yd%ylconv)
+   1555, Generating update device(yd%ylconv)
+   1557, Generating enter data attach(yd%ylconv)
+   1562, Generating enter data create(yd%yiconv)
+   1563, Generating update device(yd%yiconv)
+   1565, Generating enter data attach(yd%yiconv)
+   1570, Generating enter data create(yd%yrconv)
+   1571, Generating update device(yd%yrconv)
+   1573, Generating enter data attach(yd%yrconv)
+   1578, Generating enter data create(yd%ysconv)
+   1579, Generating update device(yd%ysconv)
+   1581, Generating enter data attach(yd%ysconv)
+   1586, Generating enter data create(yd%yirad)
+   1587, Generating update device(yd%yirad)
+   1589, Generating enter data attach(yd%yirad)
+   1594, Generating enter data create(yd%ylrad)
+   1595, Generating update device(yd%ylrad)
+   1597, Generating enter data attach(yd%ylrad)
+   1602, Generating enter data create(yd%ys)
+   1603, Generating update device(yd%ys)
+   1605, Generating enter data attach(yd%ys)
+   1610, Generating enter data create(yd%yr)
+   1611, Generating update device(yd%yr)
+   1613, Generating enter data attach(yd%yr)
+   1618, Generating enter data create(yd%yg)
+   1619, Generating update device(yd%yg)
+   1621, Generating enter data attach(yd%yg)
+   1626, Generating enter data create(yd%yh)
+   1627, Generating update device(yd%yh)
+   1629, Generating enter data attach(yd%yh)
+   1634, Generating enter data create(yd%ytke)
+   1635, Generating update device(yd%ytke)
+   1637, Generating enter data attach(yd%ytke)
+   1642, Generating enter data create(yd%ytte)
+   1643, Generating update device(yd%ytte)
+   1645, Generating enter data attach(yd%ytte)
+   1650, Generating enter data create(yd%yefb1)
+   1651, Generating update device(yd%yefb1)
+   1653, Generating enter data attach(yd%yefb1)
+   1658, Generating enter data create(yd%yefb2)
+   1659, Generating update device(yd%yefb2)
+   1661, Generating enter data attach(yd%yefb2)
+   1666, Generating enter data create(yd%yefb3)
+   1667, Generating update device(yd%yefb3)
+   1669, Generating enter data attach(yd%yefb3)
+   1674, Generating enter data create(yd%ya)
+   1675, Generating update device(yd%ya)
+   1677, Generating enter data attach(yd%ya)
+   1682, Generating enter data create(yd%yo3)
+   1683, Generating update device(yd%yo3)
+   1685, Generating enter data attach(yd%yo3)
+   1690, Generating enter data create(yd%ysrc)
+   1691, Generating update device(yd%ysrc)
+   1693, Generating enter data attach(yd%ysrc)
+   1698, Generating enter data create(yd%ylmf)
+   1699, Generating update device(yd%ylmf)
+   1701, Generating enter data attach(yd%ylmf)
+   1706, Generating enter data create(yd%yimf)
+   1707, Generating update device(yd%yimf)
+   1709, Generating enter data attach(yd%yimf)
+   1714, Generating enter data create(yd%yamf)
+   1715, Generating update device(yd%yamf)
+   1717, Generating enter data attach(yd%yamf)
+   1722, Generating enter data create(yd%ymxl)
+   1723, Generating update device(yd%ymxl)
+   1725, Generating enter data attach(yd%ymxl)
+   1730, Generating enter data create(yd%yshtur)
+   1731, Generating update device(yd%yshtur)
+   1733, Generating enter data attach(yd%yshtur)
+   1738, Generating enter data create(yd%yfqtur)
+   1739, Generating update device(yd%yfqtur)
+   1741, Generating enter data attach(yd%yfqtur)
+   1746, Generating enter data create(yd%yfstur)
+   1747, Generating update device(yd%yfstur)
+   1749, Generating enter data attach(yd%yfstur)
+   1754, Generating enter data create(yd%ycpf)
+   1755, Generating update device(yd%ycpf)
+   1757, Generating enter data attach(yd%ycpf)
+   1762, Generating enter data create(yd%yspf)
+   1763, Generating update device(yd%yspf)
+   1765, Generating enter data attach(yd%yspf)
+   1770, Generating enter data create(yd%ycvgq)
+   1771, Generating update device(yd%ycvgq)
+   1773, Generating enter data attach(yd%ycvgq)
+   1778, Generating enter data create(yd%yqva)
+   1779, Generating update device(yd%yqva)
+   1781, Generating enter data attach(yd%yqva)
+   1786, Generating enter data create(yd%yghg(:))
+   1787, Generating update device(yd%yghg(:))
+   1791, Generating enter data attach(yd%yghg)
+   1796, Generating enter data create(yd%ychem(:))
+   1797, Generating update device(yd%ychem(:))
+   1801, Generating enter data attach(yd%ychem)
+   1806, Generating enter data create(yd%yaero(:))
+   1807, Generating update device(yd%yaero(:))
+   1811, Generating enter data attach(yd%yaero)
+   1816, Generating enter data create(yd%ylrch4)
+   1817, Generating update device(yd%ylrch4)
+   1819, Generating enter data attach(yd%ylrch4)
+   1824, Generating enter data create(yd%yemis3d(:))
+   1825, Generating update device(yd%yemis3d(:))
+   1829, Generating enter data attach(yd%yemis3d)
+   1834, Generating enter data create(yd%yforc(:))
+   1835, Generating update device(yd%yforc(:))
+   1839, Generating enter data attach(yd%yforc)
+   1844, Generating enter data create(yd%yezdiag(:))
+   1845, Generating update device(yd%yezdiag(:))
+   1849, Generating enter data attach(yd%yezdiag)
+   1854, Generating enter data create(yd%yera40(:))
+   1855, Generating update device(yd%yera40(:))
+   1859, Generating enter data attach(yd%yera40)
+   1864, Generating enter data create(yd%ynogw(:))
+   1865, Generating update device(yd%ynogw(:))
+   1869, Generating enter data attach(yd%ynogw)
+   1874, Generating enter data create(yd%yedrp(:))
+   1875, Generating update device(yd%yedrp(:))
+   1879, Generating enter data attach(yd%yedrp)
+   1884, Generating enter data create(yd%ysldia(:))
+   1885, Generating update device(yd%ysldia(:))
+   1889, Generating enter data attach(yd%ysldia)
+   1894, Generating enter data create(yd%yaeraot(:))
+   1895, Generating update device(yd%yaeraot(:))
+   1899, Generating enter data attach(yd%yaeraot)
+   1904, Generating enter data create(yd%yaerlisi(:))
+   1905, Generating update device(yd%yaerlisi(:))
+   1909, Generating enter data attach(yd%yaerlisi)
+   1914, Generating enter data create(yd%yaerout(:))
+   1915, Generating update device(yd%yaerout(:))
+   1919, Generating enter data attach(yd%yaerout)
+   1924, Generating enter data create(yd%yaeroclim(:))
+   1925, Generating update device(yd%yaeroclim(:))
+   1929, Generating enter data attach(yd%yaeroclim)
+   1934, Generating enter data create(yd%yuvp(:))
+   1935, Generating update device(yd%yuvp(:))
+   1939, Generating enter data attach(yd%yuvp)
+   1944, Generating enter data create(yd%yphys(:))
+   1945, Generating update device(yd%yphys(:))
+   1949, Generating enter data attach(yd%yphys)
+   1954, Generating enter data create(yd%yphycty)
+   1955, Generating update device(yd%yphycty)
+   1957, Generating enter data attach(yd%yphycty)
+   1962, Generating enter data create(yd%yrspec)
+   1963, Generating update device(yd%yrspec)
+   1965, Generating enter data attach(yd%yrspec)
+   1970, Generating enter data create(yd%ysdsat)
+   1971, Generating update device(yd%ysdsat)
+   1973, Generating enter data attach(yd%ysdsat)
+   1978, Generating enter data create(yd%ycvv)
+   1979, Generating update device(yd%ycvv)
+   1981, Generating enter data attach(yd%ycvv)
+   1986, Generating enter data create(yd%yrkth)
+   1987, Generating update device(yd%yrkth)
+   1989, Generating enter data attach(yd%yrkth)
+   1994, Generating enter data create(yd%yrktqv)
+   1995, Generating update device(yd%yrktqv)
+   1997, Generating enter data attach(yd%yrktqv)
+   2002, Generating enter data create(yd%yrktqc)
+   2003, Generating update device(yd%yrktqc)
+   2005, Generating enter data attach(yd%yrktqc)
+   2010, Generating enter data create(yd%yuom)
+   2011, Generating update device(yd%yuom)
+   2013, Generating enter data attach(yd%yuom)
+   2018, Generating enter data create(yd%yual)
+   2019, Generating update device(yd%yual)
+   2021, Generating enter data attach(yd%yual)
+   2026, Generating enter data create(yd%ydom)
+   2027, Generating update device(yd%ydom)
+   2029, Generating enter data attach(yd%ydom)
+   2034, Generating enter data create(yd%ydal)
+   2035, Generating update device(yd%ydal)
+   2037, Generating enter data attach(yd%ydal)
+   2042, Generating enter data create(yd%yuen)
+   2043, Generating update device(yd%yuen)
+   2045, Generating enter data attach(yd%yuen)
+   2050, Generating enter data create(yd%yunebh)
+   2051, Generating update device(yd%yunebh)
+   2053, Generating enter data attach(yd%yunebh)
+   2058, Generating enter data create(yd%ylima(:))
+   2059, Generating update device(yd%ylima(:))
+   2063, Generating enter data attach(yd%ylima)
+   2068, Generating enter data create(yd%yfsd)
+   2069, Generating update device(yd%yfsd)
+   2071, Generating enter data attach(yd%yfsd)
+   2076, Generating enter data create(yd%yext(:))
+   2077, Generating update device(yd%yext(:))
+   2081, Generating enter data attach(yd%yext)
+wipe_type_gfld:
+   4509, Generating enter data detach(yd%ylastcomp)
+   4511, Generating exit data delete(yd%ylastcomp)
+   4516, Generating enter data detach(yd%yq)
+   4518, Generating exit data delete(yd%yq)
+   4523, Generating enter data detach(yd%yi)
+   4525, Generating exit data delete(yd%yi)
+   4530, Generating enter data detach(yd%yl)
+   4532, Generating exit data delete(yd%yl)
+   4537, Generating enter data detach(yd%ylconv)
+   4539, Generating exit data delete(yd%ylconv)
+   4544, Generating enter data detach(yd%yiconv)
+   4546, Generating exit data delete(yd%yiconv)
+   4551, Generating enter data detach(yd%yrconv)
+   4553, Generating exit data delete(yd%yrconv)
+   4558, Generating enter data detach(yd%ysconv)
+   4560, Generating exit data delete(yd%ysconv)
+   4565, Generating enter data detach(yd%yirad)
+   4567, Generating exit data delete(yd%yirad)
+   4572, Generating enter data detach(yd%ylrad)
+   4574, Generating exit data delete(yd%ylrad)
+   4579, Generating enter data detach(yd%ys)
+   4581, Generating exit data delete(yd%ys)
+   4586, Generating enter data detach(yd%yr)
+   4588, Generating exit data delete(yd%yr)
+   4593, Generating enter data detach(yd%yg)
+   4595, Generating exit data delete(yd%yg)
+   4600, Generating enter data detach(yd%yh)
+   4602, Generating exit data delete(yd%yh)
+   4607, Generating enter data detach(yd%ytke)
+   4609, Generating exit data delete(yd%ytke)
+   4614, Generating enter data detach(yd%ytte)
+   4616, Generating exit data delete(yd%ytte)
+   4621, Generating enter data detach(yd%yefb1)
+   4623, Generating exit data delete(yd%yefb1)
+   4628, Generating enter data detach(yd%yefb2)
+   4630, Generating exit data delete(yd%yefb2)
+   4635, Generating enter data detach(yd%yefb3)
+   4637, Generating exit data delete(yd%yefb3)
+   4642, Generating enter data detach(yd%ya)
+   4644, Generating exit data delete(yd%ya)
+   4649, Generating enter data detach(yd%yo3)
+   4651, Generating exit data delete(yd%yo3)
+   4656, Generating enter data detach(yd%ysrc)
+   4658, Generating exit data delete(yd%ysrc)
+   4663, Generating enter data detach(yd%ylmf)
+   4665, Generating exit data delete(yd%ylmf)
+   4670, Generating enter data detach(yd%yimf)
+   4672, Generating exit data delete(yd%yimf)
+   4677, Generating enter data detach(yd%yamf)
+   4679, Generating exit data delete(yd%yamf)
+   4684, Generating enter data detach(yd%ymxl)
+   4686, Generating exit data delete(yd%ymxl)
+   4691, Generating enter data detach(yd%yshtur)
+   4693, Generating exit data delete(yd%yshtur)
+   4698, Generating enter data detach(yd%yfqtur)
+   4700, Generating exit data delete(yd%yfqtur)
+   4705, Generating enter data detach(yd%yfstur)
+   4707, Generating exit data delete(yd%yfstur)
+   4712, Generating enter data detach(yd%ycpf)
+   4714, Generating exit data delete(yd%ycpf)
+   4719, Generating enter data detach(yd%yspf)
+   4721, Generating exit data delete(yd%yspf)
+   4726, Generating enter data detach(yd%ycvgq)
+   4728, Generating exit data delete(yd%ycvgq)
+   4733, Generating enter data detach(yd%yqva)
+   4735, Generating exit data delete(yd%yqva)
+   4740, Generating enter data detach(yd%yghg)
+   4744, Generating exit data delete(yd%yghg(:))
+   4749, Generating enter data detach(yd%ychem)
+   4753, Generating exit data delete(yd%ychem(:))
+   4758, Generating enter data detach(yd%yaero)
+   4762, Generating exit data delete(yd%yaero(:))
+   4767, Generating enter data detach(yd%ylrch4)
+   4769, Generating exit data delete(yd%ylrch4)
+   4774, Generating enter data detach(yd%yemis3d)
+   4778, Generating exit data delete(yd%yemis3d(:))
+   4783, Generating enter data detach(yd%yforc)
+   4787, Generating exit data delete(yd%yforc(:))
+   4792, Generating enter data detach(yd%yezdiag)
+   4796, Generating exit data delete(yd%yezdiag(:))
+   4801, Generating enter data detach(yd%yera40)
+   4805, Generating exit data delete(yd%yera40(:))
+   4810, Generating enter data detach(yd%ynogw)
+   4814, Generating exit data delete(yd%ynogw(:))
+   4819, Generating enter data detach(yd%yedrp)
+   4823, Generating exit data delete(yd%yedrp(:))
+   4828, Generating enter data detach(yd%ysldia)
+   4832, Generating exit data delete(yd%ysldia(:))
+   4837, Generating enter data detach(yd%yaeraot)
+   4841, Generating exit data delete(yd%yaeraot(:))
+   4846, Generating enter data detach(yd%yaerlisi)
+   4850, Generating exit data delete(yd%yaerlisi(:))
+   4855, Generating enter data detach(yd%yaerout)
+   4859, Generating exit data delete(yd%yaerout(:))
+   4864, Generating enter data detach(yd%yaeroclim)
+   4868, Generating exit data delete(yd%yaeroclim(:))
+   4873, Generating enter data detach(yd%yuvp)
+   4877, Generating exit data delete(yd%yuvp(:))
+   4882, Generating enter data detach(yd%yphys)
+   4886, Generating exit data delete(yd%yphys(:))
+   4891, Generating enter data detach(yd%yphycty)
+   4893, Generating exit data delete(yd%yphycty)
+   4898, Generating enter data detach(yd%yrspec)
+   4900, Generating exit data delete(yd%yrspec)
+   4905, Generating enter data detach(yd%ysdsat)
+   4907, Generating exit data delete(yd%ysdsat)
+   4912, Generating enter data detach(yd%ycvv)
+   4914, Generating exit data delete(yd%ycvv)
+   4919, Generating enter data detach(yd%yrkth)
+   4921, Generating exit data delete(yd%yrkth)
+   4926, Generating enter data detach(yd%yrktqv)
+   4928, Generating exit data delete(yd%yrktqv)
+   4933, Generating enter data detach(yd%yrktqc)
+   4935, Generating exit data delete(yd%yrktqc)
+   4940, Generating enter data detach(yd%yuom)
+   4942, Generating exit data delete(yd%yuom)
+   4947, Generating enter data detach(yd%yual)
+   4949, Generating exit data delete(yd%yual)
+   4954, Generating enter data detach(yd%ydom)
+   4956, Generating exit data delete(yd%ydom)
+   4961, Generating enter data detach(yd%ydal)
+   4963, Generating exit data delete(yd%ydal)
+   4968, Generating enter data detach(yd%yuen)
+   4970, Generating exit data delete(yd%yuen)
+   4975, Generating enter data detach(yd%yunebh)
+   4977, Generating exit data delete(yd%yunebh)
+   4982, Generating enter data detach(yd%ylima)
+   4986, Generating exit data delete(yd%ylima(:))
+   4991, Generating enter data detach(yd%yfsd)
+   4993, Generating exit data delete(yd%yfsd)
+   4998, Generating enter data detach(yd%yext)
+   5002, Generating exit data delete(yd%yext(:))
+   5174, Generating exit data delete(yd)
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./util_tchem_mod.F90
+copy_tchem:
+    224, Generating enter data create(yd)
+    225, Generating update device(yd)
+    278, Generating enter data create(yd%tco2dg(:,:))
+    279, Generating update device(yd%tco2dg(:,:))
+    280, Generating enter data attach(yd%tco2dg)
+    285, Generating enter data create(yd%tcotop(:))
+    286, Generating update device(yd%tcotop(:))
+    287, Generating enter data attach(yd%tcotop)
+wipe_tchem:
+    537, Generating enter data detach(yd%tco2dg)
+    538, Generating exit data delete(yd%tco2dg(:,:))
+    543, Generating enter data detach(yd%tcotop)
+    544, Generating exit data delete(yd%tcotop(:))
+    554, Generating exit data delete(yd)
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./util_spp_pert_mod.F90
+copy_spp_pert:
+    129, Generating enter data create(yd)
+    130, Generating update device(yd)
+wipe_spp_pert:
+    281, Generating exit data delete(yd)
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./util_spp_model_mod.F90
+copy_spp_model:
+    116, Generating enter data create(yd)
+    117, Generating update device(yd)
+wipe_spp_model:
+    260, Generating exit data delete(yd)
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./util_spp_pert_pointer_mod.F90
+copy_spp_pert_pointer:
+    177, Generating enter data create(yd)
+    178, Generating update device(yd)
+wipe_spp_pert_pointer:
+    484, Generating exit data delete(yd)
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./util_tspp_config_mod.F90
+copy_tspp_config:
+    144, Generating enter data create(yd)
+    145, Generating update device(yd)
+wipe_tspp_config:
+    349, Generating exit data delete(yd)
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./util_tcst_mod.F90
+copy_tcst:
+    294, Generating enter data create(yd)
+    295, Generating update device(yd)
+wipe_tcst:
+    706, Generating exit data delete(yd)
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./util_tpertpar_mod.F90
+copy_tpertpar:
+    490, Generating enter data create(yd)
+    491, Generating update device(yd)
+wipe_tpertpar:
+   1317, Generating exit data delete(yd)
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./yomdata.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./yomalloc.F90
+alloclm0:
+     44, Conflict or overlap between p and z
+alloclm1:
+     64, Conflict or overlap between p and z
+alloclm2:
+     85, Conflict or overlap between p and z
+alloclm3:
+    106, Conflict or overlap between p and z
+alloclm4:
+    127, Conflict or overlap between p and z
+alloclm5:
+    149, Conflict or overlap between p and z
+allocrd0:
+    160, Conflict or overlap between p and z
+allocrd1:
+    180, Conflict or overlap between p and z
+allocrd2:
+    201, Conflict or overlap between p and z
+allocrd3:
+    222, Conflict or overlap between p and z
+allocrd4:
+    243, Conflict or overlap between p and z
+allocrd5:
+    265, Conflict or overlap between p and z
+allocrm0:
+    276, Conflict or overlap between p and z
+allocrm1:
+    296, Conflict or overlap between p and z
+allocrm2:
+    317, Conflict or overlap between p and z
+allocrm3:
+    338, Conflict or overlap between p and z
+allocrm4:
+    359, Conflict or overlap between p and z
+allocrm5:
+    381, Conflict or overlap between p and z
+allocim0:
+    392, Conflict or overlap between p and z
+allocim1:
+    412, Conflict or overlap between p and z
+allocim2:
+    433, Conflict or overlap between p and z
+allocim3:
+    454, Conflict or overlap between p and z
+allocim4:
+    475, Conflict or overlap between p and z
+allocim5:
+    497, Conflict or overlap between p and z
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./xrd_unix_env.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./xrd_getoptions.F90
+addopt_shell:
+    141, Conflict or overlap between myargs1 and myargs
+grow_opt_seen:
+    192, Conflict or overlap between opt_seen and opt_seen1
+readslfromstring:
+    591, Possible copy in and copy out of val in call to readaslfromstring
+readslfromfile:
+    624, Possible copy in and copy out of val in call to readaslfromstring
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./stack_mod.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./satur.scc_stack.F90
+satur_loki:
+     11, Generating NVIDIA GPU code
+        115, !$acc loop vector ! threadidx%x
+        118, !$acc loop seq
+        136, !$acc loop seq
+    115, Loop is parallelizable
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./cubidiag.scc_stack.F90
+cubidiag_loki:
+      3, Generating NVIDIA GPU code
+         90, !$acc loop seq
+             !$acc loop vector ! threadidx%x
+         96, !$acc loop vector ! threadidx%x
+         98, !$acc loop seq
+     90, Loop is parallelizable
+     96, Loop is parallelizable
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./cuctracer.scc_stack.F90
+cuctracer_loki:
+      3, Generating NVIDIA GPU code
+        203, !$acc loop vector ! threadidx%x
+        210, !$acc loop seq
+        222, !$acc loop seq
+        228, !$acc loop seq
+        242, !$acc loop seq
+        263, !$acc loop seq
+        300, !$acc loop seq
+        306, !$acc loop seq
+        318, !$acc loop seq
+        344, !$acc loop vector ! threadidx%x
+        346, !$acc loop seq
+        348, !$acc loop seq
+        369, !$acc loop seq
+             !$acc loop vector ! threadidx%x
+        370, !$acc loop seq
+             !$acc loop vector ! threadidx%x
+        373, !$acc loop seq
+        379, !$acc loop vector ! threadidx%x
+        381, !$acc loop seq
+        409, !$acc loop vector ! threadidx%x
+        411, !$acc loop seq
+    203, Loop is parallelizable
+    344, Loop is parallelizable
+    369, Loop is parallelizable
+    370, Loop is parallelizable
+    379, Loop is parallelizable
+    409, Loop is parallelizable
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./cuinin.scc_stack.F90
+cuinin_loki:
+      3, Generating NVIDIA GPU code
+        155, !$acc loop vector ! threadidx%x
+        157, !$acc loop seq
+        319, !$acc loop seq
+    155, Loop is parallelizable
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./cuflxn.scc_stack.F90
+cuflxn_loki:
+      4, Generating NVIDIA GPU code
+        208, !$acc loop vector ! threadidx%x
+        223, !$acc loop seq
+        265, !$acc loop seq
+        266, !$acc loop seq
+        267, !$acc loop seq
+        268, !$acc loop seq
+        269, !$acc loop seq
+        270, !$acc loop seq
+        296, !$acc loop seq
+        326, !$acc loop seq
+        338, !$acc loop seq
+        356, !$acc loop seq
+        432, !$acc loop seq
+    208, Loop is parallelizable
+    247, Accelerator restriction: induction variable live-out from loop: idbas
+    265, Loop is parallelizable
+    266, Loop is parallelizable
+    267, Loop is parallelizable
+    268, Loop is parallelizable
+    269, Loop is parallelizable
+    270, Loop is parallelizable
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./cududv.scc_stack.F90
+cududv_loki:
+      3, Generating NVIDIA GPU code
+        197, !$acc loop vector ! threadidx%x
+        203, !$acc loop seq
+        216, !$acc loop seq
+        229, !$acc loop seq
+        250, !$acc loop seq
+        277, !$acc loop vector ! threadidx%x
+        279, !$acc loop seq
+        299, !$acc loop seq
+             !$acc loop vector ! threadidx%x
+        300, !$acc loop seq
+             !$acc loop vector ! threadidx%x
+        301, !$acc loop seq
+             !$acc loop vector ! threadidx%x
+        307, !$acc loop vector ! threadidx%x
+        309, !$acc loop seq
+        367, !$acc loop vector ! threadidx%x
+        425, !$acc loop seq
+    197, Loop is parallelizable
+    277, Loop is parallelizable
+    299, Loop is parallelizable
+    300, Loop is parallelizable
+    301, Loop is parallelizable
+    307, Loop is parallelizable
+    367, Loop is parallelizable
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./cudtdqn.scc_stack.F90
+cudtdqn_loki:
+      3, Generating NVIDIA GPU code
+        224, !$acc loop vector ! threadidx%x
+        229, !$acc loop seq
+        249, !$acc loop seq
+        257, !$acc loop seq
+        274, !$acc loop seq
+        303, !$acc loop seq
+        310, !$acc loop seq
+        328, !$acc loop seq
+        382, !$acc loop vector ! threadidx%x
+        384, !$acc loop seq
+        405, !$acc loop seq
+             !$acc loop vector ! threadidx%x
+        406, !$acc loop seq
+             !$acc loop vector ! threadidx%x
+        407, !$acc loop seq
+             !$acc loop vector ! threadidx%x
+        413, !$acc loop vector ! threadidx%x
+        415, !$acc loop seq
+        450, !$acc loop vector ! threadidx%x
+        452, !$acc loop seq
+    224, Loop is parallelizable
+    382, Loop is parallelizable
+    405, Loop is parallelizable
+    406, Loop is parallelizable
+    407, Loop is parallelizable
+    413, Loop is parallelizable
+    450, Loop is parallelizable
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./cudlfsn.scc_stack.F90
+cudlfsn_loki:
+      3, Generating NVIDIA GPU code
+        169, !$acc loop vector ! threadidx%x
+        201, !$acc loop seq
+        227, !$acc loop seq
+    169, Loop is parallelizable
+    211, Accelerator restriction: induction variable live-out from loop: ikhsmin
+    219, Accelerator restriction: induction variable live-out from loop: ikhsmin
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./cuddrafn.scc_stack.F90
+cuddrafn_loki:
+      3, Generating NVIDIA GPU code
+        165, !$acc loop vector ! threadidx%x
+        170, !$acc loop seq
+        171, !$acc loop seq
+        172, !$acc loop seq
+        175, !$acc loop seq
+    165, Loop is parallelizable
+    170, Loop is parallelizable
+    171, Loop is parallelizable
+    172, Loop is parallelizable
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./parphy.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./cubasen.scc_stack.F90
+cubasen_loki:
+      3, Generating NVIDIA GPU code
+        273, !$acc loop vector ! threadidx%x
+        285, !$acc loop seq
+        321, !$acc loop seq
+        330, !$acc loop seq
+        414, !$acc loop seq
+        794, !$acc loop seq
+        819, !$acc loop seq
+        861, !$acc loop seq
+    273, Loop is parallelizable
+    730, Accelerator restriction: induction variable live-out from loop: ibotsc
+    731, Accelerator restriction: induction variable live-out from loop: icbot
+    742, Accelerator restriction: induction variable live-out from loop: ictop
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./cuentr.scc_stack.F90
+cuentr_loki:
+      3, Generating NVIDIA GPU code
+        126, !$acc loop vector ! threadidx%x
+    126, Loop is parallelizable
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./cubasmcn.scc_stack.F90
+cubasmcn_loki:
+      3, Generating NVIDIA GPU code
+        139, !$acc loop vector ! threadidx%x
+    139, Loop is parallelizable
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./cuadjtq.scc_stack.F90
+cuadjtq_loki:
+     11, Generating NVIDIA GPU code
+        137, !$acc loop vector ! threadidx%x
+    137, Loop is parallelizable
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./cuascn.scc_stack.F90
+cuascn_loki:
+      4, Generating NVIDIA GPU code
+        316, !$acc loop vector ! threadidx%x
+        369, !$acc loop seq
+        422, !$acc loop seq
+        438, !$acc loop vector ! threadidx%x
+             Generating implicit reduction(+:jlm,is)
+        484, !$acc loop vector ! threadidx%x
+        577, !$acc loop vector ! threadidx%x
+        857, !$acc loop vector ! threadidx%x
+    316, Loop is parallelizable
+    438, Loop is parallelizable
+    484, Loop is parallelizable
+    577, Loop is parallelizable
+    857, Loop is parallelizable
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./cumastrn.scc_stack.F90
+cumastrn_loki:
+      3, Generating NVIDIA GPU code
+        549, !$acc loop vector ! threadidx%x
+        571, !$acc loop vector ! threadidx%x
+        592, !$acc loop vector ! threadidx%x
+        599, !$acc loop seq
+        729, !$acc loop vector ! threadidx%x
+        740, !$acc loop seq
+        745, !$acc loop seq
+        756, !$acc loop seq
+        803, !$acc loop vector ! threadidx%x
+        814, !$acc loop seq
+        999, !$acc loop seq
+       1022, !$acc loop seq
+       1042, !$acc loop seq
+       1058, !$acc loop seq
+       1128, !$acc loop seq
+       1155, !$acc loop vector ! threadidx%x
+       1157, !$acc loop seq
+       1193, !$acc loop seq
+       1228, !$acc loop seq
+       1271, !$acc loop vector ! threadidx%x
+       1273, !$acc loop seq
+       1298, !$acc loop seq
+       1320, !$acc loop seq
+       1324, !$acc loop seq
+       1333, !$acc loop seq
+       1357, !$acc loop seq
+       1404, !$acc loop vector ! threadidx%x
+       1411, !$acc loop seq
+       1428, !$acc loop seq
+       1449, !$acc loop vector ! threadidx%x
+       1452, !$acc loop seq
+       1480, !$acc loop vector ! threadidx%x
+       1491, !$acc loop seq
+       1494, !$acc loop seq
+       1503, !$acc loop seq
+       1531, !$acc loop seq
+       1547, !$acc loop seq
+       1564, !$acc loop vector ! threadidx%x
+             !$acc loop seq
+       1578, !$acc loop vector ! threadidx%x
+       1586, !$acc loop vector ! threadidx%x
+       1588, !$acc loop seq
+    549, Loop is parallelizable
+    571, Loop is parallelizable
+    592, Loop is parallelizable
+    729, Loop is parallelizable
+    803, Loop is parallelizable
+   1155, Loop is parallelizable
+   1271, Loop is parallelizable
+   1320, Loop is parallelizable
+   1404, Loop is parallelizable
+   1449, Loop is parallelizable
+   1480, Loop is parallelizable
+   1491, Loop is parallelizable
+   1564, Loop is parallelizable
+   1578, Loop is parallelizable
+   1586, Loop is parallelizable
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./cuccdia.scc_stack.F90
+cuccdia_loki:
+      3, Generating NVIDIA GPU code
+         96, !$acc loop vector ! threadidx%x
+     96, Loop is parallelizable
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./cucalln_mf.scc_stack.F90
+cucalln_mf_loki:
+      3, Generating NVIDIA GPU code
+        352, !$acc loop vector ! threadidx%x
+        354, !$acc loop seq
+        364, !$acc loop seq
+        382, !$acc loop seq
+        394, !$acc loop seq
+        396, !$acc loop seq
+        406, !$acc loop seq
+        408, !$acc loop seq
+        425, !$acc loop vector ! threadidx%x
+        458, !$acc loop vector ! threadidx%x
+        473, !$acc loop seq
+        489, !$acc loop seq
+    352, Loop is parallelizable
+    425, Loop is parallelizable
+    458, Loop is parallelizable
+touch ./cucalln_mf.intfb.ok
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./main_cucalln_mf.F90
+main_cucalln_mf:
+    292, Generating copy(pdiss(:,:,:),ldcum_lig(:,:),ptenv(:,:,:),pqhfl(:,:,:),ptm1(:,:,:),pvervel(:,:,:),plglac(:,:,:),pvdiscu(:,:),pmfude_rate(:,:,:),ldshcv(:,:),paph(:,:,:),pahfs(:,:,:),pap(:,:,:),pgaw(:,:),pgeo(:,:,:),pfplcn(:,:,:),pcm1(:,:,:,:),pgeoh(:,:,:),ptenqa(:,:,:),ptenc(:,:,:,:),ptenta(:,:,:),ptenu(:,:,:),ptent(:,:,:),ptenq(:,:,:),paphm1(:,:,:),kctop_lig(:,:),ktopc(:,:),kbotsc(:,:),kcbot_lig(:,:),kbasec(:,:),ktype(:,:),ldland(:,:),kcbot(:,:),kctop(:,:),ldcum(:,:),ldsc(:,:),pgp2dspp(:,:,:),plrain(:,:,:),plu(:,:,:),plude(:,:,:),pscav0(:),pmfdde_rate(:,:,:),pludeli(:,:,:,:),plcrit_aer(:,:,:),pcuconvca(:,:),pdifcq(:,:,:),pfcqlf(:,:,:),pfhpcl(:,:,:),pfhpcn(:,:,:),pfplcl(:,:,:),plitot(:,:,:),pqm1(:,:,:),psnde(:,:,:,:),pstrcu(:,:,:),pfcqif(:,:,:),pdx(:,:),pmfu(:,:,:),pmfd(:,:,:),parprc(:,:),pwu(:,:,:),pwmean(:,:),pvm1(:,:,:),pum1(:,:,:),pdifcs(:,:,:),pcape(:,:),pstrcv(:,:,:),prsud(:,:,:,:),pscav(:)) [if not already present]
+    317, !$omp parallel
+    320, Possible copy in and copy out of pdifcs in call to cucalln_mf
+         Possible copy in and copy out of ldcum in call to cucalln_mf
+         Possible copy in and copy out of ptenu in call to cucalln_mf
+         Possible copy in and copy out of pmfude_rate in call to cucalln_mf
+         Possible copy in and copy out of ptenv in call to cucalln_mf
+         Possible copy in and copy out of pvdiscu in call to cucalln_mf
+         Possible copy in and copy out of plcrit_aer in call to cucalln_mf
+         Possible copy in and copy out of pum1 in call to cucalln_mf
+         Possible copy in and copy out of pmfu in call to cucalln_mf
+         Possible copy in and copy out of ldsc in call to cucalln_mf
+         Possible copy in and copy out of pap in call to cucalln_mf
+         Possible copy in and copy out of ldshcv in call to cucalln_mf
+         Possible copy in and copy out of pahfs in call to cucalln_mf
+         Possible copy in and copy out of pfplcn in call to cucalln_mf
+         Possible copy in and copy out of pgaw in call to cucalln_mf
+         Possible copy in and copy out of pfplcl in call to cucalln_mf
+         Possible copy in and copy out of pcape in call to cucalln_mf
+         Possible copy in and copy out of pgeo in call to cucalln_mf
+         Possible copy in and copy out of ptenq in call to cucalln_mf
+         Possible copy in and copy out of pstrcv in call to cucalln_mf
+         Possible copy in and copy out of ptent in call to cucalln_mf
+         Possible copy in and copy out of ptenta in call to cucalln_mf
+         Possible copy in and copy out of ptenqa in call to cucalln_mf
+         Possible copy in and copy out of ptenc in call to cucalln_mf
+         Possible copy in and copy out of paph in call to cucalln_mf
+         Possible copy in and copy out of kctop in call to cucalln_mf
+         Possible copy in and copy out of kctop_lig in call to cucalln_mf
+         Possible copy in and copy out of kbasec in call to cucalln_mf
+         Possible copy in and copy out of kcbot in call to cucalln_mf
+         Possible copy in and copy out of ktopc in call to cucalln_mf
+         Possible copy in and copy out of ldcum_lig in call to cucalln_mf
+         Possible copy in and copy out of kbotsc in call to cucalln_mf
+         Possible copy in and copy out of kcbot_lig in call to cucalln_mf
+         Possible copy in and copy out of ktype in call to cucalln_mf
+         Possible copy in and copy out of ldland in call to cucalln_mf
+         Possible copy in and copy out of pgeoh in call to cucalln_mf
+         Possible copy in and copy out of plitot in call to cucalln_mf
+         Possible copy in and copy out of plrain in call to cucalln_mf
+         Possible copy in and copy out of plu in call to cucalln_mf
+         Possible copy in and copy out of pscav in call to cucalln_mf
+         Possible copy in and copy out of pmfd in call to cucalln_mf
+         Possible copy in and copy out of plude in call to cucalln_mf
+         Possible copy in and copy out of pgp2dspp in call to cucalln_mf
+         Possible copy in and copy out of pcm1 in call to cucalln_mf
+         Possible copy in and copy out of pcuconvca in call to cucalln_mf
+         Possible copy in and copy out of pfcqif in call to cucalln_mf
+         Possible copy in and copy out of pfcqlf in call to cucalln_mf
+         Possible copy in and copy out of pfhpcl in call to cucalln_mf
+         Possible copy in and copy out of pfhpcn in call to cucalln_mf
+         Possible copy in and copy out of plglac in call to cucalln_mf
+         Possible copy in and copy out of pqhfl in call to cucalln_mf
+         Possible copy in and copy out of pscav0 in call to cucalln_mf
+         Possible copy in and copy out of psnde in call to cucalln_mf
+         Possible copy in and copy out of pdx in call to cucalln_mf
+         Possible copy in and copy out of pdiss in call to cucalln_mf
+         Possible copy in and copy out of pmfdde_rate in call to cucalln_mf
+         Possible copy in and copy out of pludeli in call to cucalln_mf
+         Possible copy in and copy out of paphm1 in call to cucalln_mf
+         Possible copy in and copy out of pvm1 in call to cucalln_mf
+         Possible copy in and copy out of pvervel in call to cucalln_mf
+         Possible copy in and copy out of ptm1 in call to cucalln_mf
+         Possible copy in and copy out of pdifcq in call to cucalln_mf
+         Possible copy in and copy out of parprc in call to cucalln_mf
+         Possible copy in and copy out of pstrcu in call to cucalln_mf
+         Possible copy in and copy out of pqm1 in call to cucalln_mf
+         Possible copy in and copy out of prsud in call to cucalln_mf
+         Possible copy in and copy out of pwu in call to cucalln_mf
+         Possible copy in and copy out of pwmean in call to cucalln_mf
+    346, !$omp parallel
+    359, Possible copy in and copy out of pdifcs in call to cucalln_mf_loki
+         Possible copy in and copy out of ldcum in call to cucalln_mf_loki
+         Possible copy in and copy out of ptenu in call to cucalln_mf_loki
+         Possible copy in and copy out of pmfude_rate in call to cucalln_mf_loki
+         Possible copy in and copy out of ptenv in call to cucalln_mf_loki
+         Possible copy in and copy out of pvdiscu in call to cucalln_mf_loki
+         Possible copy in and copy out of plcrit_aer in call to cucalln_mf_loki
+         Possible copy in and copy out of pum1 in call to cucalln_mf_loki
+         Possible copy in and copy out of pmfu in call to cucalln_mf_loki
+         Possible copy in and copy out of ldsc in call to cucalln_mf_loki
+         Possible copy in and copy out of pap in call to cucalln_mf_loki
+         Possible copy in and copy out of ldshcv in call to cucalln_mf_loki
+         Possible copy in and copy out of pahfs in call to cucalln_mf_loki
+         Possible copy in and copy out of pfplcn in call to cucalln_mf_loki
+         Possible copy in and copy out of pgaw in call to cucalln_mf_loki
+         Possible copy in and copy out of pfplcl in call to cucalln_mf_loki
+         Possible copy in and copy out of pcape in call to cucalln_mf_loki
+         Possible copy in and copy out of pgeo in call to cucalln_mf_loki
+         Possible copy in and copy out of ptenq in call to cucalln_mf_loki
+         Possible copy in and copy out of pstrcv in call to cucalln_mf_loki
+         Possible copy in and copy out of ptent in call to cucalln_mf_loki
+         Possible copy in and copy out of ptenta in call to cucalln_mf_loki
+         Possible copy in and copy out of ptenqa in call to cucalln_mf_loki
+         Possible copy in and copy out of ptenc in call to cucalln_mf_loki
+         Possible copy in and copy out of paph in call to cucalln_mf_loki
+         Possible copy in and copy out of kctop in call to cucalln_mf_loki
+         Possible copy in and copy out of kctop_lig in call to cucalln_mf_loki
+         Possible copy in and copy out of kbasec in call to cucalln_mf_loki
+         Possible copy in and copy out of kcbot in call to cucalln_mf_loki
+         Possible copy in and copy out of ktopc in call to cucalln_mf_loki
+         Possible copy in and copy out of ldcum_lig in call to cucalln_mf_loki
+         Possible copy in and copy out of kbotsc in call to cucalln_mf_loki
+         Possible copy in and copy out of kcbot_lig in call to cucalln_mf_loki
+         Possible copy in and copy out of ktype in call to cucalln_mf_loki
+         Possible copy in and copy out of ldland in call to cucalln_mf_loki
+         Possible copy in and copy out of pgeoh in call to cucalln_mf_loki
+         Possible copy in and copy out of plitot in call to cucalln_mf_loki
+         Possible copy in and copy out of plrain in call to cucalln_mf_loki
+         Possible copy in and copy out of plu in call to cucalln_mf_loki
+         Possible copy in and copy out of pscav in call to cucalln_mf_loki
+         Possible copy in and copy out of pmfd in call to cucalln_mf_loki
+         Possible copy in and copy out of plude in call to cucalln_mf_loki
+         Possible copy in and copy out of pgp2dspp in call to cucalln_mf_loki
+         Possible copy in and copy out of pcm1 in call to cucalln_mf_loki
+         Possible copy in and copy out of pcuconvca in call to cucalln_mf_loki
+         Possible copy in and copy out of pfcqif in call to cucalln_mf_loki
+         Possible copy in and copy out of pfcqlf in call to cucalln_mf_loki
+         Possible copy in and copy out of pfhpcl in call to cucalln_mf_loki
+         Possible copy in and copy out of pfhpcn in call to cucalln_mf_loki
+         Possible copy in and copy out of plglac in call to cucalln_mf_loki
+         Possible copy in and copy out of pqhfl in call to cucalln_mf_loki
+         Possible copy in and copy out of pscav0 in call to cucalln_mf_loki
+         Possible copy in and copy out of psnde in call to cucalln_mf_loki
+         Possible copy in and copy out of pdx in call to cucalln_mf_loki
+         Possible copy in and copy out of pdiss in call to cucalln_mf_loki
+         Possible copy in and copy out of pmfdde_rate in call to cucalln_mf_loki
+         Possible copy in and copy out of pludeli in call to cucalln_mf_loki
+         Possible copy in and copy out of paphm1 in call to cucalln_mf_loki
+         Possible copy in and copy out of pvm1 in call to cucalln_mf_loki
+         Possible copy in and copy out of pvervel in call to cucalln_mf_loki
+         Possible copy in and copy out of ptm1 in call to cucalln_mf_loki
+         Possible copy in and copy out of pdifcq in call to cucalln_mf_loki
+         Possible copy in and copy out of parprc in call to cucalln_mf_loki
+         Possible copy in and copy out of pstrcu in call to cucalln_mf_loki
+         Possible copy in and copy out of pqm1 in call to cucalln_mf_loki
+         Possible copy in and copy out of prsud in call to cucalln_mf_loki
+         Possible copy in and copy out of pwmean in call to cucalln_mf_loki
+         Possible copy in and copy out of pwu in call to cucalln_mf_loki
+    387, Generating enter data create(ystack%zdata4(:,:,:,:))
+    388, Generating enter data create(ystack%zdata8(:,:,:,:))
+    390, Generating enter data create(ystack)
+    391, Generating update device(ystack)
+    392, Generating enter data attach(ystack%zdata4)
+    393, Generating enter data attach(ystack%zdata8)
+    407, Generating implicit firstprivate(ngptot,nproma)
+         Generating NVIDIA GPU code
+        409, !$acc loop gang ! blockidx%x
+    407, CUDA shared memory used for tmp$r475,tmp$r473,tmp$r470,tmp$r467,tmp$r464,tmp$r461,tmp$r458,tmp$r455,tmp$r452,tmp$r449,tmp$r446,tmp$r443,tmp$r440,tmp$r437,tmp$r434,tmp$r431,tmp$r428,tmp$r425,tmp$r422,tmp$r419,tmp$r416,tmp$r413,tmp$r410,tmp$r407,tmp$r404,tmp$r401,tmp$r398,tmp$r395,tmp$r392,tmp$r389,tmp$r386,tmp$r383,tmp$r380,tmp$r377,tmp$r374,tmp$r371,tmp$r368,tmp$r365,tmp$r362,tmp$r359,tmp$r356,tmp$r353,tmp$r350,tmp$r347,tmp$r344,tmp$r341,tmp$r338,tmp$r335,tmp$r332,tmp$r329,tmp$r326,tmp$r323,tmp$r320,tmp$r317,tmp$r314,tmp$r311,tmp$r308,tmp$r305,tmp$r302,tmp$r299,tmp$r296,tmp$r293,tmp$r290,tmp$r287,tmp$r284,tmp$r281,tmp$r278,kidia,ylstack,tmp$r476,kfdia
+         Generating implicit copy(pum1(:,:,:),pvm1(:,:,:),pwmean(:,:),pmfu(:,:,:),pfcqif(:,:,:),psnde(:,:,:,:),pfplcl(:,:,:),pfhpcl(:,:,:),pdifcq(:,:,:),plcrit_aer(:,:,:),pmfdde_rate(:,:,:),plrain(:,:,:),ldsc(:,:),ldcum(:,:),kctop(:,:),kcbot(:,:),ldland(:,:),ktype(:,:),kbasec(:,:),kcbot_lig(:,:),kbotsc(:,:),ktopc(:,:),kctop_lig(:,:),paphm1(:,:,:),ptenq(:,:,:),ptenu(:,:,:),ptenc(:,:,:,:),pgeoh(:,:,:),pgaw(:,:),pahfs(:,:,:),ldshcv(:,:),pvdiscu(:,:),pvervel(:,:,:),pqhfl(:,:,:),ldcum_lig(:,:),pdiss(:,:,:)) [if not already present]
+         Generating implicit copyin(ystack,ygfl) [if not already present]
+         Generating implicit copy(ptenv(:,:,:),ptm1(:,:,:),plglac(:,:,:),pmfude_rate(:,:,:),paph(:,:,:),pap(:,:,:),pgeo(:,:,:),pfplcn(:,:,:),pcm1(:,:,:,:),ptenqa(:,:,:),ptenta(:,:,:),ptent(:,:,:),pgp2dspp(:,:,:),plu(:,:,:),plude(:,:,:),pscav0(:),pludeli(:,:,:,:),pcuconvca(:,:),pfcqlf(:,:,:),pfhpcn(:,:,:),plitot(:,:,:),pqm1(:,:,:),pstrcu(:,:,:),pdx(:,:),pmfd(:,:,:),parprc(:,:),pdifcs(:,:,:),pcape(:,:),pstrcv(:,:,:),prsud(:,:,:,:),pscav(:)) [if not already present]
+         Generating implicit copyin(ydspp_config,ydchem,ydcst,ydml_phy_ec,yderad,ydthf) [if not already present]
+         Generating implicit copy(pwu(:,:,:)) [if not already present]
+         Generating implicit copyin(ydpertpar,ydml_phy_slin) [if not already present]
+    409, Generating implicit firstprivate(ldslphy,kstep,pvdifts,ptsphy,pplrg,ldmcapea,ktrac,ksmax,klev,ksppn2d,ppldare,ngpblks)
+    421, Possible copy in and copy out of pdifcs in call to cucalln_mf_loki
+         Possible copy in and copy out of ldcum in call to cucalln_mf_loki
+         Possible copy in and copy out of ptenu in call to cucalln_mf_loki
+         Possible copy in and copy out of pmfude_rate in call to cucalln_mf_loki
+         Possible copy in and copy out of ptenv in call to cucalln_mf_loki
+         Possible copy in and copy out of pvdiscu in call to cucalln_mf_loki
+         Possible copy in and copy out of plcrit_aer in call to cucalln_mf_loki
+         Possible copy in and copy out of pum1 in call to cucalln_mf_loki
+         Possible copy in and copy out of pmfu in call to cucalln_mf_loki
+         Possible copy in and copy out of ldsc in call to cucalln_mf_loki
+         Possible copy in and copy out of pap in call to cucalln_mf_loki
+         Possible copy in and copy out of ldshcv in call to cucalln_mf_loki
+         Possible copy in and copy out of pahfs in call to cucalln_mf_loki
+         Possible copy in and copy out of pfplcn in call to cucalln_mf_loki
+         Possible copy in and copy out of pgaw in call to cucalln_mf_loki
+         Possible copy in and copy out of pfplcl in call to cucalln_mf_loki
+         Possible copy in and copy out of pcape in call to cucalln_mf_loki
+         Possible copy in and copy out of pgeo in call to cucalln_mf_loki
+         Possible copy in and copy out of ptenq in call to cucalln_mf_loki
+         Possible copy in and copy out of pstrcv in call to cucalln_mf_loki
+         Possible copy in and copy out of ptent in call to cucalln_mf_loki
+         Possible copy in and copy out of ptenta in call to cucalln_mf_loki
+         Possible copy in and copy out of ptenqa in call to cucalln_mf_loki
+         Possible copy in and copy out of ptenc in call to cucalln_mf_loki
+         Possible copy in and copy out of paph in call to cucalln_mf_loki
+         Possible copy in and copy out of kctop in call to cucalln_mf_loki
+         Possible copy in and copy out of kctop_lig in call to cucalln_mf_loki
+         Possible copy in and copy out of kbasec in call to cucalln_mf_loki
+         Possible copy in and copy out of kcbot in call to cucalln_mf_loki
+         Possible copy in and copy out of ktopc in call to cucalln_mf_loki
+         Possible copy in and copy out of ldcum_lig in call to cucalln_mf_loki
+         Possible copy in and copy out of kbotsc in call to cucalln_mf_loki
+         Possible copy in and copy out of kcbot_lig in call to cucalln_mf_loki
+         Possible copy in and copy out of ktype in call to cucalln_mf_loki
+         Possible copy in and copy out of ldland in call to cucalln_mf_loki
+         Possible copy in and copy out of pgeoh in call to cucalln_mf_loki
+         Possible copy in and copy out of plitot in call to cucalln_mf_loki
+         Possible copy in and copy out of plrain in call to cucalln_mf_loki
+         Possible copy in and copy out of plu in call to cucalln_mf_loki
+         Possible copy in and copy out of pscav in call to cucalln_mf_loki
+         Possible copy in and copy out of pmfd in call to cucalln_mf_loki
+         Possible copy in and copy out of plude in call to cucalln_mf_loki
+         Possible copy in and copy out of pgp2dspp in call to cucalln_mf_loki
+         Possible copy in and copy out of pcm1 in call to cucalln_mf_loki
+         Possible copy in and copy out of pcuconvca in call to cucalln_mf_loki
+         Possible copy in and copy out of pfcqif in call to cucalln_mf_loki
+         Possible copy in and copy out of pfcqlf in call to cucalln_mf_loki
+         Possible copy in and copy out of pfhpcl in call to cucalln_mf_loki
+         Possible copy in and copy out of pfhpcn in call to cucalln_mf_loki
+         Possible copy in and copy out of plglac in call to cucalln_mf_loki
+         Possible copy in and copy out of pqhfl in call to cucalln_mf_loki
+         Possible copy in and copy out of pscav0 in call to cucalln_mf_loki
+         Possible copy in and copy out of psnde in call to cucalln_mf_loki
+         Possible copy in and copy out of pdx in call to cucalln_mf_loki
+         Possible copy in and copy out of pdiss in call to cucalln_mf_loki
+         Possible copy in and copy out of pmfdde_rate in call to cucalln_mf_loki
+         Possible copy in and copy out of pludeli in call to cucalln_mf_loki
+         Possible copy in and copy out of paphm1 in call to cucalln_mf_loki
+         Possible copy in and copy out of pwu in call to cucalln_mf_loki
+         Possible copy in and copy out of pwmean in call to cucalln_mf_loki
+         Possible copy in and copy out of pvm1 in call to cucalln_mf_loki
+         Possible copy in and copy out of pvervel in call to cucalln_mf_loki
+         Possible copy in and copy out of ptm1 in call to cucalln_mf_loki
+         Possible copy in and copy out of pdifcq in call to cucalln_mf_loki
+         Possible copy in and copy out of parprc in call to cucalln_mf_loki
+         Possible copy in and copy out of pstrcu in call to cucalln_mf_loki
+         Possible copy in and copy out of pqm1 in call to cucalln_mf_loki
+         Possible copy in and copy out of prsud in call to cucalln_mf_loki
+diffall:
+    654, Possible copy in and copy out of ptent in call to diffrd3
+    655, Possible copy in and copy out of ptenq in call to diffrd3
+    656, Possible copy in and copy out of ptenu in call to diffrd3
+    657, Possible copy in and copy out of ptenv in call to diffrd3
+    658, Possible copy in and copy out of ptenta in call to diffrd3
+    659, Possible copy in and copy out of ptenqa in call to diffrd3
+    660, Possible copy in and copy out of parprc in call to diffrd2
+    661, Possible copy in and copy out of ktopc in call to diffim2
+    662, Possible copy in and copy out of kbasec in call to diffim2
+    663, Possible copy in and copy out of ktype in call to diffim2
+    664, Possible copy in and copy out of kcbot in call to diffim2
+    665, Possible copy in and copy out of kctop in call to diffim2
+    666, Possible copy in and copy out of kbotsc in call to diffim2
+    667, Possible copy in and copy out of ldcum in call to difflm2
+    668, Possible copy in and copy out of ldsc in call to difflm2
+    669, Possible copy in and copy out of kcbot_lig in call to diffim2
+    670, Possible copy in and copy out of kctop_lig in call to diffim2
+    671, Possible copy in and copy out of ldcum_lig in call to difflm2
+    672, Possible copy in and copy out of plu in call to diffrd3
+    673, Possible copy in and copy out of plude in call to diffrd3
+    674, Possible copy in and copy out of pludeli in call to diffrd4
+    675, Possible copy in and copy out of psnde in call to diffrd4
+    676, Possible copy in and copy out of pmfu in call to diffrd3
+    677, Possible copy in and copy out of pmfd in call to diffrd3
+    678, Possible copy in and copy out of plglac in call to diffrd3
+    679, Possible copy in and copy out of pdifcq in call to diffrd3
+    680, Possible copy in and copy out of pdifcs in call to diffrd3
+    681, Possible copy in and copy out of pfhpcl in call to diffrd3
+    682, Possible copy in and copy out of pfhpcn in call to diffrd3
+    683, Possible copy in and copy out of pfplcl in call to diffrd3
+    684, Possible copy in and copy out of pfplcn in call to diffrd3
+    685, Possible copy in and copy out of plrain in call to diffrd3
+    686, Possible copy in and copy out of prsud in call to diffrd4
+    687, Possible copy in and copy out of pstrcu in call to diffrd3
+    688, Possible copy in and copy out of pstrcv in call to diffrd3
+    689, Possible copy in and copy out of pfcqlf in call to diffrd3
+    690, Possible copy in and copy out of pfcqif in call to diffrd3
+    691, Possible copy in and copy out of pmfude_rate in call to diffrd3
+    692, Possible copy in and copy out of pmfdde_rate in call to diffrd3
+    693, Possible copy in and copy out of pcape in call to diffrd2
+    694, Possible copy in and copy out of pwu in call to diffrd3
+    695, Possible copy in and copy out of pwmean in call to diffrd2
+    696, Possible copy in and copy out of pvdiscu in call to diffrd2
+    697, Possible copy in and copy out of pdiss in call to diffrd3
+    698, Possible copy in and copy out of ptenc in call to diffrd4
+saveiall:
+    729, Possible copy in and copy out of pdx in call to saverd2
+    732, Possible copy in and copy out of ldland in call to savelm2
+    736, Possible copy in and copy out of ptm1 in call to saverd3
+    737, Possible copy in and copy out of pqm1 in call to saverd3
+    738, Possible copy in and copy out of pum1 in call to saverd3
+    739, Possible copy in and copy out of pvm1 in call to saverd3
+    740, Possible copy in and copy out of plitot in call to saverd3
+    741, Possible copy in and copy out of pvervel in call to saverd3
+    742, Possible copy in and copy out of pqhfl in call to saverd3
+    743, Possible copy in and copy out of pahfs in call to saverd3
+    744, Possible copy in and copy out of paphm1 in call to saverd3
+    745, Possible copy in and copy out of pap in call to saverd3
+    746, Possible copy in and copy out of paph in call to saverd3
+    747, Possible copy in and copy out of pgeo in call to saverd3
+    748, Possible copy in and copy out of pgeoh in call to saverd3
+    749, Possible copy in and copy out of pgaw in call to saverd2
+    750, Possible copy in and copy out of pcuconvca in call to saverd2
+    751, Possible copy in and copy out of pgp2dspp in call to saverd3
+    752, Possible copy in and copy out of ptent in call to saverd3
+    753, Possible copy in and copy out of ptenq in call to saverd3
+    754, Possible copy in and copy out of ptenu in call to saverd3
+    755, Possible copy in and copy out of ptenv in call to saverd3
+    756, Possible copy in and copy out of ptenta in call to saverd3
+    757, Possible copy in and copy out of ptenqa in call to saverd3
+    758, Possible copy in and copy out of parprc in call to saverd2
+    759, Possible copy in and copy out of ktopc in call to saveim2
+    760, Possible copy in and copy out of kbasec in call to saveim2
+    761, Possible copy in and copy out of ktype in call to saveim2
+    762, Possible copy in and copy out of kcbot in call to saveim2
+    763, Possible copy in and copy out of kctop in call to saveim2
+    764, Possible copy in and copy out of kbotsc in call to saveim2
+    765, Possible copy in and copy out of ldcum in call to savelm2
+    766, Possible copy in and copy out of ldsc in call to savelm2
+    767, Possible copy in and copy out of kcbot_lig in call to saveim2
+    768, Possible copy in and copy out of kctop_lig in call to saveim2
+    769, Possible copy in and copy out of ldcum_lig in call to savelm2
+    770, Possible copy in and copy out of ldshcv in call to savelm2
+    771, Possible copy in and copy out of plcrit_aer in call to saverd3
+    772, Possible copy in and copy out of plu in call to saverd3
+    773, Possible copy in and copy out of plude in call to saverd3
+    774, Possible copy in and copy out of pludeli in call to saverd4
+    775, Possible copy in and copy out of psnde in call to saverd4
+    776, Possible copy in and copy out of pmfu in call to saverd3
+    777, Possible copy in and copy out of pmfd in call to saverd3
+    778, Possible copy in and copy out of plglac in call to saverd3
+    779, Possible copy in and copy out of pdifcq in call to saverd3
+    780, Possible copy in and copy out of pdifcs in call to saverd3
+    781, Possible copy in and copy out of pfhpcl in call to saverd3
+    782, Possible copy in and copy out of pfhpcn in call to saverd3
+    783, Possible copy in and copy out of pfplcl in call to saverd3
+    784, Possible copy in and copy out of pfplcn in call to saverd3
+    785, Possible copy in and copy out of plrain in call to saverd3
+    786, Possible copy in and copy out of prsud in call to saverd4
+    787, Possible copy in and copy out of pstrcu in call to saverd3
+    788, Possible copy in and copy out of pstrcv in call to saverd3
+    789, Possible copy in and copy out of pfcqlf in call to saverd3
+    790, Possible copy in and copy out of pfcqif in call to saverd3
+    791, Possible copy in and copy out of pmfude_rate in call to saverd3
+    792, Possible copy in and copy out of pmfdde_rate in call to saverd3
+    793, Possible copy in and copy out of pcape in call to saverd2
+    794, Possible copy in and copy out of pwu in call to saverd3
+    795, Possible copy in and copy out of pwmean in call to saverd2
+    796, Possible copy in and copy out of pvdiscu in call to saverd2
+    797, Possible copy in and copy out of pdiss in call to saverd3
+    799, Possible copy in and copy out of pcm1 in call to saverd4
+    800, Possible copy in and copy out of ptenc in call to saverd4
+    801, Possible copy in and copy out of pscav in call to saverd1
+    802, Possible copy in and copy out of pscav0 in call to saverd1
+saveoall:
+    813, Possible copy in and copy out of ptent in call to saverd3
+    814, Possible copy in and copy out of ptenq in call to saverd3
+    815, Possible copy in and copy out of ptenu in call to saverd3
+    816, Possible copy in and copy out of ptenv in call to saverd3
+    817, Possible copy in and copy out of ptenta in call to saverd3
+    818, Possible copy in and copy out of ptenqa in call to saverd3
+    819, Possible copy in and copy out of parprc in call to saverd2
+    820, Possible copy in and copy out of ktopc in call to saveim2
+    821, Possible copy in and copy out of kbasec in call to saveim2
+    822, Possible copy in and copy out of ktype in call to saveim2
+    823, Possible copy in and copy out of kcbot in call to saveim2
+    824, Possible copy in and copy out of kctop in call to saveim2
+    825, Possible copy in and copy out of kbotsc in call to saveim2
+    826, Possible copy in and copy out of ldcum in call to savelm2
+    827, Possible copy in and copy out of ldsc in call to savelm2
+    828, Possible copy in and copy out of kcbot_lig in call to saveim2
+    829, Possible copy in and copy out of kctop_lig in call to saveim2
+    830, Possible copy in and copy out of ldcum_lig in call to savelm2
+    831, Possible copy in and copy out of plu in call to saverd3
+    832, Possible copy in and copy out of plude in call to saverd3
+    833, Possible copy in and copy out of pludeli in call to saverd4
+    834, Possible copy in and copy out of psnde in call to saverd4
+    835, Possible copy in and copy out of pmfu in call to saverd3
+    836, Possible copy in and copy out of pmfd in call to saverd3
+    837, Possible copy in and copy out of plglac in call to saverd3
+    838, Possible copy in and copy out of pdifcq in call to saverd3
+    839, Possible copy in and copy out of pdifcs in call to saverd3
+    840, Possible copy in and copy out of pfhpcl in call to saverd3
+    841, Possible copy in and copy out of pfhpcn in call to saverd3
+    842, Possible copy in and copy out of pfplcl in call to saverd3
+    843, Possible copy in and copy out of pfplcn in call to saverd3
+    844, Possible copy in and copy out of plrain in call to saverd3
+    845, Possible copy in and copy out of prsud in call to saverd4
+    846, Possible copy in and copy out of pstrcu in call to saverd3
+    847, Possible copy in and copy out of pstrcv in call to saverd3
+    848, Possible copy in and copy out of pfcqlf in call to saverd3
+    849, Possible copy in and copy out of pfcqif in call to saverd3
+    850, Possible copy in and copy out of pmfude_rate in call to saverd3
+    851, Possible copy in and copy out of pmfdde_rate in call to saverd3
+    852, Possible copy in and copy out of pcape in call to saverd2
+    853, Possible copy in and copy out of pwu in call to saverd3
+    854, Possible copy in and copy out of pwmean in call to saverd2
+    855, Possible copy in and copy out of pvdiscu in call to saverd2
+    856, Possible copy in and copy out of pdiss in call to saverd3
+    857, Possible copy in and copy out of ptenc in call to saverd4
+copy_reset:
+    864, Conflict or overlap between pdx and pdx_ini
+    865, Conflict or overlap between ldland and ldland_ini
+    866, Conflict or overlap between ptm1 and ptm1_ini
+    867, Conflict or overlap between pqm1 and pqm1_ini
+    868, Conflict or overlap between pum1 and pum1_ini
+    869, Conflict or overlap between pvm1 and pvm1_ini
+    870, Conflict or overlap between plitot and plitot_ini
+    871, Conflict or overlap between pvervel and pvervel_ini
+    872, Conflict or overlap between pqhfl and pqhfl_ini
+    873, Conflict or overlap between pahfs and pahfs_ini
+    874, Conflict or overlap between paphm1 and paphm1_ini
+    875, Conflict or overlap between pap and pap_ini
+    876, Conflict or overlap between paph and paph_ini
+    877, Conflict or overlap between pgeo and pgeo_ini
+    878, Conflict or overlap between pgeoh and pgeoh_ini
+    879, Conflict or overlap between pgaw and pgaw_ini
+    880, Conflict or overlap between pcuconvca and pcuconvca_ini
+    881, Conflict or overlap between pgp2dspp and pgp2dspp_ini
+    882, Conflict or overlap between ptent and ptent_ini
+    883, Conflict or overlap between ptenq and ptenq_ini
+    884, Conflict or overlap between ptenu and ptenu_ini
+    885, Conflict or overlap between ptenv and ptenv_ini
+    886, Conflict or overlap between ptenta and ptenta_ini
+    887, Conflict or overlap between ptenqa and ptenqa_ini
+    888, Conflict or overlap between parprc and parprc_ini
+    889, Conflict or overlap between ktopc and ktopc_ini
+    890, Conflict or overlap between kbasec and kbasec_ini
+    891, Conflict or overlap between ktype and ktype_ini
+    892, Conflict or overlap between kcbot and kcbot_ini
+    893, Conflict or overlap between kctop and kctop_ini
+    894, Conflict or overlap between kbotsc and kbotsc_ini
+    895, Conflict or overlap between ldcum and ldcum_ini
+    896, Conflict or overlap between ldsc and ldsc_ini
+    897, Conflict or overlap between kcbot and kcbot_lig_ini
+    898, Conflict or overlap between kctop and kctop_lig_ini
+    899, Conflict or overlap between ldcum and ldcum_lig_ini
+    900, Conflict or overlap between ldshcv and ldshcv_ini
+    901, Conflict or overlap between plcrit_aer and plcrit_aer_ini
+    902, Conflict or overlap between plu and plu_ini
+    903, Conflict or overlap between plude and plude_ini
+    904, Conflict or overlap between pludeli and pludeli_ini
+    905, Conflict or overlap between psnde and psnde_ini
+    906, Conflict or overlap between pmfu and pmfu_ini
+    907, Conflict or overlap between pmfd and pmfd_ini
+    908, Conflict or overlap between plglac and plglac_ini
+    909, Conflict or overlap between pdifcq and pdifcq_ini
+    910, Conflict or overlap between pdifcs and pdifcs_ini
+    911, Conflict or overlap between pfhpcl and pfhpcl_ini
+    912, Conflict or overlap between pfhpcn and pfhpcn_ini
+    913, Conflict or overlap between pfplcl and pfplcl_ini
+    914, Conflict or overlap between pfplcn and pfplcn_ini
+    915, Conflict or overlap between plrain and plrain_ini
+    916, Conflict or overlap between prsud and prsud_ini
+    917, Conflict or overlap between pstrcu and pstrcu_ini
+    918, Conflict or overlap between pstrcv and pstrcv_ini
+    919, Conflict or overlap between pfcqlf and pfcqlf_ini
+    920, Conflict or overlap between pfcqif and pfcqif_ini
+    921, Conflict or overlap between pmfude_rate and pmfude_rate_ini
+    922, Conflict or overlap between pmfdde_rate and pmfdde_rate_ini
+    923, Conflict or overlap between pcape and pcape_ini
+    924, Conflict or overlap between pwu_ini and pwu
+    925, Conflict or overlap between pwmean and pwmean_ini
+    926, Conflict or overlap between pvdiscu and pvdiscu_ini
+    927, Conflict or overlap between pdiss and pdiss_ini
+    928, Conflict or overlap between pcm1 and pcm1_ini
+    929, Conflict or overlap between ptenc and ptenc_ini
+    930, Conflict or overlap between pscav and pscav_ini
+    931, Conflict or overlap between pscav0 and pscav0_ini
+    933, Generating update device(pscav(:),prsud(:,:,:,:),pstrcv(:,:,:),pcape(:,:),pdifcs(:,:,:),pum1(:,:,:),pvm1(:,:,:),pwu(:,:,:),pwmean(:,:),parprc(:,:),pmfd(:,:,:),pmfu(:,:,:),pdx(:,:),pfcqif(:,:,:),pstrcu(:,:,:),psnde(:,:,:,:),pqm1(:,:,:),plitot(:,:,:),pfplcl(:,:,:),pfhpcn(:,:,:),pfhpcl(:,:,:),pfcqlf(:,:,:),pdifcq(:,:,:),pcuconvca(:,:),plcrit_aer(:,:,:),pludeli(:,:,:,:),pmfdde_rate(:,:,:),pscav0(:),plude(:,:,:),plu(:,:,:),plrain(:,:,:),pgp2dspp(:,:,:),ldsc(:,:),ldcum(:,:),kctop(:,:),kcbot(:,:),ldland(:,:),ktype(:,:),kbasec(:,:),kcbot_lig(:,:),kbotsc(:,:),ktopc(:,:),kctop_lig(:,:),paphm1(:,:,:),ptenq(:,:,:),ptent(:,:,:),ptenu(:,:,:),ptenta(:,:,:),ptenc(:,:,:,:),ptenqa(:,:,:),pgeoh(:,:,:),pcm1(:,:,:,:),pfplcn(:,:,:),pgeo(:,:,:),pgaw(:,:),pap(:,:,:),pahfs(:,:,:),paph(:,:,:),ldshcv(:,:),pmfude_rate(:,:,:),pvdiscu(:,:),plglac(:,:,:),pvervel(:,:,:),ptm1(:,:,:),pqhfl(:,:,:),ptenv(:,:,:),ldcum_lig(:,:),pdiss(:,:,:))
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./abor1.F90
+abor1:
+      1, Generating acc routine seq
+         Generating NVIDIA GPU code
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./abor1_acc_mod.F90
+abor1_acc:
+      5, Generating acc routine seq
+         Generating NVIDIA GPU code
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./cuadjtq.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./cuadjtqs.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./cuadjtqs.scc_stack.F90
+cuadjtqs_loki:
+      3, Generating NVIDIA GPU code
+        116, !$acc loop vector ! threadidx%x
+    116, Loop is parallelizable
+touch ./cuadjtq.intfb.ok
+touch ./cubasmcn.intfb.ok
+touch ./cuentr.intfb.ok
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./cuascn.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./cubasen.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./cubasmcn.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./cubidiag.F90
+touch ./cuccdia.intfb.ok
+touch ./cumastrn.intfb.ok
+touch ./satur.intfb.ok
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./cucalln_mf.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./cuccdia.F90
+touch ./cubidiag.intfb.ok
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./cuctracer.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./cuddrafn.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./cudlfsn.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./cudtdqn.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./cududv.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./cuentr.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./cuflxn.F90
+touch ./cuadjtqs.intfb.ok
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./cuinin.F90
+touch ./cuascn.intfb.ok
+touch ./cubasen.intfb.ok
+touch ./cuddrafn.intfb.ok
+touch ./cudlfsn.intfb.ok
+touch ./cudtdqn.intfb.ok
+touch ./cududv.intfb.ok
+touch ./cuflxn.intfb.ok
+touch ./cuinin.intfb.ok
+touch ./cuctracer.intfb.ok
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./cumastrn.F90
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -c ./satur.F90
+gcc -c ./dummy.c
+gcc -c ./get_time.c
+/home/gmap/mrpm/marguina/gpupack/support/wrap/NVHPC2405ECTRANSGPU/mpif90 -mp -fPIC -Minfo -gopt -Mlarge_arrays -Mlist -traceback -Mnofma -Mbyteswapio -Mbackslash -Mstack_arrays -cuda -acc=gpu -O1 -gopt -gpu=cc70,cc80,gvmode -Minfo=accel,all,ccff -DARCH="''" -o main_cucalln_mf.x main_cucalln_mf.o abor1.o abor1_acc_mod.o crc64_intrinsic.o cuadjtq.o cuadjtq.scc_stack.o cuadjtqs.o cuadjtqs.scc_stack.o cuascn.o cuascn.scc_stack.o cubasen.o cubasen.scc_stack.o cubasmcn.o cubasmcn.scc_stack.o cubidiag.o cubidiag.scc_stack.o cucalln_mf.o cucalln_mf.scc_stack.o cuccdia.o cuccdia.scc_stack.o cuctracer.o cuctracer.scc_stack.o cuddrafn.o cuddrafn.scc_stack.o cudlfsn.o cudlfsn.scc_stack.o cudtdqn.o cudtdqn.scc_stack.o cududv.o cududv.scc_stack.o cuentr.o cuentr.scc_stack.o cuflxn.o cuflxn.scc_stack.o cuinin.o cuinin.scc_stack.o cumastrn.o cumastrn.scc_stack.o model_physics_ecmwf_mod.o model_physics_simplinear_mod.o par_gfl.o parkind1.o parphy.o satur.o satur.scc_stack.o spp_def_mod.o spp_gen_mod.o spp_mod.o stack_mod.o util_model_physics_ecmwf_type_mod.o util_model_physics_simplinear_type_mod.o util_sphys_hist_type_mod.o util_spp_model_mod.o util_spp_pert_mod.o util_spp_pert_pointer_mod.o util_tchem_mod.o util_tcst_mod.o util_tcumfs_mod.o util_tecld_mod.o util_tecldp_mod.o util_tecnd_mod.o util_tecuconvca_mod.o util_tecumf2_mod.o util_tecumf_mod.o util_tegwd_mod.o util_tegwdwms_mod.o util_tegwwms_mod.o util_tephli_mod.o util_tephy_mod.o util_terad_mod.o util_tncl_mod.o util_tpertpar_mod.o util_tphlc_mod.o util_tphnc_mod.o util_tspectralplanck_mod.o util_tspp_config_mod.o util_tsrftlad_mod.o util_tthf_mod.o util_type_aero_wvl_diag_mod.o util_type_gfl_comp_mod.o util_type_gfl_naml_mod.o util_type_gfld_mod.o xrd_getoptions.o xrd_unix_env.o yoe_aerodiag.o yoe_cuconvca.o yoe_spectral_planck.o yoecld.o yoecldp.o yoecnd.o yoecumf.o yoecumf2.o yoegwd.o yoegwdwms.o yoegwwms.o yoephli.o yoephy.o yoerad.o yoethf.o yom_ygfl.o yomalloc.o yomchem.o yomcst.o yomcumfs.o yomdata.o yomhook.o yomncl.o yompertpar.o yomsphyhist.o yomsrftlad.o yophlc.o yophnc.o dummy.o get_time.o 

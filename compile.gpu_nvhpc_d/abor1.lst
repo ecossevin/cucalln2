@@ -1,0 +1,81 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:55      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./abor1.F90
+
+(    1) SUBROUTINE ABOR1 (CDMESS)
+(    2) !$acc routine (ABOR1) seq
+(    3) CHARACTER (LEN=*) :: CDMESS
+(    4) 
+(    5) PRINT *, CDMESS
+(    6) STOP 1
+(    7) 
+(    8) END SUBROUTINE
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:55      page 2
+
+(    1) # 1 "./abor1.F90"
+(    1) SUBROUTINE ABOR1 (CDMESS)
+(    2) !$acc routine (ABOR1) seq
+(    3) CHARACTER (LEN=*) :: CDMESS
+(    4) # 5 "./abor1.F90"
+(    5) PRINT *, CDMESS
+(    6) STOP 1
+(    7) # 8 "./abor1.F90"
+(    8) END SUBROUTINE

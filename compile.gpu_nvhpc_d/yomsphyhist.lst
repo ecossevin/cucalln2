@@ -1,0 +1,98 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:24      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./yomsphyhist.F90
+
+(    1) MODULE YOMSPHYHIST
+(    2) 
+(    3) USE PARKIND1  ,ONLY : JPRB
+(    4) 
+(    5) IMPLICIT NONE
+(    6) 
+(    7) SAVE
+(    8) 
+(    9) ! ------ INTER TIMESTEP MEMORY FOR TRAJECTORIES AND PERTURBATIONS IN TL/AD PHYSICS
+(   10) !   The intention is to keep all such variables in one module 
+(   11) !   It is also aimed to be done in a style similar with the other trajectories
+(   12) !   passed between different models (NL/TL/AD)
+(   13) 
+(   14) 
+(   15) TYPE SPHYS_HIST_TYPE
+(   16)   REAL (KIND=JPRB), DIMENSION (:,:), POINTER :: YA5=>NULL(), YL5=>NULL(), YI5=>NULL() ! cloud variables for trajectory in TL
+(   17)   REAL (KIND=JPRB), DIMENSION (:,:), POINTER :: RADLWM=>NULL(), RADLWM5=>NULL() ! downward longwave emmissivity (0:KLEV)
+(   18)   REAL (KIND=JPRB), DIMENSION (:,:), POINTER :: TGWDWMSU=>NULL(), TGWDWMSU5=>NULL() ! u-tendencies from non-orographic GWD
+(   19)   REAL (KIND=JPRB), DIMENSION (:,:), POINTER :: TGWDWMSV=>NULL(), TGWDWMSV5=>NULL() ! v-tendencies from non-orographic GWD
+(   20) END TYPE SPHYS_HIST_TYPE
+(   21) 
+(   22) !!TYPE(SPHYS_HIST_TYPE), POINTER :: GPHIST(:) => NULL()
+(   23) 
+(   24) 
+(   25) !     ------------------------------------------------------------------
+(   26) 
+(   27) END MODULE YOMSPHYHIST
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:24      page 2
+
+(    1) # 1 "./yomsphyhist.F90"
+(    1) MODULE YOMSPHYHIST
+(    2) # 3 "./yomsphyhist.F90"
+(    3) USE PARKIND1  ,ONLY : JPRB
+(    4) # 5 "./yomsphyhist.F90"
+(    5) IMPLICIT NONE
+(    6) # 7 "./yomsphyhist.F90"
+(    7) SAVE
+(    8) # 9 "./yomsphyhist.F90"
+(    9) ! ------ INTER TIMESTEP MEMORY FOR TRAJECTORIES AND PERTURBATIONS IN TL/AD PHYSICS
+(   10) !   The intention is to keep all such variables in one module 
+(   11) !   It is also aimed to be done in a style similar with the other trajectories
+(   12) !   passed between different models (NL/TL/AD)
+(   13) # 15 "./yomsphyhist.F90"
+(   15) TYPE SPHYS_HIST_TYPE
+(   16)   REAL (KIND=JPRB), DIMENSION (:,:), POINTER :: YA5=>NULL(), YL5=>NULL(), YI5=>NULL() ! cloud variables for trajectory in TL
+(   17)   REAL (KIND=JPRB), DIMENSION (:,:), POINTER :: RADLWM=>NULL(), RADLWM5=>NULL() ! downward longwave emmissivity (0:KLEV)
+(   18)   REAL (KIND=JPRB), DIMENSION (:,:), POINTER :: TGWDWMSU=>NULL(), TGWDWMSU5=>NULL() ! u-tendencies from non-orographic GWD
+(   19)   REAL (KIND=JPRB), DIMENSION (:,:), POINTER :: TGWDWMSV=>NULL(), TGWDWMSV5=>NULL() ! v-tendencies from non-orographic GWD
+(   20) END TYPE SPHYS_HIST_TYPE
+(   21) # 22 "./yomsphyhist.F90"
+(   22) !!TYPE(SPHYS_HIST_TYPE), POINTER :: GPHIST(:) => NULL()
+(   23) # 25 "./yomsphyhist.F90"
+(   25) !     ------------------------------------------------------------------
+(   26) # 27 "./yomsphyhist.F90"
+(   27) END MODULE YOMSPHYHIST

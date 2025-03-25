@@ -1,0 +1,355 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:20      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./yoecld.F90
+
+(    1) ! (C) Copyright 1989- ECMWF.
+(    2) ! (C) Copyright 1989- Meteo-France.
+(    3) !
+(    4) ! This software is licensed under the terms of the Apache Licence Version 2.0
+(    5) ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+(    6) !
+(    7) ! In applying this licence, ECMWF does not waive the privileges and immunities
+(    8) ! granted to it by virtue of its status as an intergovernmental organisation
+(    9) ! nor does it submit to any jurisdiction.
+(   10) 
+(   11) MODULE YOECLD
+(   12) 
+(   13) USE PARKIND1  ,ONLY : JPRB
+(   14) 
+(   15) IMPLICIT NONE
+(   16) 
+(   17) SAVE
+(   18) 
+(   19) !     -----------------------------------------------------------------
+(   20) !*    ** *YOECLD* - CONTROL PARAMETERS FOR DIAGNOSTIC CLOUDS
+(   21) !     -----------------------------------------------------------------
+(   22) 
+(   23) TYPE :: TECLD
+(   24) REAL(KIND=JPRB),ALLOCATABLE:: CETA(:)
+(   25) 
+(   26) REAL(KIND=JPRB) :: RANVA
+(   27) REAL(KIND=JPRB) :: RANVB
+(   28) REAL(KIND=JPRB) :: RANVH
+(   29) REAL(KIND=JPRB) :: RCCA
+(   30) REAL(KIND=JPRB) :: RCCB
+(   31) REAL(KIND=JPRB) :: RCCC
+(   32) REAL(KIND=JPRB) :: RCFCT
+(   33) REAL(KIND=JPRB) :: RCLWMR
+(   34) REAL(KIND=JPRB) :: RCSCAL
+(   35) REAL(KIND=JPRB) :: RDECORR_CF
+(   36) REAL(KIND=JPRB) :: RDECORR_CW
+(   37) REAL(KIND=JPRB) :: RETAHB
+(   38) REAL(KIND=JPRB) :: RETAMB
+(   39) REAL(KIND=JPRB) :: RLOIA
+(   40) REAL(KIND=JPRB) :: RLOIB
+(   41) REAL(KIND=JPRB) :: RLOIC
+(   42) REAL(KIND=JPRB) :: RLOID
+(   43) REAL(KIND=JPRB) :: RLONIA
+(   44) REAL(KIND=JPRB) :: RLONIB
+(   45) REAL(KIND=JPRB) :: RRHH
+(   46) REAL(KIND=JPRB) :: RRHL
+(   47) REAL(KIND=JPRB) :: RGAMMAS
+(   48) REAL(KIND=JPRB) :: REPSCR
+(   49) REAL(KIND=JPRB) :: REPSEC
+(   50) LOGICAL :: LOMEGA
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:20      page 2
+
+(   51) !----------------------------------------------------------------------------
+(   52) CONTAINS
+(   53) END TYPE TECLD
+(   54) !============================================================================
+(   55) 
+(   56) !!TYPE(TECLD), POINTER :: YRECLD => NULL()
+(   57) 
+(   58) !        * E.C.M.W.F. PHYSICS PACKAGE *
+(   59) 
+(   60) !     J.-J. MORCRETTE       E.C.M.W.F.      89/07/14
+(   61) 
+(   62) !  NAME     TYPE     PURPOSE
+(   63) !  ----  :  ----   : ---------------------------------------------------
+(   64) !  RANVA :  REAL     COEFFICIENT FOR ANVIL CLOUDS
+(   65) !  RANVB :  REAL     COEFFICIENT FOR ANVIL CLOUDS
+(   66) !  RANVH :  REAL     MINIMUM HIGH CLOUD COVER FOR ANVIL CLOUDS
+(   67) !  RCCA  :  REAL     COEFFICIENT FOR DIAGNOSTIC OF CONVECTIVE CLOUD
+(   68) !  RCCB  :  REAL     COEFFICIENT FOR DIAGNOSTIC OF CONVECTIVE CLOUD
+(   69) !  RCCC  :  REAL     MAXIMUM COVER BY CONVECTIVE CLOUD
+(   70) !  RCFCT :  REAL     WEIGHTING FACTOR FOR CONVECTIVE CLOUD TOWER
+(   71) !  RCLWMR:  REAL     LIQUID WATER MIXING RATIO FOR CONVECTIVE CLOUD
+(   72) !  RCSCAL:  REAL     SCALING FACTOR FOR CONVECTIVE RAIN
+(   73) !  CETA(NFLEVG) REAL  MODEL REFERENCE ETA-LEVEL
+(   74) !  RDECORR_CF:  REAL  DECORR. DEPTH FOR GENERALISED CLOUD OVERLAP (CLOUD FRAC)
+(   75) !  RDECORR_CW:  REAL  DECORR. DEPTH FOR GENERALISED CLOUD OVERLAP (CONDENSATE)
+(   76) !  RETAHB:  REAL     ETA-LEVEL LIMIT FOR HIGH CLOUDS
+(   77) !  RETAMB:  REAL     ETA-LEVEL LIMIT FOR MEDIUM CLOUDS
+(   78) !  RLOIA :  REAL     COEFFICIENT FOR LOW CLOUD WHEN NO INVERSION
+(   79) !  RLOIB :  REAL     COEFFICIENT FOR LOW CLOUD WHEN INVERSION
+(   80) !  RLOIC :  REAL     COEFFICIENT FOR LOW CLOUD WHEN INVERSION
+(   81) !  RLOID :  REAL     COEFFICIENT FOR LOW CLOUD WHEN INVERSION
+(   82) !  RLONIA:  REAL     COEFFICIENT FOR LOW CLOUD WHEN INVERSION
+(   83) !  RLONIB:  REAL     COEFFICIENT FOR LOW CLOUD WHEN NO INVERSION
+(   84) !  RRHH  :  REAL     CRITICAL RELATIVE HUMIDITY FOR HIGH CLOUDS
+(   85) !  RRHL  :  REAL     CRITICAL RELATIVE HUMIDITY FOR LOW CLOUDS
+(   86) !  GAMMAS:  REAL     PROPORTIONALITY FACTOR FOR LIQUID WATER CONTENT
+(   87) !  REPSCR:  REAL     MINIMUM CONVECTIVE PRECIPITATION (SECURITY FACTOR)
+(   88) !  REPSEC:  REAL     MINIMUM HORIZONTAL CLOUD COVER (SECURITY FACTOR)
+(   89) !  LOMEGA:  LOGICAL  SWITCH FOR OMEGA-FILTER ON MIDDLE CLOUD
+(   90) !     ------------------------------------------------------------------
+(   91) 
+(   92) CONTAINS
+(   93) 
+(   94) SUBROUTINE PRINT_CONFIGURATION(SELF, KDEPTH, KOUTNO)
+(   95)   IMPLICIT NONE
+(   96)   CLASS(TECLD), INTENT(IN) :: SELF
+(   97)   INTEGER     , INTENT(IN) :: KDEPTH
+(   98)   INTEGER     , INTENT(IN) :: KOUTNO
+(   99) 
+(  100)   INTEGER :: IDEPTHLOC
+(  101) 
+(  102)   IDEPTHLOC = KDEPTH+2
+(  103) 
+(  104)   WRITE(KOUTNO,*) REPEAT(' ',KDEPTH   ) // 'model%yrml_phy_ec%yrecld : '
+(  105)   IF (ALLOCATED(SELF%CETA)) WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'CETA allocated of shape ', SHAPE(SELF%CETA),' sum ',SU
+(  106)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RANVA = ', SELF%RANVA
+(  107)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RANVB = ', SELF%RANVB
+(  108)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RANVH = ', SELF%RANVH
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:20      page 3
+
+(  109)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RCCA = ', SELF%RCCA
+(  110)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RCCB = ', SELF%RCCB
+(  111)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RCCC = ', SELF%RCCC
+(  112)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RCFCT = ', SELF%RCFCT
+(  113)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RCLWMR = ', SELF%RCLWMR
+(  114)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RCSCAL = ', SELF%RCSCAL
+(  115)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RDECORR_CF = ', SELF%RDECORR_CF
+(  116)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RDECORR_CW = ', SELF%RDECORR_CW
+(  117)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RETAHB = ', SELF%RETAHB
+(  118)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RETAMB = ', SELF%RETAMB
+(  119)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RLOIA = ', SELF%RLOIA
+(  120)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RLOIB = ', SELF%RLOIB
+(  121)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RLOIC = ', SELF%RLOIC
+(  122)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RLOID = ', SELF%RLOID
+(  123)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RLONIA = ', SELF%RLONIA
+(  124)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RLONIB = ', SELF%RLONIB
+(  125)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RRHH = ', SELF%RRHH
+(  126)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RRHL = ', SELF%RRHL
+(  127)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RGAMMAS = ', SELF%RGAMMAS
+(  128)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'REPSCR = ', SELF%REPSCR
+(  129)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'REPSEC = ', SELF%REPSEC
+(  130)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'LOMEGA = ', SELF%LOMEGA
+(  131) 
+(  132) END SUBROUTINE PRINT_CONFIGURATION
+(  133) 
+(  134) END MODULE YOECLD
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:20      page 4
+
+(    1) # 1 "./yoecld.F90"
+(    1) ! (C) Copyright 1989- ECMWF.
+(    2) ! (C) Copyright 1989- Meteo-France.
+(    3) !
+(    4) ! This software is licensed under the terms of the Apache Licence Version 2.0
+(    5) ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+(    6) !
+(    7) ! In applying this licence, ECMWF does not waive the privileges and immunities
+(    8) ! granted to it by virtue of its status as an intergovernmental organisation
+(    9) ! nor does it submit to any jurisdiction.
+(   10) # 11 "./yoecld.F90"
+(   11) MODULE YOECLD
+(   12) # 13 "./yoecld.F90"
+(   13) USE PARKIND1  ,ONLY : JPRB
+(   14) # 15 "./yoecld.F90"
+(   15) IMPLICIT NONE
+(   16) # 17 "./yoecld.F90"
+(   17) SAVE
+(   18) # 19 "./yoecld.F90"
+(   19) !     -----------------------------------------------------------------
+(   20) !*    ** *YOECLD* - CONTROL PARAMETERS FOR DIAGNOSTIC CLOUDS
+(   21) !     -----------------------------------------------------------------
+(   22) # 23 "./yoecld.F90"
+(   23) TYPE :: TECLD
+(   24) REAL(KIND=JPRB),ALLOCATABLE:: CETA(:)
+(   25) # 26 "./yoecld.F90"
+(   26) REAL(KIND=JPRB) :: RANVA
+(   27) REAL(KIND=JPRB) :: RANVB
+(   28) REAL(KIND=JPRB) :: RANVH
+(   29) REAL(KIND=JPRB) :: RCCA
+(   30) REAL(KIND=JPRB) :: RCCB
+(   31) REAL(KIND=JPRB) :: RCCC
+(   32) REAL(KIND=JPRB) :: RCFCT
+(   33) REAL(KIND=JPRB) :: RCLWMR
+(   34) REAL(KIND=JPRB) :: RCSCAL
+(   35) REAL(KIND=JPRB) :: RDECORR_CF
+(   36) REAL(KIND=JPRB) :: RDECORR_CW
+(   37) REAL(KIND=JPRB) :: RETAHB
+(   38) REAL(KIND=JPRB) :: RETAMB
+(   39) REAL(KIND=JPRB) :: RLOIA
+(   40) REAL(KIND=JPRB) :: RLOIB
+(   41) REAL(KIND=JPRB) :: RLOIC
+(   42) REAL(KIND=JPRB) :: RLOID
+(   43) REAL(KIND=JPRB) :: RLONIA
+(   44) REAL(KIND=JPRB) :: RLONIB
+(   45) REAL(KIND=JPRB) :: RRHH
+(   46) REAL(KIND=JPRB) :: RRHL
+(   47) REAL(KIND=JPRB) :: RGAMMAS
+(   48) REAL(KIND=JPRB) :: REPSCR
+(   49) REAL(KIND=JPRB) :: REPSEC
+(   50) LOGICAL :: LOMEGA
+(   51) !----------------------------------------------------------------------------
+(   52) CONTAINS
+(   53) END TYPE TECLD
+(   54) !============================================================================
+(   55) # 56 "./yoecld.F90"
+(   56) !!TYPE(TECLD), POINTER :: YRECLD => NULL()
+(   57) # 58 "./yoecld.F90"
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:20      page 5
+
+(   58) !        * E.C.M.W.F. PHYSICS PACKAGE *
+(   59) # 60 "./yoecld.F90"
+(   60) !     J.-J. MORCRETTE       E.C.M.W.F.      89/07/14
+(   61) # 62 "./yoecld.F90"
+(   62) !  NAME     TYPE     PURPOSE
+(   63) !  ----  :  ----   : ---------------------------------------------------
+(   64) !  RANVA :  REAL     COEFFICIENT FOR ANVIL CLOUDS
+(   65) !  RANVB :  REAL     COEFFICIENT FOR ANVIL CLOUDS
+(   66) !  RANVH :  REAL     MINIMUM HIGH CLOUD COVER FOR ANVIL CLOUDS
+(   67) !  RCCA  :  REAL     COEFFICIENT FOR DIAGNOSTIC OF CONVECTIVE CLOUD
+(   68) !  RCCB  :  REAL     COEFFICIENT FOR DIAGNOSTIC OF CONVECTIVE CLOUD
+(   69) !  RCCC  :  REAL     MAXIMUM COVER BY CONVECTIVE CLOUD
+(   70) !  RCFCT :  REAL     WEIGHTING FACTOR FOR CONVECTIVE CLOUD TOWER
+(   71) !  RCLWMR:  REAL     LIQUID WATER MIXING RATIO FOR CONVECTIVE CLOUD
+(   72) !  RCSCAL:  REAL     SCALING FACTOR FOR CONVECTIVE RAIN
+(   73) !  CETA(NFLEVG) REAL  MODEL REFERENCE ETA-LEVEL
+(   74) !  RDECORR_CF:  REAL  DECORR. DEPTH FOR GENERALISED CLOUD OVERLAP (CLOUD FRAC)
+(   75) !  RDECORR_CW:  REAL  DECORR. DEPTH FOR GENERALISED CLOUD OVERLAP (CONDENSATE)
+(   76) !  RETAHB:  REAL     ETA-LEVEL LIMIT FOR HIGH CLOUDS
+(   77) !  RETAMB:  REAL     ETA-LEVEL LIMIT FOR MEDIUM CLOUDS
+(   78) !  RLOIA :  REAL     COEFFICIENT FOR LOW CLOUD WHEN NO INVERSION
+(   79) !  RLOIB :  REAL     COEFFICIENT FOR LOW CLOUD WHEN INVERSION
+(   80) !  RLOIC :  REAL     COEFFICIENT FOR LOW CLOUD WHEN INVERSION
+(   81) !  RLOID :  REAL     COEFFICIENT FOR LOW CLOUD WHEN INVERSION
+(   82) !  RLONIA:  REAL     COEFFICIENT FOR LOW CLOUD WHEN INVERSION
+(   83) !  RLONIB:  REAL     COEFFICIENT FOR LOW CLOUD WHEN NO INVERSION
+(   84) !  RRHH  :  REAL     CRITICAL RELATIVE HUMIDITY FOR HIGH CLOUDS
+(   85) !  RRHL  :  REAL     CRITICAL RELATIVE HUMIDITY FOR LOW CLOUDS
+(   86) !  GAMMAS:  REAL     PROPORTIONALITY FACTOR FOR LIQUID WATER CONTENT
+(   87) !  REPSCR:  REAL     MINIMUM CONVECTIVE PRECIPITATION (SECURITY FACTOR)
+(   88) !  REPSEC:  REAL     MINIMUM HORIZONTAL CLOUD COVER (SECURITY FACTOR)
+(   89) !  LOMEGA:  LOGICAL  SWITCH FOR OMEGA-FILTER ON MIDDLE CLOUD
+(   90) !     ------------------------------------------------------------------
+(   91) # 92 "./yoecld.F90"
+(   92) CONTAINS
+(   93) # 94 "./yoecld.F90"
+(   94) SUBROUTINE PRINT_CONFIGURATION(SELF, KDEPTH, KOUTNO)
+(   95)   IMPLICIT NONE
+(   96)   CLASS(TECLD), INTENT(IN) :: SELF
+(   97)   INTEGER     , INTENT(IN) :: KDEPTH
+(   98)   INTEGER     , INTENT(IN) :: KOUTNO
+(   99) # 100 "./yoecld.F90"
+(  100)   INTEGER :: IDEPTHLOC
+(  101) # 102 "./yoecld.F90"
+(  102)   IDEPTHLOC = KDEPTH+2
+(  103) # 104 "./yoecld.F90"
+(  104)   WRITE(KOUTNO,*) REPEAT(' ',KDEPTH   ) // 'model%yrml_phy_ec%yrecld : '
+(  105)   IF (ALLOCATED(SELF%CETA)) WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'CETA allocated of shape ', SHAPE(SELF%CETA),' sum ',SUM(SELF%CETA)
+(  106)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RANVA = ', SELF%RANVA
+(  107)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RANVB = ', SELF%RANVB
+(  108)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RANVH = ', SELF%RANVH
+(  109)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RCCA = ', SELF%RCCA
+(  110)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RCCB = ', SELF%RCCB
+(  111)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RCCC = ', SELF%RCCC
+(  112)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RCFCT = ', SELF%RCFCT
+(  113)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RCLWMR = ', SELF%RCLWMR
+(  114)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RCSCAL = ', SELF%RCSCAL
+(  115)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RDECORR_CF = ', SELF%RDECORR_CF
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:20      page 6
+
+(  116)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RDECORR_CW = ', SELF%RDECORR_CW
+(  117)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RETAHB = ', SELF%RETAHB
+(  118)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RETAMB = ', SELF%RETAMB
+(  119)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RLOIA = ', SELF%RLOIA
+(  120)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RLOIB = ', SELF%RLOIB
+(  121)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RLOIC = ', SELF%RLOIC
+(  122)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RLOID = ', SELF%RLOID
+(  123)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RLONIA = ', SELF%RLONIA
+(  124)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RLONIB = ', SELF%RLONIB
+(  125)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RRHH = ', SELF%RRHH
+(  126)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RRHL = ', SELF%RRHL
+(  127)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'RGAMMAS = ', SELF%RGAMMAS
+(  128)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'REPSCR = ', SELF%REPSCR
+(  129)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'REPSEC = ', SELF%REPSEC
+(  130)   WRITE(KOUTNO,*) REPEAT(' ',IDEPTHLOC) // 'LOMEGA = ', SELF%LOMEGA
+(  131) # 132 "./yoecld.F90"
+(  132) END SUBROUTINE PRINT_CONFIGURATION
+(  133) # 134 "./yoecld.F90"
+(  134) END MODULE YOECLD

@@ -1,0 +1,1507 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./cucalln_mf.scc_stack.F90
+
+(    1) MODULE CUCALLN_MF_LOKI_MOD
+(    2)   CONTAINS
+(    3)   SUBROUTINE CUCALLN_MF_LOKI (PPLDARE, PPLRG, KSTEP, YDTHF, YDCST, YDERAD, YDML_PHY_SLIN, YDML_PHY_EC, YGFL, YDCHEM,  &
+(    4)   & YDSPP_CONFIG, YDPERTPAR, KIDIA, KFDIA, KLON, KSMAX, KLEV, PDX, KSPPN2D, LDMCAPEA, LDLAND, LDSLPHY, PTSPHY, PVDIFTS, PTM1
+(    5)   & PQM1, PUM1, PVM1, PLITOT, PVERVEL, PQHFL, PAHFS, PAPHM1, PAP, PAPH, PGEO, PGEOH, PGAW, PCUCONVCA, PGP2DSPP, PTENT, PTENQ
+(    6)   & PTENU, PTENV, PTENTA, PTENQA, PARPRC, KTOPC, KBASEC, KTYPE, KCBOT, KCTOP, KBOTSC, LDCUM, LDSC, KCBOT_LIG, KCTOP_LIG,  &
+(    7)   & LDCUM_LIG, LDSHCV, PLCRIT_AER, PLU, PLUDE, PLUDELI, PSNDE, PMFU, PMFD, PLGLAC, PDIFCQ, PDIFCS, PFHPCL, PFHPCN, PFPLCL,  
+(    8)   & PFPLCN, PLRAIN, PRSUD, PSTRCU, PSTRCV, PFCQLF, PFCQIF, PMFUDE_RATE, PMFDDE_RATE, PCAPE, PWU, PWMEAN, PVDISCU, PDISS, KTR
+(    9)   & PCM1, PTENC, PSCAV, PSCAV0, YDSTACK_L)
+(   10)     
+(   11)     !          *CUCALL* - MASTER ROUTINE - PROVIDES INTERFACE FOR:
+(   12)     !                     *CUMASTR* (CUMULUS PARAMETERIZATION)
+(   13)     !                     *CUCCDIA* (CUMULUS CLOUDS FOR RADIATION)
+(   14)     !                     *CUSTRAT* (PBL_STRATOCUMULUS)
+(   15)     
+(   16)     !**   PURPOSE.
+(   17)     !     --------
+(   18)     
+(   19)     !          *CUCALL* - INTERFACE FOR *CUMASTR*,*CUCCDIA* AND *CUSTRAT*:
+(   20)     !                     PROVIDES INPUT FOR CUMASTR, CUCCDIA AND CUSTRAT.
+(   21)     !                     RECEIVES UPDATED TENDENCIES, PRECIPITATION
+(   22)     !                     AND CONVECTIVE CLOUD PARAMETERS FOR RADIATION.
+(   23)     
+(   24)     !**   INTERFACE.
+(   25)     !     ----------
+(   26)     
+(   27)     !          *CUCALL* IS CALLED FROM *CALLPAR*
+(   28)     
+(   29)     !     PARAMETER     DESCRIPTION                                   UNITS
+(   30)     !     ---------     -----------                                   -----
+(   31)     !     INPUT PARAMETERS (INTEGER):
+(   32)     
+(   33)     !    *KIDIA*        START POINT
+(   34)     !    *KFDIA*        END POINT
+(   35)     !    *KLON*         NUMBER OF GRID POINTS PER PACKET
+(   36)     !    *KSMAX*        HORIZONTAL SPECTRAL TRUNCATION
+(   37)     !    *KLEV*         NUMBER OF LEVELS
+(   38)     !    *KSPPN2D*      Number of 2D patterns in SPP scheme
+(   39)     !    *KTRAC*        NUMBER OF CHEMICAL TRACERS
+(   40)     
+(   41)     !     INPUT PARAMETERS (LOGICAL)
+(   42)     
+(   43)     !    *LDLAND*       LAND SEA MASK (.TRUE. FOR LAND)
+(   44)     
+(   45)     !     INPUT PARAMETERS (REAL)
+(   46)     
+(   47)     !    *PTSPHY*       TIME STEP FOR THE PHYSICS                     S
+(   48)     !    *PTM1*         TEMPERATURE (T-1)                             K
+(   49)     !    *PQM1*         SPECIFIC HUMIDITY (T-1)                       KG/KG
+(   50)     !    *PUM1*         X-VELOCITY COMPONENT (T-1)                    M/S
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 2
+
+(   51)     !    *PVM1*         Y-VELOCITY COMPONENT (T-1)                    M/S
+(   52)     !    *PCM1*         CHEMICAL TRACERS (T-1)                        KG/KG
+(   53)     !    *PLITOT*       GRID MEAN LIQUID WATER + ICE CONTENT          KG/KG
+(   54)     !    *PVERVEL*      VERTICAL VELOCITY                             PA/S
+(   55)     !    *PQHFL*        MOISTURE FLUX (EXCEPT FROM SNOW EVAP.)     KG/(SM2)
+(   56)     !    *PAHFS*        SENSIBLE HEAT FLUX                            W/M2
+(   57)     !    *PAPHM1*       PRESSURE ON HALF LEVELS                       PA
+(   58)     !    *PAP*          PROVISIONAL PRESSURE ON FULL LEVELS           PA
+(   59)     !    *PAPH*         PROVISIONAL PRESSURE ON HALF LEVELS           PA
+(   60)     !    *PGEO*         GEOPOTENTIAL                                  M2/S2
+(   61)     !    *PGEOH*        GEOPOTENTIAL ON HALF LEVELS                   M2/S2
+(   62)     !    *PGAW*       NORMALISED GAUSSIAN QUADRATURE WEIGHT / NUMBER OF LONGITUDE POINTS
+(   63)     !                           LOCAL SUB-AREA == 4*RPI*RA**2 * PGAW
+(   64)     !    *PLCRIT_AER*   CRITICAL LIQUID MMR FOR AUTOCONVERSION PROCESS KG/KG
+(   65)     !    *PCUCONVCA*    COUPLING TO CELL AUTOMATON OR 2D ADVECT FIELD ( )
+(   66)     !    *PGP2DSPP*     Standard stochastic variable (mean=0, SD=1)
+(   67)     
+(   68)     !    UPDATED PARAMETERS (REAL):
+(   69)     
+(   70)     !     tendency_cml    cumulative tendency used for final output
+(   71)     !     tendency_tmp    cumulative tendency used as input
+(   72)     !     tendency_loc    local tendency from convection
+(   73)     
+(   74)     !    *PTENC*        TENDENCY OF CHEMICAL TRACERS                 1/S
+(   75)     !    *PARPRC*       ACCUMULATED PRECIPITATION AMMOUNT           KG/(M2*S)
+(   76)     !                   FOR RADIATION CALCULATION
+(   77)     
+(   78)     !    UPDATED PARAMETERS (INTEGER):
+(   79)     
+(   80)     !    *KTOPC*        UPDATED CONVECTIVE CLOUD TOP LEVEL FOR RADIATION
+(   81)     !    *KBASEC*       UPDATED CONVECTIVE CLOUD BASE LEVEL FOR RADIATION
+(   82)     
+(   83)     !    OUTPUT PARAMETERS (INTEGER):
+(   84)     
+(   85)     !    *KTYPE*        TYPE OF CONVECTION
+(   86)     !                       1 = PENETRATIVE CONVECTION
+(   87)     !                       2 = SHALLOW CONVECTION
+(   88)     !                       3 = MIDLEVEL CONVECTION
+(   89)     !    *KCBOT*        CLOUD BASE LEVEL
+(   90)     !    *KCTOP*        CLOUD TOP LEVEL
+(   91)     !    *KBOTSC*       CLOUD BASE LEVEL FOR SC-CLOUDS
+(   92)     !    *KCBOT_LIG*    CLOUD BASE LEVEL (FOR LIGHTNING PARAM)
+(   93)     !    *KCTOP_LIG*    CLOUD TOP LEVEL (FOR LIGHTNING PARAM)
+(   94)     
+(   95)     !    OUTPUT PARAMETERS (LOGICAL):
+(   96)     
+(   97)     !    *LDCUM*        FLAG: .TRUE. FOR CONVECTIVE POINTS
+(   98)     !    *LDCUM_LIG*    FLAG: .TRUE. FOR CONVECTIVE POINTS (FOR LIGHTNING PARAM)
+(   99)     !    *LDSC*         FLAG: .TRUE. FOR SC-POINTS
+(  100)     
+(  101)     !    OUTPUT PARAMETERS (REAL):
+(  102)     
+(  103)     !    *PLU*          LIQUID WATER CONTENT IN UPDRAFTS            KG/KG
+(  104)     !    *PLUDE*        DETRAINED TOTAL CONDENSATE                  KG/(M2*S)
+(  105)     !    *PLUDELI*      DETRAINED LIQUID, ICE                       KG/(M2*S)
+(  106)     !    *PLGLAC*       FROZEN CLOUD WATER/RAIN CONTENT             KG/KG
+(  107)     !    *PSNDE*        DETRAINED SNOW/RAIN                         KG/(M2*S)
+(  108)     !    *PMFU*         MASSFLUX UPDRAFTS                           KG/(M2*S)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 3
+
+(  109)     !    *PMFD*         MASSFLUX DOWNDRAFTS                         KG/(M2*S)
+(  110)     !    *PDIFCQ*       CONVECTIVE FLUX OF SPECIFIC HUMIDITY        KG/(M2*S)
+(  111)     !    *PDIFCS*       CONVECTIVE FLUX OF HEAT                      J/(M2*S)
+(  112)     !    *PFHPCL*       ENTHALPY FLUX DUE TO CONVECTIVE RAIN         J/(M2*S)
+(  113)     !    *PFHPCN*       ENTHALPY FLUX DUE TO CONVECTIVE SNOW         J/(M2*S)
+(  114)     !    *PFPLCL*       CONVECTIVE RAIN FLUX                        KG/(M2*S)
+(  115)     !    *PFPLCN*       CONVECTIVE SNOW FLUX                        KG/(M2*S)
+(  116)     !    *PLRAIN*       RAIN+SNOW CONTENT IN UPDRAFTS                 KG/KG
+(  117)     !    *PRSUD*        CONVECT MEAN RAIN AND SNOW CONTENT IN COLUMN  KG/KG
+(  118)     !    *PSTRTU*       CONVECTIVE FLUX OF U-MOMEMTUM         (M/S)*KG/(M2*S)
+(  119)     !    *PSTRTV*       CONVECTIVE FLUX OF V-MOMEMTUM         (M/S)*KG/(M2*S)
+(  120)     !    *PFCQLF*       CONVECTIVE CONDENSATION FLUX LIQUID         KG/(M2*S)
+(  121)     !    *PFCQIF*       CONVECTIVE CONDENSATION FLUX ICE            KG/(M2*S)
+(  122)     
+(  123)     !               Diagnostics:
+(  124)     !    *PMFUDE_RATE* UPDRAFT DETRAINMENT RATE                     KG/(M3*S)
+(  125)     !    *PMFDDE_RATE* DOWNDRAFT DETRAINMENT RATE                   KG/(M3*S)
+(  126)     !    *PCAPE*       MAXIMUM pseudoadiabat CAPE                   (J/KG)
+(  127)     !    *PWMEAN*      VERTICALLY AVERAGED UPDRAUGHT VELOCITY        M/S
+(  128)     !    *PVDISCU*     VERT INTEGRATED CONVECTIVE DISSIPATION RATE   W/m2
+(  129)     !    *PDISS*       ESTIMATE FOR DISSIPATION BT DEEP CONVCTION    J/m2
+(  130)     
+(  131)     !     EXTERNALS.
+(  132)     !     ----------
+(  133)     
+(  134)     !          CUMASTR
+(  135)     !          CUCCDIA
+(  136)     !          CUSTRAT
+(  137)     
+(  138)     !     AUTHOR.
+(  139)     !     -------
+(  140)     !      M.TIEDTKE      E.C.M.W.F.     12/1989
+(  141)     
+(  142)     !     MODIFICATIONS.
+(  143)     !     --------------
+(  144)     !      15-10-01 : FULLIMP mods D.Salmond
+(  145)     !      11-02-04 : Enable tracer transport P. Bechtold
+(  146)     !      M.Hamrud      01-Oct-2003 CY28 Cleaning
+(  147)     !      D.Salmond     22-Nov-2005 Mods for coarser/finer physics
+(  148)     !      F.Vana        18-May-2012 cleaning
+(  149)     !     R. El Khatib 22-Jun-2022 A contribution to simplify phasing after the refactoring of YOMCLI/YOMCST/YOETHF.
+(  150)     !----------------------------------------------------------------------
+(  151)     
+(  152)     USE satur_LOKI_MOD, ONLY: satur_LOKI
+(  153)     USE cumastrn_LOKI_MOD, ONLY: cumastrn_LOKI
+(  154)     USE cuccdia_LOKI_MOD, ONLY: cuccdia_LOKI
+(  155)     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY: REAL64
+(  156)     USE, intrinsic :: ISO_C_BINDING, ONLY: C_SIZEOF
+(  157)     USE MODEL_PHYSICS_ECMWF_MOD, ONLY: MODEL_PHYSICS_ECMWF_TYPE
+(  158)     USE MODEL_PHYSICS_SIMPLINEAR_MOD, ONLY: MODEL_PHYSICS_SIMPLINEAR_TYPE
+(  159)     USE YOERAD, ONLY: TERAD
+(  160)     USE YOM_YGFL, ONLY: TYPE_GFLD
+(  161)     USE YOMCHEM, ONLY: TCHEM
+(  162)     USE SPP_MOD, ONLY: TSPP_CONFIG
+(  163)     USE PARKIND1, ONLY: JPIM, JPRB
+(  164)     USE YOMHOOK, ONLY: LHOOK, JPHOOK
+(  165)     
+(  166)     USE YOMCST, ONLY: TCST
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 4
+
+(  167)     USE YOETHF, ONLY: TTHF
+(  168)     USE YOMPERTPAR, ONLY: TPERTPAR
+(  169)     
+(  170)     IMPLICIT NONE
+(  171)     
+(  172)     
+(  173)     REAL(KIND=JPRB), INTENT(IN) :: PPLDARE
+(  174)     REAL(KIND=JPRB), INTENT(IN) :: PPLRG
+(  175)     INTEGER(KIND=JPIM), INTENT(IN) :: KSTEP
+(  176)     TYPE(TTHF), INTENT(IN) :: YDTHF
+(  177)     TYPE(TCST), INTENT(IN) :: YDCST
+(  178)     TYPE(TERAD), INTENT(IN) :: YDERAD
+(  179)     TYPE(MODEL_PHYSICS_SIMPLINEAR_TYPE), INTENT(IN) :: YDML_PHY_SLIN
+(  180)     TYPE(MODEL_PHYSICS_ECMWF_TYPE), INTENT(IN) :: YDML_PHY_EC
+(  181)     TYPE(TYPE_GFLD), INTENT(IN) :: YGFL
+(  182)     TYPE(TCHEM), INTENT(IN) :: YDCHEM
+(  183)     TYPE(TSPP_CONFIG), INTENT(IN) :: YDSPP_CONFIG
+(  184)     TYPE(TPERTPAR), INTENT(IN) :: YDPERTPAR
+(  185)     INTEGER(KIND=JPIM), INTENT(IN) :: KLON
+(  186)     INTEGER(KIND=JPIM), INTENT(IN) :: KSMAX
+(  187)     INTEGER(KIND=JPIM), INTENT(IN) :: KLEV
+(  188)     INTEGER(KIND=JPIM), INTENT(IN) :: KSPPN2D
+(  189)     INTEGER(KIND=JPIM), INTENT(IN) :: KTRAC
+(  190)     INTEGER(KIND=JPIM), INTENT(IN) :: KIDIA
+(  191)     INTEGER(KIND=JPIM), INTENT(IN) :: KFDIA
+(  192)     LOGICAL, INTENT(IN) :: LDMCAPEA
+(  193)     LOGICAL, INTENT(IN) :: LDLAND(KLON)
+(  194)     LOGICAL, INTENT(IN) :: LDSLPHY
+(  195)     REAL(KIND=JPRB), INTENT(IN) :: PTSPHY
+(  196)     REAL(KIND=JPRB), INTENT(IN) :: PVDIFTS
+(  197)     REAL(KIND=JPRB), INTENT(IN) :: PLCRIT_AER(KLON, KLEV)
+(  198)     REAL(KIND=JPRB), INTENT(IN) :: PTM1(KLON, KLEV)
+(  199)     REAL(KIND=JPRB), INTENT(IN) :: PQM1(KLON, KLEV)
+(  200)     REAL(KIND=JPRB), INTENT(IN) :: PUM1(KLON, KLEV)
+(  201)     REAL(KIND=JPRB), INTENT(IN) :: PVM1(KLON, KLEV)
+(  202)     REAL(KIND=JPRB), INTENT(IN) :: PCM1(KLON, KLEV, KTRAC)
+(  203)     REAL(KIND=JPRB), INTENT(IN) :: PLITOT(KLON, KLEV)
+(  204)     REAL(KIND=JPRB), INTENT(IN) :: PVERVEL(KLON, KLEV)
+(  205)     REAL(KIND=JPRB), INTENT(IN) :: PQHFL(KLON, KLEV + 1)
+(  206)     REAL(KIND=JPRB), INTENT(IN) :: PAHFS(KLON, KLEV + 1)
+(  207)     REAL(KIND=JPRB), INTENT(IN) :: PAPHM1(KLON, KLEV + 1)
+(  208)     REAL(KIND=JPRB), INTENT(IN) :: PAP(KLON, KLEV)
+(  209)     REAL(KIND=JPRB), INTENT(IN) :: PAPH(KLON, KLEV + 1)
+(  210)     REAL(KIND=JPRB), INTENT(IN) :: PGEO(KLON, KLEV)
+(  211)     REAL(KIND=JPRB), INTENT(IN) :: PGEOH(KLON, KLEV + 1)
+(  212)     REAL(KIND=JPRB), INTENT(INOUT) :: PTENT(KLON, KLEV)
+(  213)     REAL(KIND=JPRB), INTENT(INOUT) :: PTENQ(KLON, KLEV)
+(  214)     REAL(KIND=JPRB), INTENT(INOUT) :: PTENU(KLON, KLEV)
+(  215)     REAL(KIND=JPRB), INTENT(INOUT) :: PTENV(KLON, KLEV)
+(  216)     REAL(KIND=JPRB), INTENT(INOUT) :: PTENTA(KLON, KLEV)
+(  217)     REAL(KIND=JPRB), INTENT(INOUT) :: PTENQA(KLON, KLEV)
+(  218)     REAL(KIND=JPRB), INTENT(IN) :: PGAW(KLON)
+(  219)     REAL(KIND=JPRB), INTENT(IN) :: PCUCONVCA(KLON)
+(  220)     REAL(KIND=JPRB), INTENT(IN) :: PGP2DSPP(KLON, KSPPN2D)
+(  221)     REAL(KIND=JPRB), INTENT(IN) :: PSCAV(KTRAC)
+(  222)     REAL(KIND=JPRB), INTENT(IN) :: PSCAV0(KTRAC)
+(  223)     REAL(KIND=JPRB), INTENT(IN) :: PDX(KLON)
+(  224)     REAL(KIND=JPRB), INTENT(INOUT) :: PTENC(KLON, KLEV, KTRAC)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 5
+
+(  225)     REAL(KIND=JPRB), INTENT(OUT) :: PARPRC(KLON)
+(  226)     INTEGER(KIND=JPIM), INTENT(OUT) :: KTOPC(KLON)
+(  227)     INTEGER(KIND=JPIM), INTENT(OUT) :: KBASEC(KLON)
+(  228)     INTEGER(KIND=JPIM), INTENT(OUT) :: KTYPE(KLON)
+(  229)     INTEGER(KIND=JPIM), INTENT(OUT) :: KCBOT(KLON)
+(  230)     INTEGER(KIND=JPIM), INTENT(OUT) :: KCTOP(KLON)
+(  231)     INTEGER(KIND=JPIM), INTENT(OUT) :: KCBOT_LIG(KLON)
+(  232)     INTEGER(KIND=JPIM), INTENT(OUT) :: KCTOP_LIG(KLON)
+(  233)     INTEGER(KIND=JPIM), INTENT(OUT) :: KBOTSC(KLON)
+(  234)     LOGICAL, INTENT(OUT) :: LDCUM(KLON)
+(  235)     LOGICAL, INTENT(OUT) :: LDCUM_LIG(KLON)
+(  236)     LOGICAL, INTENT(OUT) :: LDSC(KLON)
+(  237)     LOGICAL, INTENT(IN) :: LDSHCV(KLON)
+(  238)     REAL(KIND=JPRB), INTENT(OUT) :: PLU(KLON, KLEV)
+(  239)     REAL(KIND=JPRB), INTENT(OUT) :: PLUDE(KLON, KLEV)
+(  240)     REAL(KIND=JPRB), INTENT(OUT) :: PLUDELI(KLON, KLEV, 4)
+(  241)     REAL(KIND=JPRB), INTENT(OUT) :: PSNDE(KLON, KLEV, 2)
+(  242)     REAL(KIND=JPRB), INTENT(OUT) :: PMFU(KLON, KLEV)
+(  243)     REAL(KIND=JPRB), INTENT(OUT) :: PMFD(KLON, KLEV)
+(  244)     REAL(KIND=JPRB), INTENT(OUT) :: PLGLAC(KLON, KLEV)
+(  245)     REAL(KIND=JPRB), INTENT(OUT) :: PDIFCQ(KLON, KLEV + 1)
+(  246)     REAL(KIND=JPRB), INTENT(OUT) :: PDIFCS(KLON, KLEV + 1)
+(  247)     REAL(KIND=JPRB), INTENT(OUT) :: PFHPCL(KLON, KLEV + 1)
+(  248)     REAL(KIND=JPRB), INTENT(OUT) :: PFHPCN(KLON, KLEV + 1)
+(  249)     REAL(KIND=JPRB), INTENT(OUT) :: PFPLCL(KLON, KLEV + 1)
+(  250)     REAL(KIND=JPRB), INTENT(OUT) :: PFPLCN(KLON, KLEV + 1)
+(  251)     REAL(KIND=JPRB), INTENT(OUT) :: PLRAIN(KLON, KLEV)
+(  252)     REAL(KIND=JPRB), INTENT(OUT) :: PRSUD(KLON, KLEV, 2)
+(  253)     REAL(KIND=JPRB), INTENT(OUT) :: PSTRCU(KLON, KLEV + 1)
+(  254)     REAL(KIND=JPRB), INTENT(OUT) :: PSTRCV(KLON, KLEV + 1)
+(  255)     REAL(KIND=JPRB), INTENT(OUT) :: PFCQLF(KLON, KLEV + 1)
+(  256)     REAL(KIND=JPRB), INTENT(OUT) :: PFCQIF(KLON, KLEV + 1)
+(  257)     REAL(KIND=JPRB), INTENT(OUT) :: PMFUDE_RATE(KLON, KLEV)
+(  258)     REAL(KIND=JPRB), INTENT(OUT) :: PMFDDE_RATE(KLON, KLEV)
+(  259)     REAL(KIND=JPRB), INTENT(OUT) :: PCAPE(KLON)
+(  260)     REAL(KIND=JPRB), INTENT(OUT) :: PWMEAN(KLON)
+(  261)     REAL(KIND=JPRB), INTENT(OUT) :: PVDISCU(KLON)
+(  262)     REAL(KIND=JPRB), INTENT(OUT) :: PWU(KLON, KLEV)
+(  263)     REAL(KIND=JPRB), INTENT(OUT) :: PDISS(KLON, KLEV)
+(  264)     
+(  265)     REAL(KIND=JPRB) :: ZTP1(KLON, KLEV), ZQP1(KLON, KLEV), ZUP1(KLON, KLEV), ZVP1(KLON, KLEV), ZTU(KLON, KLEV), ZQU(KLON, KL
+(  266)     & ZQSAT(KLON, KLEV), ZRAIN(KLON)
+(  267)     
+(  268)     REAL(KIND=JPRB) :: ZCP1(KLON, KLEV, KTRAC)
+(  269)     
+(  270)     !-----------------------------------------------------------------------
+(  271)     
+(  272)     REAL(KIND=JPRB) :: ZQEA(KLON, KLEV), ZTEA(KLON, KLEV), ZVEA(KLON, KLEV), ZUEA(KLON, KLEV), ZENTHD(KLON, KLEV),  &
+(  273)     & ZENTHS(KLON, KLEV)
+(  274)     REAL(KIND=JPRB) :: ZCONDFLL, ZCONDFLN
+(  275)     
+(  276)     INTEGER(KIND=JPIM) :: IFLAG, JK, JL, JN
+(  277)     
+(  278)     REAL(KIND=JPRB) :: ZCP, ZGDPH, ZEPS
+(  279)     
+(  280)     LOGICAL :: LLTDKMF
+(  281)     REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+(  282)     
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 6
+
+(  283)     
+(  284)     !DIR$ VFUNCTION EXPHF
+(  285) #include "fcttre.func.h"
+(  286) #include "fcttrm.func.h"
+(  287) !$acc routine vector
+(  288)     INTEGER(KIND=8) :: YLSTACK_L
+(  289)     INTEGER(KIND=8), INTENT(INOUT) :: YDSTACK_L
+(  290)     POINTER(IP_ZTP1, ZTP1)
+(  291)     POINTER(IP_ZQP1, ZQP1)
+(  292)     POINTER(IP_ZUP1, ZUP1)
+(  293)     POINTER(IP_ZVP1, ZVP1)
+(  294)     POINTER(IP_ZTU, ZTU)
+(  295)     POINTER(IP_ZQU, ZQU)
+(  296)     POINTER(IP_ZQSAT, ZQSAT)
+(  297)     POINTER(IP_ZRAIN, ZRAIN)
+(  298)     POINTER(IP_ZCP1, ZCP1)
+(  299)     POINTER(IP_ZQEA, ZQEA)
+(  300)     POINTER(IP_ZTEA, ZTEA)
+(  301)     POINTER(IP_ZVEA, ZVEA)
+(  302)     POINTER(IP_ZUEA, ZUEA)
+(  303)     POINTER(IP_ZENTHD, ZENTHD)
+(  304)     POINTER(IP_ZENTHS, ZENTHS)
+(  305)     YLSTACK_L = YDSTACK_L
+(  306)     IP_ZTP1 = YLSTACK_L
+(  307)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  308)     IP_ZQP1 = YLSTACK_L
+(  309)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  310)     IP_ZUP1 = YLSTACK_L
+(  311)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  312)     IP_ZVP1 = YLSTACK_L
+(  313)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  314)     IP_ZTU = YLSTACK_L
+(  315)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  316)     IP_ZQU = YLSTACK_L
+(  317)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  318)     IP_ZQSAT = YLSTACK_L
+(  319)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  320)     IP_ZRAIN = YLSTACK_L
+(  321)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  322)     IP_ZCP1 = YLSTACK_L
+(  323)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*KTRAC*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  324)     IP_ZQEA = YLSTACK_L
+(  325)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  326)     IP_ZTEA = YLSTACK_L
+(  327)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  328)     IP_ZVEA = YLSTACK_L
+(  329)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  330)     IP_ZUEA = YLSTACK_L
+(  331)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  332)     IP_ZENTHD = YLSTACK_L
+(  333)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  334)     IP_ZENTHS = YLSTACK_L
+(  335)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  336) !$acc data present( PDX, LDLAND, PTM1, PQM1, PUM1, PVM1, PLITOT, PVERVEL, PQHFL, PAHFS, PAPHM1, PAP, PAPH, PGEO, PGEOH, PGAW
+(  337) !$acc & PCUCONVCA, PGP2DSPP, PTENT, PTENQ, PTENU, PTENV, PTENTA, PTENQA, PARPRC, KTOPC, KBASEC, KTYPE, KCBOT, KCTOP, KBOTSC,
+(  338) !$acc & LDCUM, LDSC, KCBOT_LIG, KCTOP_LIG, LDCUM_LIG, LDSHCV, PLCRIT_AER, PLU, PLUDE, PLUDELI, PSNDE, PMFU, PMFD, PLGLAC,  &
+(  339) !$acc & PDIFCQ, PDIFCS, PFHPCL, PFHPCN, PFPLCL, PFPLCN, PLRAIN, PRSUD, PSTRCU, PSTRCV, PFCQLF, PFCQIF, PMFUDE_RATE, PMFDDE_R
+(  340) !$acc & PCAPE, PWU, PWMEAN, PVDISCU, PDISS, PCM1, PTENC, PSCAV, PSCAV0, YDTHF, YDCST, YDERAD, YDML_PHY_SLIN, YDML_PHY_EC, YG
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 7
+
+(  341) !$acc & YDCHEM, YDSPP_CONFIG, YDPERTPAR )
+(  342)     
+(  343)     !-----------------------------------------------------------------------
+(  344)     
+(  345)     !*    0.1          STORE T,Q,X,Y TENDENCIES FOR FLUX COMPUTATIONS
+(  346)     !*                 ----------------------------------------------
+(  347)     
+(  348)     
+(  349)     ! Setup of tendencies
+(  350)     
+(  351) !$acc loop vector
+(  352)     DO JL=KIDIA,KFDIA
+(  353) !$acc loop seq
+(  354)       DO JK=1,KLEV
+(  355)         ZQEA(JL, JK) = PTENQ(JL, JK)
+(  356)         ZTEA(JL, JK) = PTENT(JL, JK)
+(  357)         ZVEA(JL, JK) = PTENV(JL, JK)
+(  358)         ZUEA(JL, JK) = PTENU(JL, JK)
+(  359)         ZENTHD(JL, JK) = 0.0_JPRB
+(  360)         ZENTHS(JL, JK) = 0.0_JPRB
+(  361)       END DO
+(  362)       
+(  363) !$acc loop seq
+(  364)       DO JK=1,KLEV + 1
+(  365)         PFPLCL(JL, JK) = 0.0_JPRB
+(  366)         PFPLCN(JL, JK) = 0.0_JPRB
+(  367)       END DO
+(  368)       
+(  369)       !-----------------------------------------------------------------------
+(  370)       
+(  371)       !*    1.           UPDATE PROGN. VALUES DEPENDING ON
+(  372)       !                  TIME INTEGRATION AND CALCULATE QS
+(  373)       !*                 ---------------------------------
+(  374)       !-------------------------------------------------
+(  375)       ! Protection in division. ZEPS is choosen as 1000 times lower
+(  376)       ! than the actual values of qv (1.e-7 kg/kg) met in the high atmosphere.
+(  377)       ! This ZEPS value, used in multiplication only, is relevant for both simple and
+(  378)       ! double precision purpose.
+(  379)       !-------------------------------------------------
+(  380)       ZEPS = 1.0E-10_JPRB
+(  381) !$acc loop seq
+(  382)       DO JK=1,KLEV
+(  383)         ZUP1(JL, JK) = PUM1(JL, JK) + PTENU(JL, JK)*PTSPHY
+(  384)         ZVP1(JL, JK) = PVM1(JL, JK) + PTENV(JL, JK)*PTSPHY
+(  385)         ZTP1(JL, JK) = PTM1(JL, JK) + PTENT(JL, JK)*PTSPHY
+(  386)         ZQP1(JL, JK) = PQM1(JL, JK) + PTENQ(JL, JK)*PTSPHY
+(  387)         ZQSAT(JL, JK) = ZQP1(JL, JK)
+(  388)         IF (ZQSAT(JL, JK) <= 0.0_JPRB) ZQSAT(JL, JK) = ZEPS
+(  389)       END DO
+(  390)       
+(  391)       IF (LDSLPHY) THEN
+(  392)         IF (KTRAC > 0 .and. YDML_PHY_EC%YREPHY%LMFTRAC) THEN
+(  393) !$acc loop seq
+(  394)           DO JN=1,KTRAC
+(  395) !$acc loop seq
+(  396)             DO JK=1,KLEV
+(  397)               ! attention: transport is for positive definit quantities only
+(  398)               ! ZCP1(JL,JK,JN)=MAX(0._JPRB,PCM1(JL,JK,JN))
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 8
+
+(  399)               ZCP1(JL, JK, JN) = PCM1(JL, JK, JN)
+(  400)             END DO
+(  401)           END DO
+(  402)         END IF
+(  403)       ELSE
+(  404)         IF (KTRAC > 0 .and. YDML_PHY_EC%YREPHY%LMFTRAC) THEN
+(  405) !$acc loop seq
+(  406)           DO JN=1,KTRAC
+(  407) !$acc loop seq
+(  408)             DO JK=1,KLEV
+(  409)               ! attention: transport is for positive definit quantities only
+(  410)               ! ZCP1(JL,JK,JN)=MAX(0._JPRB,PCM1(JL,JK,JN)+PTENC(JL,JK,JN)*PTSPHY)
+(  411)               ZCP1(JL, JK, JN) = PCM1(JL, JK, JN) + PTENC(JL, JK, JN)*PTSPHY
+(  412)             END DO
+(  413)           END DO
+(  414)         END IF
+(  415)       END IF
+(  416)     END DO
+(  417)     
+(  418)     
+(  419)     IFLAG = 1
+(  420)     CALL SATUR_LOKI(YDTHF, YDCST, KIDIA, KFDIA, KLON, YDML_PHY_EC%YRECUMF%NJKT2, KLEV, YDML_PHY_SLIN%YREPHLI%LPHYLIN, PAP, Z
+(  421)     & ZQSAT, IFLAG, YDSTACK_L=YLSTACK_L)
+(  422)     
+(  423)     
+(  424) !$acc loop vector
+(  425)     DO JL=KIDIA,KFDIA
+(  426)       ZRAIN(JL) = 0.0_JPRB
+(  427)     END DO
+(  428)     
+(  429)     
+(  430)     !-----------------------------------------------------------------------
+(  431)     
+(  432)     !*    2.     CALL 'CUMASTR'(MASTER-ROUTINE FOR CUMULUS PARAMETERIZATION)
+(  433)     !*           -----------------------------------------------------------
+(  434)     
+(  435)     LLTDKMF = .true.
+(  436)     CALL CUMASTRN_LOKI(PPLDARE, PPLRG, YDTHF, YDCST, YDML_PHY_SLIN, YDML_PHY_EC, YGFL, YDCHEM, YDSPP_CONFIG, YDPERTPAR, KIDI
+(  437)     & KFDIA, KLON, KLEV, PDX, LLTDKMF, LDMCAPEA, LDLAND, PTSPHY, ZTP1, ZQP1, ZUP1, ZVP1, PLITOT, PVERVEL, ZQSAT, PQHFL, PAHF
+(  438)     & PAP, PAPH, PGEO, PGEOH, PGAW, PCUCONVCA, PGP2DSPP, PTENT, PTENQ, PTENU, PTENV, PTENTA, PTENQA, LDCUM, KTYPE, KCBOT, KC
+(  439)     & LDCUM_LIG, KCBOT_LIG, KCTOP_LIG, KBOTSC, LDSC, LDSHCV, PLCRIT_AER, ZTU, ZQU, PLU, PLUDE, PLUDELI, PSNDE, ZENTHD, PFPLC
+(  440)     & PFPLCN, ZRAIN, PLRAIN, PRSUD, PMFU, PMFD, PLGLAC, PMFUDE_RATE, PMFDDE_RATE, PCAPE, PWU, PWMEAN, PVDISCU, PDISS, KTRAC,
+(  441)     & ZCP1, PTENC, PSCAV, PSCAV0, YDSTACK_L=YLSTACK_L)
+(  442)     !----------------------------------------------------------------------
+(  443)     
+(  444)     !*    3.0       CALL 'CUCCDIA' TO UPDATE CLOUD PARAMETERS FOR RADIATION
+(  445)     !               -------------------------------------------------------
+(  446)     
+(  447)     CALL CUCCDIA_LOKI(YDERAD, YDML_PHY_SLIN%YREPHLI, YDML_PHY_EC%YREPHY, KIDIA, KFDIA, KLON, KLEV, KSTEP, KCBOT, KCTOP, LDCU
+(  448)     & ZQU, PLU, PMFU, ZRAIN, PARPRC, KTOPC, KBASEC, YDSTACK_L=YLSTACK_L)
+(  449)     
+(  450)     
+(  451)     !---------------------------------------------------------------------
+(  452)     
+(  453)     !*    5.           FLUX COMPUTATIONS
+(  454)     !                  -----------------
+(  455)     
+(  456)     
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 9
+
+(  457) !$acc loop vector
+(  458)     DO JL=KIDIA,KFDIA
+(  459)       PDIFCQ(JL, 1) = 0.0_JPRB
+(  460)       PDIFCS(JL, 1) = 0.0_JPRB
+(  461)       PSTRCU(JL, 1) = 0.0_JPRB
+(  462)       PSTRCV(JL, 1) = 0.0_JPRB
+(  463)       PFCQLF(JL, 1) = 0.0_JPRB
+(  464)       PFCQIF(JL, 1) = 0.0_JPRB
+(  465)       PFHPCL(JL, 1) = 0.0_JPRB
+(  466)       PFHPCN(JL, 1) = 0.0_JPRB
+(  467)       PDIFCS(JL, 1) = 0.0_JPRB
+(  468)       PDIFCQ(JL, 1) = 0.0_JPRB
+(  469)       ZCONDFLL = 0.0_JPRB
+(  470)       ZCONDFLN = 0.0_JPRB
+(  471)       
+(  472) !$acc loop seq
+(  473)       DO JK=1,KLEV
+(  474)         
+(  475)         ZGDPH = -YDCST%RG / (PAPHM1(JL, JK + 1) - PAPHM1(JL, JK))
+(  476)         !...increment in dry static energy is converted to flux of d.s.e.
+(  477)         ZCP = YDCST%RCPD*(1 + YDTHF%RVTMP2*ZQP1(JL, JK))
+(  478)         PDIFCS(JL, JK + 1) = (PTENT(JL, JK) - ZTEA(JL, JK)) / ZGDPH*ZCP + PDIFCS(JL, JK)
+(  479)         !...increments in U,V
+(  480)         PSTRCU(JL, JK + 1) = (PTENU(JL, JK) - ZUEA(JL, JK)) / ZGDPH + PSTRCU(JL, JK)
+(  481)         PSTRCV(JL, JK + 1) = (PTENV(JL, JK) - ZVEA(JL, JK)) / ZGDPH + PSTRCV(JL, JK)
+(  482)         
+(  483)         !...increment in Q
+(  484)         PDIFCQ(JL, JK + 1) = (PTENQ(JL, JK) - ZQEA(JL, JK)) / ZGDPH + PDIFCQ(JL, JK)
+(  485)         
+(  486)       END DO
+(  487)       
+(  488) !$acc loop seq
+(  489)       DO JK=1,KLEV
+(  490)         !DEC$ IVDEP
+(  491)         !... enthalpy flux due to precipitations
+(  492)         
+(  493)         PFHPCL(JL, JK + 1) = -PFPLCL(JL, JK + 1)*YDCST%RLVTT
+(  494)         PFHPCN(JL, JK + 1) = -PFPLCN(JL, JK + 1)*YDCST%RLSTT
+(  495)         ZCONDFLL = ZCONDFLL + PLUDELI(JL, JK, 1)
+(  496)         ZCONDFLN = ZCONDFLN + PLUDELI(JL, JK, 2)
+(  497)         PDIFCS(JL, JK + 1) =  &
+(  498)         & PDIFCS(JL, JK + 1) - PFHPCL(JL, JK + 1) - PFHPCN(JL, JK + 1) + YDCST%RLVTT*ZCONDFLL + YDCST%RLSTT*ZCONDFLN
+(  499)         PDIFCQ(JL, JK + 1) = PDIFCQ(JL, JK + 1) - PFPLCL(JL, JK + 1) - PFPLCN(JL, JK + 1) - ZCONDFLL - ZCONDFLN
+(  500)         PFCQLF(JL, JK + 1) = ZCONDFLL
+(  501)         PFCQIF(JL, JK + 1) = ZCONDFLN
+(  502)       END DO
+(  503)     END DO
+(  504)     
+(  505)     !---------------------------------------------------------------------
+(  506)     
+(  507)     
+(  508) !$acc end data
+(  509)   END SUBROUTINE CUCALLN_MF_LOKI
+(  510) END MODULE CUCALLN_MF_LOKI_MOD
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 10
+
+(    1) # 1 "./cucalln_mf.scc_stack.F90"
+(    1) MODULE CUCALLN_MF_LOKI_MOD
+(    2)   CONTAINS
+(    3)   SUBROUTINE CUCALLN_MF_LOKI (PPLDARE, PPLRG, KSTEP, YDTHF, YDCST, YDERAD, YDML_PHY_SLIN, YDML_PHY_EC, YGFL, YDCHEM,  &
+(    4)   & YDSPP_CONFIG, YDPERTPAR, KIDIA, KFDIA, KLON, KSMAX, KLEV, PDX, KSPPN2D, LDMCAPEA, LDLAND, LDSLPHY, PTSPHY, PVDIFTS, PTM1,  &
+(    5)   & PQM1, PUM1, PVM1, PLITOT, PVERVEL, PQHFL, PAHFS, PAPHM1, PAP, PAPH, PGEO, PGEOH, PGAW, PCUCONVCA, PGP2DSPP, PTENT, PTENQ,  &
+(    6)   & PTENU, PTENV, PTENTA, PTENQA, PARPRC, KTOPC, KBASEC, KTYPE, KCBOT, KCTOP, KBOTSC, LDCUM, LDSC, KCBOT_LIG, KCTOP_LIG,  &
+(    7)   & LDCUM_LIG, LDSHCV, PLCRIT_AER, PLU, PLUDE, PLUDELI, PSNDE, PMFU, PMFD, PLGLAC, PDIFCQ, PDIFCS, PFHPCL, PFHPCN, PFPLCL,  &
+(    8)   & PFPLCN, PLRAIN, PRSUD, PSTRCU, PSTRCV, PFCQLF, PFCQIF, PMFUDE_RATE, PMFDDE_RATE, PCAPE, PWU, PWMEAN, PVDISCU, PDISS, KTRAC,  &
+(    9)   & PCM1, PTENC, PSCAV, PSCAV0, YDSTACK_L)
+(   10)     
+(   11)     !          *CUCALL* - MASTER ROUTINE - PROVIDES INTERFACE FOR:
+(   12)     !                     *CUMASTR* (CUMULUS PARAMETERIZATION)
+(   13)     !                     *CUCCDIA* (CUMULUS CLOUDS FOR RADIATION)
+(   14)     !                     *CUSTRAT* (PBL_STRATOCUMULUS)
+(   15)     
+(   16)     !**   PURPOSE.
+(   17)     !     --------
+(   18)     
+(   19)     !          *CUCALL* - INTERFACE FOR *CUMASTR*,*CUCCDIA* AND *CUSTRAT*:
+(   20)     !                     PROVIDES INPUT FOR CUMASTR, CUCCDIA AND CUSTRAT.
+(   21)     !                     RECEIVES UPDATED TENDENCIES, PRECIPITATION
+(   22)     !                     AND CONVECTIVE CLOUD PARAMETERS FOR RADIATION.
+(   23)     
+(   24)     !**   INTERFACE.
+(   25)     !     ----------
+(   26)     
+(   27)     !          *CUCALL* IS CALLED FROM *CALLPAR*
+(   28)     
+(   29)     !     PARAMETER     DESCRIPTION                                   UNITS
+(   30)     !     ---------     -----------                                   -----
+(   31)     !     INPUT PARAMETERS (INTEGER):
+(   32)     
+(   33)     !    *KIDIA*        START POINT
+(   34)     !    *KFDIA*        END POINT
+(   35)     !    *KLON*         NUMBER OF GRID POINTS PER PACKET
+(   36)     !    *KSMAX*        HORIZONTAL SPECTRAL TRUNCATION
+(   37)     !    *KLEV*         NUMBER OF LEVELS
+(   38)     !    *KSPPN2D*      Number of 2D patterns in SPP scheme
+(   39)     !    *KTRAC*        NUMBER OF CHEMICAL TRACERS
+(   40)     
+(   41)     !     INPUT PARAMETERS (LOGICAL)
+(   42)     
+(   43)     !    *LDLAND*       LAND SEA MASK (.TRUE. FOR LAND)
+(   44)     
+(   45)     !     INPUT PARAMETERS (REAL)
+(   46)     
+(   47)     !    *PTSPHY*       TIME STEP FOR THE PHYSICS                     S
+(   48)     !    *PTM1*         TEMPERATURE (T-1)                             K
+(   49)     !    *PQM1*         SPECIFIC HUMIDITY (T-1)                       KG/KG
+(   50)     !    *PUM1*         X-VELOCITY COMPONENT (T-1)                    M/S
+(   51)     !    *PVM1*         Y-VELOCITY COMPONENT (T-1)                    M/S
+(   52)     !    *PCM1*         CHEMICAL TRACERS (T-1)                        KG/KG
+(   53)     !    *PLITOT*       GRID MEAN LIQUID WATER + ICE CONTENT          KG/KG
+(   54)     !    *PVERVEL*      VERTICAL VELOCITY                             PA/S
+(   55)     !    *PQHFL*        MOISTURE FLUX (EXCEPT FROM SNOW EVAP.)     KG/(SM2)
+(   56)     !    *PAHFS*        SENSIBLE HEAT FLUX                            W/M2
+(   57)     !    *PAPHM1*       PRESSURE ON HALF LEVELS                       PA
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 11
+
+(   58)     !    *PAP*          PROVISIONAL PRESSURE ON FULL LEVELS           PA
+(   59)     !    *PAPH*         PROVISIONAL PRESSURE ON HALF LEVELS           PA
+(   60)     !    *PGEO*         GEOPOTENTIAL                                  M2/S2
+(   61)     !    *PGEOH*        GEOPOTENTIAL ON HALF LEVELS                   M2/S2
+(   62)     !    *PGAW*       NORMALISED GAUSSIAN QUADRATURE WEIGHT / NUMBER OF LONGITUDE POINTS
+(   63)     !                           LOCAL SUB-AREA == 4*RPI*RA**2 * PGAW
+(   64)     !    *PLCRIT_AER*   CRITICAL LIQUID MMR FOR AUTOCONVERSION PROCESS KG/KG
+(   65)     !    *PCUCONVCA*    COUPLING TO CELL AUTOMATON OR 2D ADVECT FIELD ( )
+(   66)     !    *PGP2DSPP*     Standard stochastic variable (mean=0, SD=1)
+(   67)     
+(   68)     !    UPDATED PARAMETERS (REAL):
+(   69)     
+(   70)     !     tendency_cml    cumulative tendency used for final output
+(   71)     !     tendency_tmp    cumulative tendency used as input
+(   72)     !     tendency_loc    local tendency from convection
+(   73)     
+(   74)     !    *PTENC*        TENDENCY OF CHEMICAL TRACERS                 1/S
+(   75)     !    *PARPRC*       ACCUMULATED PRECIPITATION AMMOUNT           KG/(M2*S)
+(   76)     !                   FOR RADIATION CALCULATION
+(   77)     
+(   78)     !    UPDATED PARAMETERS (INTEGER):
+(   79)     
+(   80)     !    *KTOPC*        UPDATED CONVECTIVE CLOUD TOP LEVEL FOR RADIATION
+(   81)     !    *KBASEC*       UPDATED CONVECTIVE CLOUD BASE LEVEL FOR RADIATION
+(   82)     
+(   83)     !    OUTPUT PARAMETERS (INTEGER):
+(   84)     
+(   85)     !    *KTYPE*        TYPE OF CONVECTION
+(   86)     !                       1 = PENETRATIVE CONVECTION
+(   87)     !                       2 = SHALLOW CONVECTION
+(   88)     !                       3 = MIDLEVEL CONVECTION
+(   89)     !    *KCBOT*        CLOUD BASE LEVEL
+(   90)     !    *KCTOP*        CLOUD TOP LEVEL
+(   91)     !    *KBOTSC*       CLOUD BASE LEVEL FOR SC-CLOUDS
+(   92)     !    *KCBOT_LIG*    CLOUD BASE LEVEL (FOR LIGHTNING PARAM)
+(   93)     !    *KCTOP_LIG*    CLOUD TOP LEVEL (FOR LIGHTNING PARAM)
+(   94)     
+(   95)     !    OUTPUT PARAMETERS (LOGICAL):
+(   96)     
+(   97)     !    *LDCUM*        FLAG: .TRUE. FOR CONVECTIVE POINTS
+(   98)     !    *LDCUM_LIG*    FLAG: .TRUE. FOR CONVECTIVE POINTS (FOR LIGHTNING PARAM)
+(   99)     !    *LDSC*         FLAG: .TRUE. FOR SC-POINTS
+(  100)     
+(  101)     !    OUTPUT PARAMETERS (REAL):
+(  102)     
+(  103)     !    *PLU*          LIQUID WATER CONTENT IN UPDRAFTS            KG/KG
+(  104)     !    *PLUDE*        DETRAINED TOTAL CONDENSATE                  KG/(M2*S)
+(  105)     !    *PLUDELI*      DETRAINED LIQUID, ICE                       KG/(M2*S)
+(  106)     !    *PLGLAC*       FROZEN CLOUD WATER/RAIN CONTENT             KG/KG
+(  107)     !    *PSNDE*        DETRAINED SNOW/RAIN                         KG/(M2*S)
+(  108)     !    *PMFU*         MASSFLUX UPDRAFTS                           KG/(M2*S)
+(  109)     !    *PMFD*         MASSFLUX DOWNDRAFTS                         KG/(M2*S)
+(  110)     !    *PDIFCQ*       CONVECTIVE FLUX OF SPECIFIC HUMIDITY        KG/(M2*S)
+(  111)     !    *PDIFCS*       CONVECTIVE FLUX OF HEAT                      J/(M2*S)
+(  112)     !    *PFHPCL*       ENTHALPY FLUX DUE TO CONVECTIVE RAIN         J/(M2*S)
+(  113)     !    *PFHPCN*       ENTHALPY FLUX DUE TO CONVECTIVE SNOW         J/(M2*S)
+(  114)     !    *PFPLCL*       CONVECTIVE RAIN FLUX                        KG/(M2*S)
+(  115)     !    *PFPLCN*       CONVECTIVE SNOW FLUX                        KG/(M2*S)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 12
+
+(  116)     !    *PLRAIN*       RAIN+SNOW CONTENT IN UPDRAFTS                 KG/KG
+(  117)     !    *PRSUD*        CONVECT MEAN RAIN AND SNOW CONTENT IN COLUMN  KG/KG
+(  118)     !    *PSTRTU*       CONVECTIVE FLUX OF U-MOMEMTUM         (M/S)*KG/(M2*S)
+(  119)     !    *PSTRTV*       CONVECTIVE FLUX OF V-MOMEMTUM         (M/S)*KG/(M2*S)
+(  120)     !    *PFCQLF*       CONVECTIVE CONDENSATION FLUX LIQUID         KG/(M2*S)
+(  121)     !    *PFCQIF*       CONVECTIVE CONDENSATION FLUX ICE            KG/(M2*S)
+(  122)     
+(  123)     !               Diagnostics:
+(  124)     !    *PMFUDE_RATE* UPDRAFT DETRAINMENT RATE                     KG/(M3*S)
+(  125)     !    *PMFDDE_RATE* DOWNDRAFT DETRAINMENT RATE                   KG/(M3*S)
+(  126)     !    *PCAPE*       MAXIMUM pseudoadiabat CAPE                   (J/KG)
+(  127)     !    *PWMEAN*      VERTICALLY AVERAGED UPDRAUGHT VELOCITY        M/S
+(  128)     !    *PVDISCU*     VERT INTEGRATED CONVECTIVE DISSIPATION RATE   W/m2
+(  129)     !    *PDISS*       ESTIMATE FOR DISSIPATION BT DEEP CONVCTION    J/m2
+(  130)     
+(  131)     !     EXTERNALS.
+(  132)     !     ----------
+(  133)     
+(  134)     !          CUMASTR
+(  135)     !          CUCCDIA
+(  136)     !          CUSTRAT
+(  137)     
+(  138)     !     AUTHOR.
+(  139)     !     -------
+(  140)     !      M.TIEDTKE      E.C.M.W.F.     12/1989
+(  141)     
+(  142)     !     MODIFICATIONS.
+(  143)     !     --------------
+(  144)     !      15-10-01 : FULLIMP mods D.Salmond
+(  145)     !      11-02-04 : Enable tracer transport P. Bechtold
+(  146)     !      M.Hamrud      01-Oct-2003 CY28 Cleaning
+(  147)     !      D.Salmond     22-Nov-2005 Mods for coarser/finer physics
+(  148)     !      F.Vana        18-May-2012 cleaning
+(  149)     !     R. El Khatib 22-Jun-2022 A contribution to simplify phasing after the refactoring of YOMCLI/YOMCST/YOETHF.
+(  150)     !----------------------------------------------------------------------
+(  151)     
+(  152)     USE satur_LOKI_MOD, ONLY: satur_LOKI
+(  153)     USE cumastrn_LOKI_MOD, ONLY: cumastrn_LOKI
+(  154)     USE cuccdia_LOKI_MOD, ONLY: cuccdia_LOKI
+(  155)     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY: REAL64
+(  156)     USE, intrinsic :: ISO_C_BINDING, ONLY: C_SIZEOF
+(  157)     USE MODEL_PHYSICS_ECMWF_MOD, ONLY: MODEL_PHYSICS_ECMWF_TYPE
+(  158)     USE MODEL_PHYSICS_SIMPLINEAR_MOD, ONLY: MODEL_PHYSICS_SIMPLINEAR_TYPE
+(  159)     USE YOERAD, ONLY: TERAD
+(  160)     USE YOM_YGFL, ONLY: TYPE_GFLD
+(  161)     USE YOMCHEM, ONLY: TCHEM
+(  162)     USE SPP_MOD, ONLY: TSPP_CONFIG
+(  163)     USE PARKIND1, ONLY: JPIM, JPRB
+(  164)     USE YOMHOOK, ONLY: LHOOK, JPHOOK
+(  165)     
+(  166)     USE YOMCST, ONLY: TCST
+(  167)     USE YOETHF, ONLY: TTHF
+(  168)     USE YOMPERTPAR, ONLY: TPERTPAR
+(  169)     
+(  170)     IMPLICIT NONE
+(  171)     
+(  172)     
+(  173)     REAL(KIND=JPRB), INTENT(IN) :: PPLDARE
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 13
+
+(  174)     REAL(KIND=JPRB), INTENT(IN) :: PPLRG
+(  175)     INTEGER(KIND=JPIM), INTENT(IN) :: KSTEP
+(  176)     TYPE(TTHF), INTENT(IN) :: YDTHF
+(  177)     TYPE(TCST), INTENT(IN) :: YDCST
+(  178)     TYPE(TERAD), INTENT(IN) :: YDERAD
+(  179)     TYPE(MODEL_PHYSICS_SIMPLINEAR_TYPE), INTENT(IN) :: YDML_PHY_SLIN
+(  180)     TYPE(MODEL_PHYSICS_ECMWF_TYPE), INTENT(IN) :: YDML_PHY_EC
+(  181)     TYPE(TYPE_GFLD), INTENT(IN) :: YGFL
+(  182)     TYPE(TCHEM), INTENT(IN) :: YDCHEM
+(  183)     TYPE(TSPP_CONFIG), INTENT(IN) :: YDSPP_CONFIG
+(  184)     TYPE(TPERTPAR), INTENT(IN) :: YDPERTPAR
+(  185)     INTEGER(KIND=JPIM), INTENT(IN) :: KLON
+(  186)     INTEGER(KIND=JPIM), INTENT(IN) :: KSMAX
+(  187)     INTEGER(KIND=JPIM), INTENT(IN) :: KLEV
+(  188)     INTEGER(KIND=JPIM), INTENT(IN) :: KSPPN2D
+(  189)     INTEGER(KIND=JPIM), INTENT(IN) :: KTRAC
+(  190)     INTEGER(KIND=JPIM), INTENT(IN) :: KIDIA
+(  191)     INTEGER(KIND=JPIM), INTENT(IN) :: KFDIA
+(  192)     LOGICAL, INTENT(IN) :: LDMCAPEA
+(  193)     LOGICAL, INTENT(IN) :: LDLAND(KLON)
+(  194)     LOGICAL, INTENT(IN) :: LDSLPHY
+(  195)     REAL(KIND=JPRB), INTENT(IN) :: PTSPHY
+(  196)     REAL(KIND=JPRB), INTENT(IN) :: PVDIFTS
+(  197)     REAL(KIND=JPRB), INTENT(IN) :: PLCRIT_AER(KLON, KLEV)
+(  198)     REAL(KIND=JPRB), INTENT(IN) :: PTM1(KLON, KLEV)
+(  199)     REAL(KIND=JPRB), INTENT(IN) :: PQM1(KLON, KLEV)
+(  200)     REAL(KIND=JPRB), INTENT(IN) :: PUM1(KLON, KLEV)
+(  201)     REAL(KIND=JPRB), INTENT(IN) :: PVM1(KLON, KLEV)
+(  202)     REAL(KIND=JPRB), INTENT(IN) :: PCM1(KLON, KLEV, KTRAC)
+(  203)     REAL(KIND=JPRB), INTENT(IN) :: PLITOT(KLON, KLEV)
+(  204)     REAL(KIND=JPRB), INTENT(IN) :: PVERVEL(KLON, KLEV)
+(  205)     REAL(KIND=JPRB), INTENT(IN) :: PQHFL(KLON, KLEV + 1)
+(  206)     REAL(KIND=JPRB), INTENT(IN) :: PAHFS(KLON, KLEV + 1)
+(  207)     REAL(KIND=JPRB), INTENT(IN) :: PAPHM1(KLON, KLEV + 1)
+(  208)     REAL(KIND=JPRB), INTENT(IN) :: PAP(KLON, KLEV)
+(  209)     REAL(KIND=JPRB), INTENT(IN) :: PAPH(KLON, KLEV + 1)
+(  210)     REAL(KIND=JPRB), INTENT(IN) :: PGEO(KLON, KLEV)
+(  211)     REAL(KIND=JPRB), INTENT(IN) :: PGEOH(KLON, KLEV + 1)
+(  212)     REAL(KIND=JPRB), INTENT(INOUT) :: PTENT(KLON, KLEV)
+(  213)     REAL(KIND=JPRB), INTENT(INOUT) :: PTENQ(KLON, KLEV)
+(  214)     REAL(KIND=JPRB), INTENT(INOUT) :: PTENU(KLON, KLEV)
+(  215)     REAL(KIND=JPRB), INTENT(INOUT) :: PTENV(KLON, KLEV)
+(  216)     REAL(KIND=JPRB), INTENT(INOUT) :: PTENTA(KLON, KLEV)
+(  217)     REAL(KIND=JPRB), INTENT(INOUT) :: PTENQA(KLON, KLEV)
+(  218)     REAL(KIND=JPRB), INTENT(IN) :: PGAW(KLON)
+(  219)     REAL(KIND=JPRB), INTENT(IN) :: PCUCONVCA(KLON)
+(  220)     REAL(KIND=JPRB), INTENT(IN) :: PGP2DSPP(KLON, KSPPN2D)
+(  221)     REAL(KIND=JPRB), INTENT(IN) :: PSCAV(KTRAC)
+(  222)     REAL(KIND=JPRB), INTENT(IN) :: PSCAV0(KTRAC)
+(  223)     REAL(KIND=JPRB), INTENT(IN) :: PDX(KLON)
+(  224)     REAL(KIND=JPRB), INTENT(INOUT) :: PTENC(KLON, KLEV, KTRAC)
+(  225)     REAL(KIND=JPRB), INTENT(OUT) :: PARPRC(KLON)
+(  226)     INTEGER(KIND=JPIM), INTENT(OUT) :: KTOPC(KLON)
+(  227)     INTEGER(KIND=JPIM), INTENT(OUT) :: KBASEC(KLON)
+(  228)     INTEGER(KIND=JPIM), INTENT(OUT) :: KTYPE(KLON)
+(  229)     INTEGER(KIND=JPIM), INTENT(OUT) :: KCBOT(KLON)
+(  230)     INTEGER(KIND=JPIM), INTENT(OUT) :: KCTOP(KLON)
+(  231)     INTEGER(KIND=JPIM), INTENT(OUT) :: KCBOT_LIG(KLON)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 14
+
+(  232)     INTEGER(KIND=JPIM), INTENT(OUT) :: KCTOP_LIG(KLON)
+(  233)     INTEGER(KIND=JPIM), INTENT(OUT) :: KBOTSC(KLON)
+(  234)     LOGICAL, INTENT(OUT) :: LDCUM(KLON)
+(  235)     LOGICAL, INTENT(OUT) :: LDCUM_LIG(KLON)
+(  236)     LOGICAL, INTENT(OUT) :: LDSC(KLON)
+(  237)     LOGICAL, INTENT(IN) :: LDSHCV(KLON)
+(  238)     REAL(KIND=JPRB), INTENT(OUT) :: PLU(KLON, KLEV)
+(  239)     REAL(KIND=JPRB), INTENT(OUT) :: PLUDE(KLON, KLEV)
+(  240)     REAL(KIND=JPRB), INTENT(OUT) :: PLUDELI(KLON, KLEV, 4)
+(  241)     REAL(KIND=JPRB), INTENT(OUT) :: PSNDE(KLON, KLEV, 2)
+(  242)     REAL(KIND=JPRB), INTENT(OUT) :: PMFU(KLON, KLEV)
+(  243)     REAL(KIND=JPRB), INTENT(OUT) :: PMFD(KLON, KLEV)
+(  244)     REAL(KIND=JPRB), INTENT(OUT) :: PLGLAC(KLON, KLEV)
+(  245)     REAL(KIND=JPRB), INTENT(OUT) :: PDIFCQ(KLON, KLEV + 1)
+(  246)     REAL(KIND=JPRB), INTENT(OUT) :: PDIFCS(KLON, KLEV + 1)
+(  247)     REAL(KIND=JPRB), INTENT(OUT) :: PFHPCL(KLON, KLEV + 1)
+(  248)     REAL(KIND=JPRB), INTENT(OUT) :: PFHPCN(KLON, KLEV + 1)
+(  249)     REAL(KIND=JPRB), INTENT(OUT) :: PFPLCL(KLON, KLEV + 1)
+(  250)     REAL(KIND=JPRB), INTENT(OUT) :: PFPLCN(KLON, KLEV + 1)
+(  251)     REAL(KIND=JPRB), INTENT(OUT) :: PLRAIN(KLON, KLEV)
+(  252)     REAL(KIND=JPRB), INTENT(OUT) :: PRSUD(KLON, KLEV, 2)
+(  253)     REAL(KIND=JPRB), INTENT(OUT) :: PSTRCU(KLON, KLEV + 1)
+(  254)     REAL(KIND=JPRB), INTENT(OUT) :: PSTRCV(KLON, KLEV + 1)
+(  255)     REAL(KIND=JPRB), INTENT(OUT) :: PFCQLF(KLON, KLEV + 1)
+(  256)     REAL(KIND=JPRB), INTENT(OUT) :: PFCQIF(KLON, KLEV + 1)
+(  257)     REAL(KIND=JPRB), INTENT(OUT) :: PMFUDE_RATE(KLON, KLEV)
+(  258)     REAL(KIND=JPRB), INTENT(OUT) :: PMFDDE_RATE(KLON, KLEV)
+(  259)     REAL(KIND=JPRB), INTENT(OUT) :: PCAPE(KLON)
+(  260)     REAL(KIND=JPRB), INTENT(OUT) :: PWMEAN(KLON)
+(  261)     REAL(KIND=JPRB), INTENT(OUT) :: PVDISCU(KLON)
+(  262)     REAL(KIND=JPRB), INTENT(OUT) :: PWU(KLON, KLEV)
+(  263)     REAL(KIND=JPRB), INTENT(OUT) :: PDISS(KLON, KLEV)
+(  264)     
+(  265)     REAL(KIND=JPRB) :: ZTP1(KLON, KLEV), ZQP1(KLON, KLEV), ZUP1(KLON, KLEV), ZVP1(KLON, KLEV), ZTU(KLON, KLEV), ZQU(KLON, KLEV),  &
+(  266)     & ZQSAT(KLON, KLEV), ZRAIN(KLON)
+(  267)     
+(  268)     REAL(KIND=JPRB) :: ZCP1(KLON, KLEV, KTRAC)
+(  269)     
+(  270)     !-----------------------------------------------------------------------
+(  271)     
+(  272)     REAL(KIND=JPRB) :: ZQEA(KLON, KLEV), ZTEA(KLON, KLEV), ZVEA(KLON, KLEV), ZUEA(KLON, KLEV), ZENTHD(KLON, KLEV),  &
+(  273)     & ZENTHS(KLON, KLEV)
+(  274)     REAL(KIND=JPRB) :: ZCONDFLL, ZCONDFLN
+(  275)     
+(  276)     INTEGER(KIND=JPIM) :: IFLAG, JK, JL, JN
+(  277)     
+(  278)     REAL(KIND=JPRB) :: ZCP, ZGDPH, ZEPS
+(  279)     
+(  280)     LOGICAL :: LLTDKMF
+(  281)     REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+(  282)     
+(  283)     
+(  284)     !DIR$ VFUNCTION EXPHF
+(  285) # 285 "./cucalln_mf.scc_stack.F90"
+(  285) # 1 "./fcttre.func.h"
+(    1) ! (C) Copyright 1988- ECMWF.
+(    2) !
+(    3) ! This software is licensed under the terms of the Apache Licence Version 2.0
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 15
+
+(    4) ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
+(    5) !
+(    6) ! In applying this licence, ECMWF does not waive the privileges and immunities
+(    7) ! granted to it by virtue of its status as an intergovernmental organisation
+(    8) ! nor does it submit to any jurisdiction.
+(    9) # 10 "./fcttre.func.h"
+(   10) !*
+(   11) !     ------------------------------------------------------------------
+(   12) # 13 "./fcttre.func.h"
+(   13) !     This COMDECK includes the Thermodynamical functions for the cy39
+(   14) !       ECMWF Physics package.
+(   15) !       Consistent with YOMCST Basic physics constants, assuming the
+(   16) !       partial pressure of water vapour is given by a first order
+(   17) !       Taylor expansion of Qs(T) w.r.t. to Temperature, using constants
+(   18) !       in YOETHF
+(   19) !       Two sets of functions are available. In the first set only the
+(   20) !       cases water or ice are distinguished by temperature.  This set 
+(   21) !       consists of the functions FOEDELTA,FOEEW,FOEDE and FOELH.
+(   22) !       The second set considers, besides the two cases water and ice 
+(   23) !       also a mix of both for the temperature range YDTHF%RTICE < T < YDTHF%RTWAT.
+(   24) !       This set contains FOEALFA,FOEEWM,FOEDEM,FOELDCPM and FOELHM.
+(   25) !       FKOOP modifies the ice saturation mixing ratio for homogeneous 
+(   26) !       nucleation. FOE_DEWM_DT provides an approximate first derivative
+(   27) !       of FOEEWM.
+(   28) # 29 "./fcttre.func.h"
+(   29) !       Depending on the consideration of mixed phases either the first 
+(   30) !       set (e.g. surface, post-processing) or the second set 
+(   31) !       (e.g. clouds, condensation, convection) should be used.
+(   32) # 33 "./fcttre.func.h"
+(   33) !     ------------------------------------------------------------------
+(   34) !     *****************************************************************
+(   35) # 36 "./fcttre.func.h"
+(   36) !                NO CONSIDERATION OF MIXED PHASES
+(   37) # 38 "./fcttre.func.h"
+(   38) !     *****************************************************************
+(   39) REAL(KIND=JPRB) :: FOEDELTA
+(   40) REAL(KIND=JPRB) :: PTARE
+(   41) FOEDELTA (PTARE) = MAX (0.0_JPRB,SIGN(1.0_JPRB,PTARE-YDCST%RTT))
+(   42) # 43 "./fcttre.func.h"
+(   43) !                  FOEDELTA = 1    water
+(   44) !                  FOEDELTA = 0    ice
+(   45) # 46 "./fcttre.func.h"
+(   46) !     THERMODYNAMICAL FUNCTIONS .
+(   47) # 48 "./fcttre.func.h"
+(   48) !     Pressure of water vapour at saturation
+(   49) !        INPUT : PTARE = TEMPERATURE
+(   50) REAL(KIND=JPRB) :: FOEEW,FOEDE,FOEDESU,FOELH,FOELDCP
+(   51) FOEEW ( PTARE ) = YDTHF%R2ES*EXP (&
+(   52)   &(YDTHF%R3LES*FOEDELTA(PTARE)+YDTHF%R3IES*(1.0_JPRB-FOEDELTA(PTARE)))*(PTARE-YDCST%RTT)&
+(   53) &/ (PTARE-(YDTHF%R4LES*FOEDELTA(PTARE)+YDTHF%R4IES*(1.0_JPRB-FOEDELTA(PTARE)))))
+(   54) # 55 "./fcttre.func.h"
+(   55) FOEDE ( PTARE ) = &
+(   56)   &(FOEDELTA(PTARE)*YDTHF%R5ALVCP+(1.0_JPRB-FOEDELTA(PTARE))*YDTHF%R5ALSCP)&
+(   57) &/ (PTARE-(YDTHF%R4LES*FOEDELTA(PTARE)+YDTHF%R4IES*(1.0_JPRB-FOEDELTA(PTARE))))**2
+(   58) # 59 "./fcttre.func.h"
+(   59) FOEDESU ( PTARE ) = &
+(   60)   &(FOEDELTA(PTARE)*YDTHF%R5LES+(1.0_JPRB-FOEDELTA(PTARE))*YDTHF%R5IES)&
+(   61) &/ (PTARE-(YDTHF%R4LES*FOEDELTA(PTARE)+YDTHF%R4IES*(1.0_JPRB-FOEDELTA(PTARE))))**2
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 16
+
+(   62) # 63 "./fcttre.func.h"
+(   63) FOELH ( PTARE ) =&
+(   64)          &FOEDELTA(PTARE)*YDCST%RLVTT + (1.0_JPRB-FOEDELTA(PTARE))*YDCST%RLSTT
+(   65) # 66 "./fcttre.func.h"
+(   66) FOELDCP ( PTARE ) = &
+(   67)          &FOEDELTA(PTARE)*YDTHF%RALVDCP + (1.0_JPRB-FOEDELTA(PTARE))*YDTHF%RALSDCP
+(   68) # 69 "./fcttre.func.h"
+(   69) !     *****************************************************************
+(   70) # 71 "./fcttre.func.h"
+(   71) !           CONSIDERATION OF MIXED PHASES
+(   72) # 73 "./fcttre.func.h"
+(   73) !     *****************************************************************
+(   74) # 75 "./fcttre.func.h"
+(   75) !     FOEALFA is calculated to distinguish the three cases:
+(   76) # 77 "./fcttre.func.h"
+(   77) !                       FOEALFA=1            water phase
+(   78) !                       FOEALFA=0            ice phase
+(   79) !                       0 < FOEALFA < 1      mixed phase
+(   80) # 81 "./fcttre.func.h"
+(   81) !               INPUT : PTARE = TEMPERATURE
+(   82) REAL(KIND=JPRB) :: FOEALFA
+(   83) FOEALFA (PTARE) = MIN(1.0_JPRB,((MAX(YDTHF%RTICE,MIN(YDTHF%RTWAT,PTARE))-YDTHF%RTICE)&
+(   84)  &*YDTHF%RTWAT_RTICE_R)**2) 
+(   85) # 87 "./fcttre.func.h"
+(   87) !     Pressure of water vapour at saturation
+(   88) !        INPUT : PTARE = TEMPERATURE
+(   89) REAL(KIND=JPRB) :: FOEEWM,FOEDEM,FOELDCPM,FOELHM,FOE_DEWM_DT
+(   90) FOEEWM ( PTARE ) = YDTHF%R2ES *&
+(   91)      &(FOEALFA(PTARE)*EXP(YDTHF%R3LES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4LES))+&
+(   92)   &(1.0_JPRB-FOEALFA(PTARE))*EXP(YDTHF%R3IES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4IES)))
+(   93) # 94 "./fcttre.func.h"
+(   94) FOE_DEWM_DT( PTARE ) = YDTHF%R2ES * ( &
+(   95)      & YDTHF%R3LES*FOEALFA(PTARE)*EXP(YDTHF%R3LES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4LES)) &
+(   96)      &    *(YDCST%RTT-YDTHF%R4LES)/(PTARE-YDTHF%R4LES)**2 + &
+(   97)      & YDTHF%R3IES*(1.0-FOEALFA(PTARE))*EXP(YDTHF%R3IES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4IES)) &
+(   98)      &    *(YDCST%RTT-YDTHF%R4IES)/(PTARE-YDTHF%R4IES)**2)
+(   99) # 100 "./fcttre.func.h"
+(  100) FOEDEM ( PTARE ) = FOEALFA(PTARE)*YDTHF%R5ALVCP*(1.0_JPRB/(PTARE-YDTHF%R4LES)**2)+&
+(  101)              &(1.0_JPRB-FOEALFA(PTARE))*YDTHF%R5ALSCP*(1.0_JPRB/(PTARE-YDTHF%R4IES)**2)
+(  102) # 103 "./fcttre.func.h"
+(  103) FOELDCPM ( PTARE ) = FOEALFA(PTARE)*YDTHF%RALVDCP+&
+(  104)             &(1.0_JPRB-FOEALFA(PTARE))*YDTHF%RALSDCP
+(  105) # 106 "./fcttre.func.h"
+(  106) FOELHM ( PTARE ) =&
+(  107)          &FOEALFA(PTARE)*YDCST%RLVTT+(1.0_JPRB-FOEALFA(PTARE))*YDCST%RLSTT
+(  108) # 110 "./fcttre.func.h"
+(  110) !     Temperature normalization for humidity background change of variable
+(  111) !        INPUT : PTARE = TEMPERATURE
+(  112) REAL(KIND=JPRB) :: FOETB
+(  113) FOETB ( PTARE )=FOEALFA(PTARE)*YDTHF%R3LES*(YDCST%RTT-YDTHF%R4LES)*(1.0_JPRB/(PTARE-YDTHF%R4LES)**2)+&
+(  114)              &(1.0_JPRB-FOEALFA(PTARE))*YDTHF%R3IES*(YDCST%RTT-YDTHF%R4IES)*(1.0_JPRB/(PTARE-YDTHF%R4IES)**2)
+(  115) # 116 "./fcttre.func.h"
+(  116) !     ------------------------------------------------------------------
+(  117) !     *****************************************************************
+(  118) # 119 "./fcttre.func.h"
+(  119) !           CONSIDERATION OF DIFFERENT MIXED PHASE FOR CONV
+(  120) # 121 "./fcttre.func.h"
+(  121) !     *****************************************************************
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 17
+
+(  122) # 123 "./fcttre.func.h"
+(  123) !     FOEALFCU is calculated to distinguish the three cases:
+(  124) # 125 "./fcttre.func.h"
+(  125) !                       FOEALFCU=1            water phase
+(  126) !                       FOEALFCU=0            ice phase
+(  127) !                       0 < FOEALFCU < 1      mixed phase
+(  128) # 129 "./fcttre.func.h"
+(  129) !               INPUT : PTARE = TEMPERATURE
+(  130) REAL(KIND=JPRB) :: FOEALFCU 
+(  131) FOEALFCU (PTARE) = MIN(1.0_JPRB,((MAX(YDTHF%RTICECU,MIN(YDTHF%RTWAT,PTARE))&
+(  132) &-YDTHF%RTICECU)*YDTHF%RTWAT_RTICECU_R)**2) 
+(  133) # 135 "./fcttre.func.h"
+(  135) !     Pressure of water vapour at saturation
+(  136) !        INPUT : PTARE = TEMPERATURE
+(  137) REAL(KIND=JPRB) :: FOEEWMCU,FOEDEMCU,FOELDCPMCU,FOELHMCU
+(  138) FOEEWMCU ( PTARE ) = YDTHF%R2ES *&
+(  139)      &(FOEALFCU(PTARE)*EXP(YDTHF%R3LES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4LES))+&
+(  140)   &(1.0_JPRB-FOEALFCU(PTARE))*EXP(YDTHF%R3IES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4IES)))
+(  141) # 142 "./fcttre.func.h"
+(  142) FOEDEMCU ( PTARE )=FOEALFCU(PTARE)*YDTHF%R5ALVCP*(1.0_JPRB/(PTARE-YDTHF%R4LES)**2)+&
+(  143)              &(1.0_JPRB-FOEALFCU(PTARE))*YDTHF%R5ALSCP*(1.0_JPRB/(PTARE-YDTHF%R4IES)**2)
+(  144) # 145 "./fcttre.func.h"
+(  145) FOELDCPMCU ( PTARE ) = FOEALFCU(PTARE)*YDTHF%RALVDCP+&
+(  146)             &(1.0_JPRB-FOEALFCU(PTARE))*YDTHF%RALSDCP
+(  147) # 148 "./fcttre.func.h"
+(  148) FOELHMCU ( PTARE ) =&
+(  149)          &FOEALFCU(PTARE)*YDCST%RLVTT+(1.0_JPRB-FOEALFCU(PTARE))*YDCST%RLSTT
+(  150) !     ------------------------------------------------------------------
+(  151) # 152 "./fcttre.func.h"
+(  152) !     Pressure of water vapour at saturation
+(  153) !     This one is for the WMO definition of saturation, i.e. always
+(  154) !     with respect to water.
+(  155) !     
+(  156) !     Duplicate to FOEELIQ and FOEEICE for separate ice variable
+(  157) !     FOEELIQ always respect to water 
+(  158) !     FOEEICE always respect to ice 
+(  159) !     FOEELIQ2ICE is the ratio of vapour pressures over water and ice 
+(  160) !       (analytically simplified to avoid a suspected Cray compiler bug and using a single call to exp)
+(  161) !     (could use FOEEW and FOEEWMO, but naming convention unclear)
+(  162) !     FOELSON returns e wrt liquid water using D Sonntag (1994, Met. Zeit.)
+(  163) !      - now recommended for use with radiosonde data (WMO CIMO guide, 2014)
+(  164) !      unlike the FOEE functions does not include 1/(YDCST%RETV+1.0_JPRB) factor
+(  165) # 166 "./fcttre.func.h"
+(  166) REAL(KIND=JPRB) :: FOEEWMO, FOEELIQ, FOEEICE, FOEELIQ2ICE, FOELSON 
+(  167) FOEEWMO( PTARE ) = YDTHF%R2ES*EXP(YDTHF%R3LES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4LES))
+(  168) FOEELIQ( PTARE ) = YDTHF%R2ES*EXP(YDTHF%R3LES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4LES))
+(  169) FOEEICE( PTARE ) = YDTHF%R2ES*EXP(YDTHF%R3IES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4IES))
+(  170) FOEELIQ2ICE( PTARE )  = EXP(      (PTARE-YDCST%RTT)*(YDTHF%R3LES/(PTARE-YDTHF%R4LES) - YDTHF%R3IES/(PTARE-YDTHF%R4IES)))
+(  171) FOELSON( PTARE ) = EXP( -6096.9385_JPRB/PTARE + 21.2409642_JPRB &
+(  172) 	             - 2.711193E-2_JPRB * PTARE    &
+(  173)                      + 1.673952E-5_JPRB * PTARE**2 &
+(  174) 		     + 2.433502_JPRB * LOG(PTARE))
+(  175) # 176 "./fcttre.func.h"
+(  176) REAL(KIND=JPRB) :: FOEEWM_V,FOEEWMCU_V,FOELES_V,FOEIES_V
+(  177) REAL(KIND=JPRB) :: EXP1,EXP2
+(  178)       FOELES_V(PTARE)=YDTHF%R3LES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4LES)
+(  179)       FOEIES_V(PTARE)=YDTHF%R3IES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4IES)
+(  180)       FOEEWM_V( PTARE,EXP1,EXP2 )=YDTHF%R2ES*(FOEALFA(PTARE)*EXP1+ &
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 18
+
+(  181)           & (1.0_JPRB-FOEALFA(PTARE))*EXP2)
+(  182)       FOEEWMCU_V ( PTARE,EXP1,EXP2 ) = YDTHF%R2ES*(FOEALFCU(PTARE)*EXP1+&
+(  183)           &(1.0_JPRB-FOEALFCU(PTARE))*EXP2)
+(  184) # 286 "./cucalln_mf.scc_stack.F90"
+(  286) # 286 "./cucalln_mf.scc_stack.F90"
+(  286) # 1 "./fcttrm.func.h"
+(    1) !*
+(    2) !     ------------------------------------------------------------------
+(    3) # 4 "./fcttrm.func.h"
+(    4) !     CE COMDECK CONTIENT DEUX GROUPES DE FONCTIONS THERMODYNAMIQUES :
+(    5) # 6 "./fcttrm.func.h"
+(    6) !        * LE PREMIER (RLV,RLS,RLF,ESW,ESS,ES) CORRESPOND A DES
+(    7) !     FONCTIONS ABSOLUES (OU INTRINSEQUES) QUI DOIVENT ETRE UTILISEES
+(    8) !     POUR TOUT CE QUI CONCERNE LE MONDE REEL (DONNEES OBSERVEES ET
+(    9) !     SORTIES DESTINEES A ETRE COMPAREES A DE TELLES DONNEES).
+(   10) # 11 "./fcttrm.func.h"
+(   11) !        * LE SECOND (FOEW,FODLEW,FOQS,FODQS,FOLH) CORRESPOND AU MONDE
+(   12) !     DE LA PHYSIQUE DU MODELE (ET PAR CONSEQUENT DE TOUTE LES PARTIES
+(   13) !     DU CODE QUI DOIVENT ETRE COMPATIBLES AVEC CETTE PHYSIQUE :
+(   14) !     ANALYSE/DYNAMIQUE/POST-PROCESSING ... ). LES DIFFERENCES ENTRE LES
+(   15) !     DEUX GROUPES VIENNENT, DANS LA CONFIGURATION ACTUELLE DE LA
+(   16) !     PHYSIQUE, DES POINTS SUIVANTS :
+(   17) !         - CALCULS RELATIFS A LA VARIABLE Q DU MODELE
+(   18) !         - CALCULS DE DERIVATION PAR RAPPORT A LA TEMPERATURE
+(   19) !         - ABSENCE D'ETATS HORS-EQUILIBRE = UNE SEULE CHALEUR LATENTE
+(   20) !           DE FUSION
+(   21) !         - POSSIBILITE DE TRAVAILLER SANS LA PHASE GLACE = INDICE DE
+(   22) !           TEST BINAIRE.
+(   23) # 24 "./fcttrm.func.h"
+(   24) !     ------------------------------------------------------------------
+(   25) !     ABSOLUTE THERMODYNAMICAL FUNCTIONS .
+(   26) # 28 "./fcttrm.func.h"
+(   28) !     RLV : LATENT HEAT OF VAPOURISATION
+(   29) !     RLS : LATENT HEAT OF SUBLIMATION
+(   30) !     RLF : LATENT HEAT OF FUSION
+(   31) !     ESW : SATURATION IN PRESENCE OF WATER
+(   32) !     ESS : SATURATION IN PRESENCE OF ICE
+(   33) !     ES  : SATURATION (IF T>YDCST%RTT THEN WATER ; IF T<YDCST%RTT THEN ICE)
+(   34) !        INPUT (FOR ALL SIX FUNCTIONS) : PTARG = TEMPERATURE .
+(   35) REAL(KIND=JPRB) :: RLV,RLS,RLF,ESW,ESS,ES
+(   36) REAL(KIND=JPRB) :: PTARG
+(   37) # 38 "./fcttrm.func.h"
+(   38) RLV(PTARG)=YDCST%RLVTT+(YDCST%RCPV-YDCST%RCW)*(PTARG-YDCST%RTT)
+(   39) RLS(PTARG)=YDCST%RLSTT+(YDCST%RCPV-YDCST%RCS)*(PTARG-YDCST%RTT)
+(   40) RLF(PTARG)=RLS(PTARG)-RLV(PTARG)
+(   41) ESW(PTARG)=EXP(YDCST%RALPW-YDCST%RBETW/PTARG-YDCST%RGAMW*LOG(PTARG))
+(   42) ESS(PTARG)=EXP(YDCST%RALPS-YDCST%RBETS/PTARG-YDCST%RGAMS*LOG(PTARG))
+(   43) ES (PTARG)=EXP(&
+(   44)           &(YDCST%RALPW+YDCST%RALPD*MAX(0.0_JPRB,SIGN(1.0_JPRB,YDCST%RTT-PTARG)))&
+(   45)          &-(YDCST%RBETW+YDCST%RBETD*MAX(0.0_JPRB,SIGN(1.0_JPRB,YDCST%RTT-PTARG)))/PTARG &
+(   46)          &-(YDCST%RGAMW+YDCST%RGAMD*MAX(0.0_JPRB,SIGN(1.0_JPRB,YDCST%RTT-PTARG)))*LOG(PTARG))
+(   47) # 48 "./fcttrm.func.h"
+(   48) !     ------------------------------------------------------------------
+(   49) !     FONCTIONS THERMODYNAMIQUES : FONCTIONS DEFINIES DE LA PHYSIQUE .
+(   50) # 52 "./fcttrm.func.h"
+(   52) !     FONCTION DE LA TENSION DE VAPEUR SATURANTE .
+(   53) !        INPUT : PTARG = TEMPERATURE
+(   54) !                PDELARG = 0 SI EAU (QUELQUE SOIT PTARG)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 19
+
+(   55) !                          1 SI GLACE (QUELQUE SOIT PTARG).
+(   56) REAL(KIND=JPRB) :: FOEW
+(   57) REAL(KIND=JPRB) :: PDELARG
+(   58) FOEW ( PTARG,PDELARG ) = EXP (&
+(   59)     &( YDCST%RALPW+PDELARG*YDCST%RALPD )&
+(   60)   &- ( YDCST%RBETW+PDELARG*YDCST%RBETD ) / PTARG &
+(   61)   &- ( YDCST%RGAMW+PDELARG*YDCST%RGAMD ) * LOG(PTARG) )
+(   62) # 63 "./fcttrm.func.h"
+(   63) !     FONCTION DERIVEE DU LOGARITHME NEPERIEN DE LA PRECEDENTE (FOEW) .
+(   64) !        INPUT : PTARG = TEMPERATURE
+(   65) !                PDELARG = 0 SI EAU (QUELQUE SOIT PTARG)
+(   66) !                          1 SI GLACE (QUELQUE SOIT PTARG).
+(   67) REAL(KIND=JPRB) :: FODLEW
+(   68) FODLEW ( PTARG,PDELARG ) = (&
+(   69)       &( YDCST%RBETW+PDELARG*YDCST%RBETD )&
+(   70)     &- ( YDCST%RGAMW+PDELARG*YDCST%RGAMD ) * PTARG )&
+(   71)     &/ ( PTARG*PTARG )
+(   72) # 73 "./fcttrm.func.h"
+(   73) !     FONCTION HUMIDITE SPECIFIQUE SATURANTE .
+(   74) !        INPUT : PESPFAR = RAPPORT FOEW SUR PRESSION.
+(   75) REAL(KIND=JPRB) :: FOQS
+(   76) REAL(KIND=JPRB) :: PESPFAR
+(   77) FOQS ( PESPFAR ) = PESPFAR / ( 1.0_JPRB+YDCST%RETV*MAX(0.0_JPRB,&
+(   78)     &(1.0_JPRB-PESPFAR)) )
+(   79) # 80 "./fcttrm.func.h"
+(   80) !     FONCTION HUMIDITE SPECIFIQUE SATURANTE, COMME FONCTION DIRECTE DE T ET P.
+(   81) !        INPUT : PTARG  = TEMPERATURE.
+(   82) !                PPRESS = PRESSION.
+(   83) REAL(KIND=JPRB) :: FOQSTP
+(   84) REAL(KIND=JPRB) :: PPRESS
+(   85) FOQSTP(PTARG,PPRESS)=FOQS(FOEW(PTARG,MAX(0.0_JPRB,SIGN(1.0_JPRB,YDCST%RTT-PTARG)))/PPRESS)
+(   86) # 87 "./fcttrm.func.h"
+(   87) !     FONCTION DERIVEE EN TEMPERATURE DE LA PRECEDENTE (FOQS) .
+(   88) !        INPUT : PQSFARG = FOQS
+(   89) !                PESPFAR = RAPPORT FOEW SUR PRESSION
+(   90) !                PDLEFAR = FODLEW.
+(   91) REAL(KIND=JPRB) :: FODQS 
+(   92) REAL(KIND=JPRB) :: PQSFARG,PDLEFAR 
+(   93) FODQS ( PQSFARG,PESPFAR,PDLEFAR ) = ( PQSFARG &
+(   94)    &* (1.0_JPRB-PQSFARG)*PDLEFAR ) / (1.0_JPRB-PESPFAR)
+(   95) # 96 "./fcttrm.func.h"
+(   96) !     FONCTION COMPOSE DE FODQS ET FOQS AVEC SIMPLIFICATION DU TERME (1-PESPFAR) POUR EVITER LES OVERFLOWS
+(   97) !     FDQW (PESPFAR, PDLEFAR) = FODQS (FOQS (PESPFAR), PESPFAR, PDLEFAR)
+(   98) !        INPUT : PESPFAR = RAPPORT FOEW SUR PRESSION
+(   99) !                PDLEFAR = FODLEW
+(  100) REAL(KIND=JPRB) :: FDQW
+(  101) FDQW (PESPFAR, PDLEFAR) = PDLEFAR * PESPFAR * (1.0_JPRB+YDCST%RETV) / ( 1.0_JPRB+YDCST%RETV*MAX(0.0_JPRB,(1.0_JPRB-PESPFAR)) ) ** 2._JPRB
+(  102) !     FONCTION CHALEUR LATENTE .
+(  103) !        INPUT : PTARG = TEMPERATURE
+(  104) !                PDELARG = 0 SI EAU (QUELQUE SOIT PTARG)
+(  105) !                          1 SI GLACE (QUELQUE SOIT PTARG).
+(  106) REAL(KIND=JPRB) :: FOLH
+(  107) FOLH ( PTARG,PDELARG ) =  YDCST%RV * (&
+(  108)     &( YDCST%RBETW+PDELARG*YDCST%RBETD )&
+(  109)   &- ( YDCST%RGAMW+PDELARG*YDCST%RGAMD ) * PTARG )
+(  110) !     ------------------------------------------------------------------
+(  111) # 287 "./cucalln_mf.scc_stack.F90"
+(  287) # 287 "./cucalln_mf.scc_stack.F90"
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 20
+
+(  287) !$acc routine vector
+(  288)     INTEGER(KIND=8) :: YLSTACK_L
+(  289)     INTEGER(KIND=8), INTENT(INOUT) :: YDSTACK_L
+(  290)     POINTER(IP_ZTP1, ZTP1)
+(  291)     POINTER(IP_ZQP1, ZQP1)
+(  292)     POINTER(IP_ZUP1, ZUP1)
+(  293)     POINTER(IP_ZVP1, ZVP1)
+(  294)     POINTER(IP_ZTU, ZTU)
+(  295)     POINTER(IP_ZQU, ZQU)
+(  296)     POINTER(IP_ZQSAT, ZQSAT)
+(  297)     POINTER(IP_ZRAIN, ZRAIN)
+(  298)     POINTER(IP_ZCP1, ZCP1)
+(  299)     POINTER(IP_ZQEA, ZQEA)
+(  300)     POINTER(IP_ZTEA, ZTEA)
+(  301)     POINTER(IP_ZVEA, ZVEA)
+(  302)     POINTER(IP_ZUEA, ZUEA)
+(  303)     POINTER(IP_ZENTHD, ZENTHD)
+(  304)     POINTER(IP_ZENTHS, ZENTHS)
+(  305)     YLSTACK_L = YDSTACK_L
+(  306)     IP_ZTP1 = YLSTACK_L
+(  307)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  308)     IP_ZQP1 = YLSTACK_L
+(  309)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  310)     IP_ZUP1 = YLSTACK_L
+(  311)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  312)     IP_ZVP1 = YLSTACK_L
+(  313)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  314)     IP_ZTU = YLSTACK_L
+(  315)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  316)     IP_ZQU = YLSTACK_L
+(  317)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  318)     IP_ZQSAT = YLSTACK_L
+(  319)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  320)     IP_ZRAIN = YLSTACK_L
+(  321)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  322)     IP_ZCP1 = YLSTACK_L
+(  323)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*KTRAC*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  324)     IP_ZQEA = YLSTACK_L
+(  325)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  326)     IP_ZTEA = YLSTACK_L
+(  327)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  328)     IP_ZVEA = YLSTACK_L
+(  329)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  330)     IP_ZUEA = YLSTACK_L
+(  331)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  332)     IP_ZENTHD = YLSTACK_L
+(  333)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  334)     IP_ZENTHS = YLSTACK_L
+(  335)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
+(  337) !$acc & PCUCONVCA, PGP2DSPP, PTENT, PTENQ, PTENU, PTENV, PTENTA, PTENQA, PARPRC, KTOPC, KBASEC, KTYPE, KCBOT, KCTOP, KBOTSC,  &
+(  338) !$acc & LDCUM, LDSC, KCBOT_LIG, KCTOP_LIG, LDCUM_LIG, LDSHCV, PLCRIT_AER, PLU, PLUDE, PLUDELI, PSNDE, PMFU, PMFD, PLGLAC,  &
+(  339) !$acc & PDIFCQ, PDIFCS, PFHPCL, PFHPCN, PFPLCL, PFPLCN, PLRAIN, PRSUD, PSTRCU, PSTRCV, PFCQLF, PFCQIF, PMFUDE_RATE, PMFDDE_RATE,  &
+(  340) !$acc & PCAPE, PWU, PWMEAN, PVDISCU, PDISS, PCM1, PTENC, PSCAV, PSCAV0, YDTHF, YDCST, YDERAD, YDML_PHY_SLIN, YDML_PHY_EC, YGFL,  &
+(  341) !$acc & YDCHEM, YDSPP_CONFIG, YDPERTPAR )
+(  342)     
+(  343)     !-----------------------------------------------------------------------
+(  344)     
+(  345)     !*    0.1          STORE T,Q,X,Y TENDENCIES FOR FLUX COMPUTATIONS
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 21
+
+(  346)     !*                 ----------------------------------------------
+(  347)     
+(  348)     
+(  349)     ! Setup of tendencies
+(  350)     
+(  351) !$acc loop vector
+(  352)     DO JL=KIDIA,KFDIA
+(  353) !$acc loop seq
+(  354)       DO JK=1,KLEV
+(  355)         ZQEA(JL, JK) = PTENQ(JL, JK)
+(  356)         ZTEA(JL, JK) = PTENT(JL, JK)
+(  357)         ZVEA(JL, JK) = PTENV(JL, JK)
+(  358)         ZUEA(JL, JK) = PTENU(JL, JK)
+(  359)         ZENTHD(JL, JK) = 0.0_JPRB
+(  360)         ZENTHS(JL, JK) = 0.0_JPRB
+(  361)       END DO
+(  362)       
+(  363) !$acc loop seq
+(  364)       DO JK=1,KLEV + 1
+(  365)         PFPLCL(JL, JK) = 0.0_JPRB
+(  366)         PFPLCN(JL, JK) = 0.0_JPRB
+(  367)       END DO
+(  368)       
+(  369)       !-----------------------------------------------------------------------
+(  370)       
+(  371)       !*    1.           UPDATE PROGN. VALUES DEPENDING ON
+(  372)       !                  TIME INTEGRATION AND CALCULATE QS
+(  373)       !*                 ---------------------------------
+(  374)       !-------------------------------------------------
+(  375)       ! Protection in division. ZEPS is choosen as 1000 times lower
+(  376)       ! than the actual values of qv (1.e-7 kg/kg) met in the high atmosphere.
+(  377)       ! This ZEPS value, used in multiplication only, is relevant for both simple and
+(  378)       ! double precision purpose.
+(  379)       !-------------------------------------------------
+(  380)       ZEPS = 1.0E-10_JPRB
+(  381) !$acc loop seq
+(  382)       DO JK=1,KLEV
+(  383)         ZUP1(JL, JK) = PUM1(JL, JK) + PTENU(JL, JK)*PTSPHY
+(  384)         ZVP1(JL, JK) = PVM1(JL, JK) + PTENV(JL, JK)*PTSPHY
+(  385)         ZTP1(JL, JK) = PTM1(JL, JK) + PTENT(JL, JK)*PTSPHY
+(  386)         ZQP1(JL, JK) = PQM1(JL, JK) + PTENQ(JL, JK)*PTSPHY
+(  387)         ZQSAT(JL, JK) = ZQP1(JL, JK)
+(  388)         IF (ZQSAT(JL, JK) <= 0.0_JPRB) ZQSAT(JL, JK) = ZEPS
+(  389)       END DO
+(  390)       
+(  391)       IF (LDSLPHY) THEN
+(  392)         IF (KTRAC > 0 .and. YDML_PHY_EC%YREPHY%LMFTRAC) THEN
+(  393) !$acc loop seq
+(  394)           DO JN=1,KTRAC
+(  395) !$acc loop seq
+(  396)             DO JK=1,KLEV
+(  397)               ! attention: transport is for positive definit quantities only
+(  398)               ! ZCP1(JL,JK,JN)=MAX(0._JPRB,PCM1(JL,JK,JN))
+(  399)               ZCP1(JL, JK, JN) = PCM1(JL, JK, JN)
+(  400)             END DO
+(  401)           END DO
+(  402)         END IF
+(  403)       ELSE
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 22
+
+(  404)         IF (KTRAC > 0 .and. YDML_PHY_EC%YREPHY%LMFTRAC) THEN
+(  405) !$acc loop seq
+(  406)           DO JN=1,KTRAC
+(  407) !$acc loop seq
+(  408)             DO JK=1,KLEV
+(  409)               ! attention: transport is for positive definit quantities only
+(  410)               ! ZCP1(JL,JK,JN)=MAX(0._JPRB,PCM1(JL,JK,JN)+PTENC(JL,JK,JN)*PTSPHY)
+(  411)               ZCP1(JL, JK, JN) = PCM1(JL, JK, JN) + PTENC(JL, JK, JN)*PTSPHY
+(  412)             END DO
+(  413)           END DO
+(  414)         END IF
+(  415)       END IF
+(  416)     END DO
+(  417)     
+(  418)     
+(  419)     IFLAG = 1
+(  420)     CALL SATUR_LOKI(YDTHF, YDCST, KIDIA, KFDIA, KLON, YDML_PHY_EC%YRECUMF%NJKT2, KLEV, YDML_PHY_SLIN%YREPHLI%LPHYLIN, PAP, ZTP1,  &
+(  421)     & ZQSAT, IFLAG, YDSTACK_L=YLSTACK_L)
+(  422)     
+(  423)     
+(  424) !$acc loop vector
+(  425)     DO JL=KIDIA,KFDIA
+(  426)       ZRAIN(JL) = 0.0_JPRB
+(  427)     END DO
+(  428)     
+(  429)     
+(  430)     !-----------------------------------------------------------------------
+(  431)     
+(  432)     !*    2.     CALL 'CUMASTR'(MASTER-ROUTINE FOR CUMULUS PARAMETERIZATION)
+(  433)     !*           -----------------------------------------------------------
+(  434)     
+(  435)     LLTDKMF = .true.
+(  436)     CALL CUMASTRN_LOKI(PPLDARE, PPLRG, YDTHF, YDCST, YDML_PHY_SLIN, YDML_PHY_EC, YGFL, YDCHEM, YDSPP_CONFIG, YDPERTPAR, KIDIA,  &
+(  437)     & KFDIA, KLON, KLEV, PDX, LLTDKMF, LDMCAPEA, LDLAND, PTSPHY, ZTP1, ZQP1, ZUP1, ZVP1, PLITOT, PVERVEL, ZQSAT, PQHFL, PAHFS,  &
+(  438)     & PAP, PAPH, PGEO, PGEOH, PGAW, PCUCONVCA, PGP2DSPP, PTENT, PTENQ, PTENU, PTENV, PTENTA, PTENQA, LDCUM, KTYPE, KCBOT, KCTOP,  &
+(  439)     & LDCUM_LIG, KCBOT_LIG, KCTOP_LIG, KBOTSC, LDSC, LDSHCV, PLCRIT_AER, ZTU, ZQU, PLU, PLUDE, PLUDELI, PSNDE, ZENTHD, PFPLCL,  &
+(  440)     & PFPLCN, ZRAIN, PLRAIN, PRSUD, PMFU, PMFD, PLGLAC, PMFUDE_RATE, PMFDDE_RATE, PCAPE, PWU, PWMEAN, PVDISCU, PDISS, KTRAC,  &
+(  441)     & ZCP1, PTENC, PSCAV, PSCAV0, YDSTACK_L=YLSTACK_L)
+(  442)     !----------------------------------------------------------------------
+(  443)     
+(  444)     !*    3.0       CALL 'CUCCDIA' TO UPDATE CLOUD PARAMETERS FOR RADIATION
+(  445)     !               -------------------------------------------------------
+(  446)     
+(  447)     CALL CUCCDIA_LOKI(YDERAD, YDML_PHY_SLIN%YREPHLI, YDML_PHY_EC%YREPHY, KIDIA, KFDIA, KLON, KLEV, KSTEP, KCBOT, KCTOP, LDCUM,  &
+(  448)     & ZQU, PLU, PMFU, ZRAIN, PARPRC, KTOPC, KBASEC, YDSTACK_L=YLSTACK_L)
+(  449)     
+(  450)     
+(  451)     !---------------------------------------------------------------------
+(  452)     
+(  453)     !*    5.           FLUX COMPUTATIONS
+(  454)     !                  -----------------
+(  455)     
+(  456)     
+(  457) !$acc loop vector
+(  458)     DO JL=KIDIA,KFDIA
+(  459)       PDIFCQ(JL, 1) = 0.0_JPRB
+(  460)       PDIFCS(JL, 1) = 0.0_JPRB
+(  461)       PSTRCU(JL, 1) = 0.0_JPRB
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 23
+
+(  462)       PSTRCV(JL, 1) = 0.0_JPRB
+(  463)       PFCQLF(JL, 1) = 0.0_JPRB
+(  464)       PFCQIF(JL, 1) = 0.0_JPRB
+(  465)       PFHPCL(JL, 1) = 0.0_JPRB
+(  466)       PFHPCN(JL, 1) = 0.0_JPRB
+(  467)       PDIFCS(JL, 1) = 0.0_JPRB
+(  468)       PDIFCQ(JL, 1) = 0.0_JPRB
+(  469)       ZCONDFLL = 0.0_JPRB
+(  470)       ZCONDFLN = 0.0_JPRB
+(  471)       
+(  472) !$acc loop seq
+(  473)       DO JK=1,KLEV
+(  474)         
+(  475)         ZGDPH = -YDCST%RG / (PAPHM1(JL, JK + 1) - PAPHM1(JL, JK))
+(  476)         !...increment in dry static energy is converted to flux of d.s.e.
+(  477)         ZCP = YDCST%RCPD*(1 + YDTHF%RVTMP2*ZQP1(JL, JK))
+(  478)         PDIFCS(JL, JK + 1) = (PTENT(JL, JK) - ZTEA(JL, JK)) / ZGDPH*ZCP + PDIFCS(JL, JK)
+(  479)         !...increments in U,V
+(  480)         PSTRCU(JL, JK + 1) = (PTENU(JL, JK) - ZUEA(JL, JK)) / ZGDPH + PSTRCU(JL, JK)
+(  481)         PSTRCV(JL, JK + 1) = (PTENV(JL, JK) - ZVEA(JL, JK)) / ZGDPH + PSTRCV(JL, JK)
+(  482)         
+(  483)         !...increment in Q
+(  484)         PDIFCQ(JL, JK + 1) = (PTENQ(JL, JK) - ZQEA(JL, JK)) / ZGDPH + PDIFCQ(JL, JK)
+(  485)         
+(  486)       END DO
+(  487)       
+(  488) !$acc loop seq
+(  489)       DO JK=1,KLEV
+(  490)         !DEC$ IVDEP
+(  491)         !... enthalpy flux due to precipitations
+(  492)         
+(  493)         PFHPCL(JL, JK + 1) = -PFPLCL(JL, JK + 1)*YDCST%RLVTT
+(  494)         PFHPCN(JL, JK + 1) = -PFPLCN(JL, JK + 1)*YDCST%RLSTT
+(  495)         ZCONDFLL = ZCONDFLL + PLUDELI(JL, JK, 1)
+(  496)         ZCONDFLN = ZCONDFLN + PLUDELI(JL, JK, 2)
+(  497)         PDIFCS(JL, JK + 1) =  &
+(  498)         & PDIFCS(JL, JK + 1) - PFHPCL(JL, JK + 1) - PFHPCN(JL, JK + 1) + YDCST%RLVTT*ZCONDFLL + YDCST%RLSTT*ZCONDFLN
+(  499)         PDIFCQ(JL, JK + 1) = PDIFCQ(JL, JK + 1) - PFPLCL(JL, JK + 1) - PFPLCN(JL, JK + 1) - ZCONDFLL - ZCONDFLN
+(  500)         PFCQLF(JL, JK + 1) = ZCONDFLL
+(  501)         PFCQIF(JL, JK + 1) = ZCONDFLN
+(  502)       END DO
+(  503)     END DO
+(  504)     
+(  505)     !---------------------------------------------------------------------
+(  506)     
+(  507)     
+(  508) !$acc end data
+(  509)   END SUBROUTINE CUCALLN_MF_LOKI
+(  510) END MODULE CUCALLN_MF_LOKI_MOD

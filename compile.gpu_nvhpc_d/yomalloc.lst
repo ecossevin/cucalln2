@@ -1,0 +1,1065 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:56      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./yomalloc.F90
+
+(    1) MODULE YOMALLOC
+(    2) 
+(    3) USE PARKIND1
+(    4) 
+(    5) IMPLICIT NONE
+(    6) 
+(    7) 
+(    8) INTERFACE ALLOC
+(    9) MODULE PROCEDURE :: ALLOCLM0
+(   10) MODULE PROCEDURE :: ALLOCLM1
+(   11) MODULE PROCEDURE :: ALLOCLM2
+(   12) MODULE PROCEDURE :: ALLOCLM3
+(   13) MODULE PROCEDURE :: ALLOCLM4
+(   14) MODULE PROCEDURE :: ALLOCLM5
+(   15) MODULE PROCEDURE :: ALLOCRD0
+(   16) MODULE PROCEDURE :: ALLOCRD1
+(   17) MODULE PROCEDURE :: ALLOCRD2
+(   18) MODULE PROCEDURE :: ALLOCRD3
+(   19) MODULE PROCEDURE :: ALLOCRD4
+(   20) MODULE PROCEDURE :: ALLOCRD5
+(   21) MODULE PROCEDURE :: ALLOCRM0
+(   22) MODULE PROCEDURE :: ALLOCRM1
+(   23) MODULE PROCEDURE :: ALLOCRM2
+(   24) MODULE PROCEDURE :: ALLOCRM3
+(   25) MODULE PROCEDURE :: ALLOCRM4
+(   26) MODULE PROCEDURE :: ALLOCRM5
+(   27) MODULE PROCEDURE :: ALLOCIM0
+(   28) MODULE PROCEDURE :: ALLOCIM1
+(   29) MODULE PROCEDURE :: ALLOCIM2
+(   30) MODULE PROCEDURE :: ALLOCIM3
+(   31) MODULE PROCEDURE :: ALLOCIM4
+(   32) MODULE PROCEDURE :: ALLOCIM5
+(   33) END INTERFACE
+(   34) 
+(   35) CONTAINS
+(   36) 
+(   37) 
+(   38) 
+(   39) 
+(   40) SUBROUTINE ALLOCLM0 (P, Z)
+(   41) 
+(   42) LOGICAL (KIND=JPLM), POINTER :: P
+(   43) LOGICAL (KIND=JPLM), POINTER :: Z
+(   44) P=Z
+(   45) END SUBROUTINE
+(   46) 
+(   47) 
+(   48) 
+(   49) 
+(   50) SUBROUTINE ALLOCLM1 (P, Z)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:56      page 2
+
+(   51) 
+(   52) LOGICAL (KIND=JPLM), POINTER :: P(:)
+(   53) LOGICAL (KIND=JPLM), POINTER :: Z(:)
+(   54) 
+(   55) INTEGER :: ILBOUND(1)
+(   56) INTEGER :: IUBOUND(1)
+(   57) 
+(   58) ILBOUND = LBOUND(Z)
+(   59) IUBOUND = UBOUND(Z)
+(   60) 
+(   61) 
+(   62) ALLOCATE (P (ILBOUND (1):IUBOUND (1)))
+(   63) 
+(   64) P=Z
+(   65) 
+(   66) END SUBROUTINE
+(   67) 
+(   68) 
+(   69) 
+(   70) 
+(   71) SUBROUTINE ALLOCLM2 (P, Z)
+(   72) 
+(   73) LOGICAL (KIND=JPLM), POINTER :: P(:,:)
+(   74) LOGICAL (KIND=JPLM), POINTER :: Z(:,:)
+(   75) 
+(   76) INTEGER :: ILBOUND(2)
+(   77) INTEGER :: IUBOUND(2)
+(   78) 
+(   79) ILBOUND = LBOUND(Z)
+(   80) IUBOUND = UBOUND(Z)
+(   81) 
+(   82) 
+(   83) ALLOCATE (P (ILBOUND (1):IUBOUND (1),ILBOUND (2):IUBOUND (2)))
+(   84) 
+(   85) P=Z
+(   86) 
+(   87) END SUBROUTINE
+(   88) 
+(   89) 
+(   90) 
+(   91) 
+(   92) SUBROUTINE ALLOCLM3 (P, Z)
+(   93) 
+(   94) LOGICAL (KIND=JPLM), POINTER :: P(:,:,:)
+(   95) LOGICAL (KIND=JPLM), POINTER :: Z(:,:,:)
+(   96) 
+(   97) INTEGER :: ILBOUND(3)
+(   98) INTEGER :: IUBOUND(3)
+(   99) 
+(  100) ILBOUND = LBOUND(Z)
+(  101) IUBOUND = UBOUND(Z)
+(  102) 
+(  103) 
+(  104) ALLOCATE (P (ILBOUND (1):IUBOUND (1),ILBOUND (2):IUBOUND (2),ILBOUND (3):IUBOUND (3)))
+(  105) 
+(  106) P=Z
+(  107) 
+(  108) END SUBROUTINE
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:56      page 3
+
+(  109) 
+(  110) 
+(  111) 
+(  112) 
+(  113) SUBROUTINE ALLOCLM4 (P, Z)
+(  114) 
+(  115) LOGICAL (KIND=JPLM), POINTER :: P(:,:,:,:)
+(  116) LOGICAL (KIND=JPLM), POINTER :: Z(:,:,:,:)
+(  117) 
+(  118) INTEGER :: ILBOUND(4)
+(  119) INTEGER :: IUBOUND(4)
+(  120) 
+(  121) ILBOUND = LBOUND(Z)
+(  122) IUBOUND = UBOUND(Z)
+(  123) 
+(  124) 
+(  125) ALLOCATE (P (ILBOUND (1):IUBOUND (1),ILBOUND (2):IUBOUND (2),ILBOUND (3):IUBOUND (3),ILBOUND (4):IUBOUND (4)))
+(  126) 
+(  127) P=Z
+(  128) 
+(  129) END SUBROUTINE
+(  130) 
+(  131) 
+(  132) 
+(  133) 
+(  134) SUBROUTINE ALLOCLM5 (P, Z)
+(  135) 
+(  136) LOGICAL (KIND=JPLM), POINTER :: P(:,:,:,:,:)
+(  137) LOGICAL (KIND=JPLM), POINTER :: Z(:,:,:,:,:)
+(  138) 
+(  139) INTEGER :: ILBOUND(5)
+(  140) INTEGER :: IUBOUND(5)
+(  141) 
+(  142) ILBOUND = LBOUND(Z)
+(  143) IUBOUND = UBOUND(Z)
+(  144) 
+(  145) 
+(  146) ALLOCATE (P (ILBOUND (1):IUBOUND (1),ILBOUND (2):IUBOUND (2),ILBOUND (3):IUBOUND (3),ILBOUND (4):IUBOUND (4),ILBOUND (5):IUB
+(  147)     & (5)))
+(  148) 
+(  149) P=Z
+(  150) 
+(  151) END SUBROUTINE
+(  152) 
+(  153) 
+(  154) 
+(  155) 
+(  156) SUBROUTINE ALLOCRD0 (P, Z)
+(  157) 
+(  158) REAL (KIND=JPRD), POINTER :: P
+(  159) REAL (KIND=JPRD), POINTER :: Z
+(  160) P=Z
+(  161) END SUBROUTINE
+(  162) 
+(  163) 
+(  164) 
+(  165) 
+(  166) SUBROUTINE ALLOCRD1 (P, Z)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:56      page 4
+
+(  167) 
+(  168) REAL (KIND=JPRD), POINTER :: P(:)
+(  169) REAL (KIND=JPRD), POINTER :: Z(:)
+(  170) 
+(  171) INTEGER :: ILBOUND(1)
+(  172) INTEGER :: IUBOUND(1)
+(  173) 
+(  174) ILBOUND = LBOUND(Z)
+(  175) IUBOUND = UBOUND(Z)
+(  176) 
+(  177) 
+(  178) ALLOCATE (P (ILBOUND (1):IUBOUND (1)))
+(  179) 
+(  180) P=Z
+(  181) 
+(  182) END SUBROUTINE
+(  183) 
+(  184) 
+(  185) 
+(  186) 
+(  187) SUBROUTINE ALLOCRD2 (P, Z)
+(  188) 
+(  189) REAL (KIND=JPRD), POINTER :: P(:,:)
+(  190) REAL (KIND=JPRD), POINTER :: Z(:,:)
+(  191) 
+(  192) INTEGER :: ILBOUND(2)
+(  193) INTEGER :: IUBOUND(2)
+(  194) 
+(  195) ILBOUND = LBOUND(Z)
+(  196) IUBOUND = UBOUND(Z)
+(  197) 
+(  198) 
+(  199) ALLOCATE (P (ILBOUND (1):IUBOUND (1),ILBOUND (2):IUBOUND (2)))
+(  200) 
+(  201) P=Z
+(  202) 
+(  203) END SUBROUTINE
+(  204) 
+(  205) 
+(  206) 
+(  207) 
+(  208) SUBROUTINE ALLOCRD3 (P, Z)
+(  209) 
+(  210) REAL (KIND=JPRD), POINTER :: P(:,:,:)
+(  211) REAL (KIND=JPRD), POINTER :: Z(:,:,:)
+(  212) 
+(  213) INTEGER :: ILBOUND(3)
+(  214) INTEGER :: IUBOUND(3)
+(  215) 
+(  216) ILBOUND = LBOUND(Z)
+(  217) IUBOUND = UBOUND(Z)
+(  218) 
+(  219) 
+(  220) ALLOCATE (P (ILBOUND (1):IUBOUND (1),ILBOUND (2):IUBOUND (2),ILBOUND (3):IUBOUND (3)))
+(  221) 
+(  222) P=Z
+(  223) 
+(  224) END SUBROUTINE
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:56      page 5
+
+(  225) 
+(  226) 
+(  227) 
+(  228) 
+(  229) SUBROUTINE ALLOCRD4 (P, Z)
+(  230) 
+(  231) REAL (KIND=JPRD), POINTER :: P(:,:,:,:)
+(  232) REAL (KIND=JPRD), POINTER :: Z(:,:,:,:)
+(  233) 
+(  234) INTEGER :: ILBOUND(4)
+(  235) INTEGER :: IUBOUND(4)
+(  236) 
+(  237) ILBOUND = LBOUND(Z)
+(  238) IUBOUND = UBOUND(Z)
+(  239) 
+(  240) 
+(  241) ALLOCATE (P (ILBOUND (1):IUBOUND (1),ILBOUND (2):IUBOUND (2),ILBOUND (3):IUBOUND (3),ILBOUND (4):IUBOUND (4)))
+(  242) 
+(  243) P=Z
+(  244) 
+(  245) END SUBROUTINE
+(  246) 
+(  247) 
+(  248) 
+(  249) 
+(  250) SUBROUTINE ALLOCRD5 (P, Z)
+(  251) 
+(  252) REAL (KIND=JPRD), POINTER :: P(:,:,:,:,:)
+(  253) REAL (KIND=JPRD), POINTER :: Z(:,:,:,:,:)
+(  254) 
+(  255) INTEGER :: ILBOUND(5)
+(  256) INTEGER :: IUBOUND(5)
+(  257) 
+(  258) ILBOUND = LBOUND(Z)
+(  259) IUBOUND = UBOUND(Z)
+(  260) 
+(  261) 
+(  262) ALLOCATE (P (ILBOUND (1):IUBOUND (1),ILBOUND (2):IUBOUND (2),ILBOUND (3):IUBOUND (3),ILBOUND (4):IUBOUND (4),ILBOUND (5):IUB
+(  263)     & (5)))
+(  264) 
+(  265) P=Z
+(  266) 
+(  267) END SUBROUTINE
+(  268) 
+(  269) 
+(  270) 
+(  271) 
+(  272) SUBROUTINE ALLOCRM0 (P, Z)
+(  273) 
+(  274) REAL (KIND=JPRM), POINTER :: P
+(  275) REAL (KIND=JPRM), POINTER :: Z
+(  276) P=Z
+(  277) END SUBROUTINE
+(  278) 
+(  279) 
+(  280) 
+(  281) 
+(  282) SUBROUTINE ALLOCRM1 (P, Z)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:56      page 6
+
+(  283) 
+(  284) REAL (KIND=JPRM), POINTER :: P(:)
+(  285) REAL (KIND=JPRM), POINTER :: Z(:)
+(  286) 
+(  287) INTEGER :: ILBOUND(1)
+(  288) INTEGER :: IUBOUND(1)
+(  289) 
+(  290) ILBOUND = LBOUND(Z)
+(  291) IUBOUND = UBOUND(Z)
+(  292) 
+(  293) 
+(  294) ALLOCATE (P (ILBOUND (1):IUBOUND (1)))
+(  295) 
+(  296) P=Z
+(  297) 
+(  298) END SUBROUTINE
+(  299) 
+(  300) 
+(  301) 
+(  302) 
+(  303) SUBROUTINE ALLOCRM2 (P, Z)
+(  304) 
+(  305) REAL (KIND=JPRM), POINTER :: P(:,:)
+(  306) REAL (KIND=JPRM), POINTER :: Z(:,:)
+(  307) 
+(  308) INTEGER :: ILBOUND(2)
+(  309) INTEGER :: IUBOUND(2)
+(  310) 
+(  311) ILBOUND = LBOUND(Z)
+(  312) IUBOUND = UBOUND(Z)
+(  313) 
+(  314) 
+(  315) ALLOCATE (P (ILBOUND (1):IUBOUND (1),ILBOUND (2):IUBOUND (2)))
+(  316) 
+(  317) P=Z
+(  318) 
+(  319) END SUBROUTINE
+(  320) 
+(  321) 
+(  322) 
+(  323) 
+(  324) SUBROUTINE ALLOCRM3 (P, Z)
+(  325) 
+(  326) REAL (KIND=JPRM), POINTER :: P(:,:,:)
+(  327) REAL (KIND=JPRM), POINTER :: Z(:,:,:)
+(  328) 
+(  329) INTEGER :: ILBOUND(3)
+(  330) INTEGER :: IUBOUND(3)
+(  331) 
+(  332) ILBOUND = LBOUND(Z)
+(  333) IUBOUND = UBOUND(Z)
+(  334) 
+(  335) 
+(  336) ALLOCATE (P (ILBOUND (1):IUBOUND (1),ILBOUND (2):IUBOUND (2),ILBOUND (3):IUBOUND (3)))
+(  337) 
+(  338) P=Z
+(  339) 
+(  340) END SUBROUTINE
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:56      page 7
+
+(  341) 
+(  342) 
+(  343) 
+(  344) 
+(  345) SUBROUTINE ALLOCRM4 (P, Z)
+(  346) 
+(  347) REAL (KIND=JPRM), POINTER :: P(:,:,:,:)
+(  348) REAL (KIND=JPRM), POINTER :: Z(:,:,:,:)
+(  349) 
+(  350) INTEGER :: ILBOUND(4)
+(  351) INTEGER :: IUBOUND(4)
+(  352) 
+(  353) ILBOUND = LBOUND(Z)
+(  354) IUBOUND = UBOUND(Z)
+(  355) 
+(  356) 
+(  357) ALLOCATE (P (ILBOUND (1):IUBOUND (1),ILBOUND (2):IUBOUND (2),ILBOUND (3):IUBOUND (3),ILBOUND (4):IUBOUND (4)))
+(  358) 
+(  359) P=Z
+(  360) 
+(  361) END SUBROUTINE
+(  362) 
+(  363) 
+(  364) 
+(  365) 
+(  366) SUBROUTINE ALLOCRM5 (P, Z)
+(  367) 
+(  368) REAL (KIND=JPRM), POINTER :: P(:,:,:,:,:)
+(  369) REAL (KIND=JPRM), POINTER :: Z(:,:,:,:,:)
+(  370) 
+(  371) INTEGER :: ILBOUND(5)
+(  372) INTEGER :: IUBOUND(5)
+(  373) 
+(  374) ILBOUND = LBOUND(Z)
+(  375) IUBOUND = UBOUND(Z)
+(  376) 
+(  377) 
+(  378) ALLOCATE (P (ILBOUND (1):IUBOUND (1),ILBOUND (2):IUBOUND (2),ILBOUND (3):IUBOUND (3),ILBOUND (4):IUBOUND (4),ILBOUND (5):IUB
+(  379)     & (5)))
+(  380) 
+(  381) P=Z
+(  382) 
+(  383) END SUBROUTINE
+(  384) 
+(  385) 
+(  386) 
+(  387) 
+(  388) SUBROUTINE ALLOCIM0 (P, Z)
+(  389) 
+(  390) INTEGER (KIND=JPIM), POINTER :: P
+(  391) INTEGER (KIND=JPIM), POINTER :: Z
+(  392) P=Z
+(  393) END SUBROUTINE
+(  394) 
+(  395) 
+(  396) 
+(  397) 
+(  398) SUBROUTINE ALLOCIM1 (P, Z)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:56      page 8
+
+(  399) 
+(  400) INTEGER (KIND=JPIM), POINTER :: P(:)
+(  401) INTEGER (KIND=JPIM), POINTER :: Z(:)
+(  402) 
+(  403) INTEGER :: ILBOUND(1)
+(  404) INTEGER :: IUBOUND(1)
+(  405) 
+(  406) ILBOUND = LBOUND(Z)
+(  407) IUBOUND = UBOUND(Z)
+(  408) 
+(  409) 
+(  410) ALLOCATE (P (ILBOUND (1):IUBOUND (1)))
+(  411) 
+(  412) P=Z
+(  413) 
+(  414) END SUBROUTINE
+(  415) 
+(  416) 
+(  417) 
+(  418) 
+(  419) SUBROUTINE ALLOCIM2 (P, Z)
+(  420) 
+(  421) INTEGER (KIND=JPIM), POINTER :: P(:,:)
+(  422) INTEGER (KIND=JPIM), POINTER :: Z(:,:)
+(  423) 
+(  424) INTEGER :: ILBOUND(2)
+(  425) INTEGER :: IUBOUND(2)
+(  426) 
+(  427) ILBOUND = LBOUND(Z)
+(  428) IUBOUND = UBOUND(Z)
+(  429) 
+(  430) 
+(  431) ALLOCATE (P (ILBOUND (1):IUBOUND (1),ILBOUND (2):IUBOUND (2)))
+(  432) 
+(  433) P=Z
+(  434) 
+(  435) END SUBROUTINE
+(  436) 
+(  437) 
+(  438) 
+(  439) 
+(  440) SUBROUTINE ALLOCIM3 (P, Z)
+(  441) 
+(  442) INTEGER (KIND=JPIM), POINTER :: P(:,:,:)
+(  443) INTEGER (KIND=JPIM), POINTER :: Z(:,:,:)
+(  444) 
+(  445) INTEGER :: ILBOUND(3)
+(  446) INTEGER :: IUBOUND(3)
+(  447) 
+(  448) ILBOUND = LBOUND(Z)
+(  449) IUBOUND = UBOUND(Z)
+(  450) 
+(  451) 
+(  452) ALLOCATE (P (ILBOUND (1):IUBOUND (1),ILBOUND (2):IUBOUND (2),ILBOUND (3):IUBOUND (3)))
+(  453) 
+(  454) P=Z
+(  455) 
+(  456) END SUBROUTINE
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:56      page 9
+
+(  457) 
+(  458) 
+(  459) 
+(  460) 
+(  461) SUBROUTINE ALLOCIM4 (P, Z)
+(  462) 
+(  463) INTEGER (KIND=JPIM), POINTER :: P(:,:,:,:)
+(  464) INTEGER (KIND=JPIM), POINTER :: Z(:,:,:,:)
+(  465) 
+(  466) INTEGER :: ILBOUND(4)
+(  467) INTEGER :: IUBOUND(4)
+(  468) 
+(  469) ILBOUND = LBOUND(Z)
+(  470) IUBOUND = UBOUND(Z)
+(  471) 
+(  472) 
+(  473) ALLOCATE (P (ILBOUND (1):IUBOUND (1),ILBOUND (2):IUBOUND (2),ILBOUND (3):IUBOUND (3),ILBOUND (4):IUBOUND (4)))
+(  474) 
+(  475) P=Z
+(  476) 
+(  477) END SUBROUTINE
+(  478) 
+(  479) 
+(  480) 
+(  481) 
+(  482) SUBROUTINE ALLOCIM5 (P, Z)
+(  483) 
+(  484) INTEGER (KIND=JPIM), POINTER :: P(:,:,:,:,:)
+(  485) INTEGER (KIND=JPIM), POINTER :: Z(:,:,:,:,:)
+(  486) 
+(  487) INTEGER :: ILBOUND(5)
+(  488) INTEGER :: IUBOUND(5)
+(  489) 
+(  490) ILBOUND = LBOUND(Z)
+(  491) IUBOUND = UBOUND(Z)
+(  492) 
+(  493) 
+(  494) ALLOCATE (P (ILBOUND (1):IUBOUND (1),ILBOUND (2):IUBOUND (2),ILBOUND (3):IUBOUND (3),ILBOUND (4):IUBOUND (4),ILBOUND (5):IUB
+(  495)     & (5)))
+(  496) 
+(  497) P=Z
+(  498) 
+(  499) END SUBROUTINE
+(  500) 
+(  501) 
+(  502) END
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:56      page 10
+
+(    1) # 1 "./yomalloc.F90"
+(    1) MODULE YOMALLOC
+(    2) # 3 "./yomalloc.F90"
+(    3) USE PARKIND1
+(    4) # 5 "./yomalloc.F90"
+(    5) IMPLICIT NONE
+(    6) # 8 "./yomalloc.F90"
+(    8) INTERFACE ALLOC
+(    9) MODULE PROCEDURE :: ALLOCLM0
+(   10) MODULE PROCEDURE :: ALLOCLM1
+(   11) MODULE PROCEDURE :: ALLOCLM2
+(   12) MODULE PROCEDURE :: ALLOCLM3
+(   13) MODULE PROCEDURE :: ALLOCLM4
+(   14) MODULE PROCEDURE :: ALLOCLM5
+(   15) MODULE PROCEDURE :: ALLOCRD0
+(   16) MODULE PROCEDURE :: ALLOCRD1
+(   17) MODULE PROCEDURE :: ALLOCRD2
+(   18) MODULE PROCEDURE :: ALLOCRD3
+(   19) MODULE PROCEDURE :: ALLOCRD4
+(   20) MODULE PROCEDURE :: ALLOCRD5
+(   21) MODULE PROCEDURE :: ALLOCRM0
+(   22) MODULE PROCEDURE :: ALLOCRM1
+(   23) MODULE PROCEDURE :: ALLOCRM2
+(   24) MODULE PROCEDURE :: ALLOCRM3
+(   25) MODULE PROCEDURE :: ALLOCRM4
+(   26) MODULE PROCEDURE :: ALLOCRM5
+(   27) MODULE PROCEDURE :: ALLOCIM0
+(   28) MODULE PROCEDURE :: ALLOCIM1
+(   29) MODULE PROCEDURE :: ALLOCIM2
+(   30) MODULE PROCEDURE :: ALLOCIM3
+(   31) MODULE PROCEDURE :: ALLOCIM4
+(   32) MODULE PROCEDURE :: ALLOCIM5
+(   33) END INTERFACE
+(   34) # 35 "./yomalloc.F90"
+(   35) CONTAINS
+(   36) # 40 "./yomalloc.F90"
+(   40) SUBROUTINE ALLOCLM0 (P, Z)
+(   41) # 42 "./yomalloc.F90"
+(   42) LOGICAL (KIND=JPLM), POINTER :: P
+(   43) LOGICAL (KIND=JPLM), POINTER :: Z
+(   44) P=Z
+(   45) END SUBROUTINE
+(   46) # 50 "./yomalloc.F90"
+(   50) SUBROUTINE ALLOCLM1 (P, Z)
+(   51) # 52 "./yomalloc.F90"
+(   52) LOGICAL (KIND=JPLM), POINTER :: P(:)
+(   53) LOGICAL (KIND=JPLM), POINTER :: Z(:)
+(   54) # 55 "./yomalloc.F90"
+(   55) INTEGER :: ILBOUND(1)
+(   56) INTEGER :: IUBOUND(1)
+(   57) # 58 "./yomalloc.F90"
+(   58) ILBOUND = LBOUND(Z)
+(   59) IUBOUND = UBOUND(Z)
+(   60) # 62 "./yomalloc.F90"
+(   62) ALLOCATE (P (ILBOUND (1):IUBOUND (1)))
+(   63) # 64 "./yomalloc.F90"
+(   64) P=Z
+(   65) # 66 "./yomalloc.F90"
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:56      page 11
+
+(   66) END SUBROUTINE
+(   67) # 71 "./yomalloc.F90"
+(   71) SUBROUTINE ALLOCLM2 (P, Z)
+(   72) # 73 "./yomalloc.F90"
+(   73) LOGICAL (KIND=JPLM), POINTER :: P(:,:)
+(   74) LOGICAL (KIND=JPLM), POINTER :: Z(:,:)
+(   75) # 76 "./yomalloc.F90"
+(   76) INTEGER :: ILBOUND(2)
+(   77) INTEGER :: IUBOUND(2)
+(   78) # 79 "./yomalloc.F90"
+(   79) ILBOUND = LBOUND(Z)
+(   80) IUBOUND = UBOUND(Z)
+(   81) # 83 "./yomalloc.F90"
+(   83) ALLOCATE (P (ILBOUND (1):IUBOUND (1),ILBOUND (2):IUBOUND (2)))
+(   84) # 85 "./yomalloc.F90"
+(   85) P=Z
+(   86) # 87 "./yomalloc.F90"
+(   87) END SUBROUTINE
+(   88) # 92 "./yomalloc.F90"
+(   92) SUBROUTINE ALLOCLM3 (P, Z)
+(   93) # 94 "./yomalloc.F90"
+(   94) LOGICAL (KIND=JPLM), POINTER :: P(:,:,:)
+(   95) LOGICAL (KIND=JPLM), POINTER :: Z(:,:,:)
+(   96) # 97 "./yomalloc.F90"
+(   97) INTEGER :: ILBOUND(3)
+(   98) INTEGER :: IUBOUND(3)
+(   99) # 100 "./yomalloc.F90"
+(  100) ILBOUND = LBOUND(Z)
+(  101) IUBOUND = UBOUND(Z)
+(  102) # 104 "./yomalloc.F90"
+(  104) ALLOCATE (P (ILBOUND (1):IUBOUND (1),ILBOUND (2):IUBOUND (2),ILBOUND (3):IUBOUND (3)))
+(  105) # 106 "./yomalloc.F90"
+(  106) P=Z
+(  107) # 108 "./yomalloc.F90"
+(  108) END SUBROUTINE
+(  109) # 113 "./yomalloc.F90"
+(  113) SUBROUTINE ALLOCLM4 (P, Z)
+(  114) # 115 "./yomalloc.F90"
+(  115) LOGICAL (KIND=JPLM), POINTER :: P(:,:,:,:)
+(  116) LOGICAL (KIND=JPLM), POINTER :: Z(:,:,:,:)
+(  117) # 118 "./yomalloc.F90"
+(  118) INTEGER :: ILBOUND(4)
+(  119) INTEGER :: IUBOUND(4)
+(  120) # 121 "./yomalloc.F90"
+(  121) ILBOUND = LBOUND(Z)
+(  122) IUBOUND = UBOUND(Z)
+(  123) # 125 "./yomalloc.F90"
+(  125) ALLOCATE (P (ILBOUND (1):IUBOUND (1),ILBOUND (2):IUBOUND (2),ILBOUND (3):IUBOUND (3),ILBOUND (4):IUBOUND (4)))
+(  126) # 127 "./yomalloc.F90"
+(  127) P=Z
+(  128) # 129 "./yomalloc.F90"
+(  129) END SUBROUTINE
+(  130) # 134 "./yomalloc.F90"
+(  134) SUBROUTINE ALLOCLM5 (P, Z)
+(  135) # 136 "./yomalloc.F90"
+(  136) LOGICAL (KIND=JPLM), POINTER :: P(:,:,:,:,:)
+(  137) LOGICAL (KIND=JPLM), POINTER :: Z(:,:,:,:,:)
+(  138) # 139 "./yomalloc.F90"
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:56      page 12
+
+(  139) INTEGER :: ILBOUND(5)
+(  140) INTEGER :: IUBOUND(5)
+(  141) # 142 "./yomalloc.F90"
+(  142) ILBOUND = LBOUND(Z)
+(  143) IUBOUND = UBOUND(Z)
+(  144) # 146 "./yomalloc.F90"
+(  146) ALLOCATE (P (ILBOUND (1):IUBOUND (1),ILBOUND (2):IUBOUND (2),ILBOUND (3):IUBOUND (3),ILBOUND (4):IUBOUND (4),ILBOUND (5):IUBOUND&
+(  147)     & (5)))
+(  148) # 149 "./yomalloc.F90"
+(  149) P=Z
+(  150) # 151 "./yomalloc.F90"
+(  151) END SUBROUTINE
+(  152) # 156 "./yomalloc.F90"
+(  156) SUBROUTINE ALLOCRD0 (P, Z)
+(  157) # 158 "./yomalloc.F90"
+(  158) REAL (KIND=JPRD), POINTER :: P
+(  159) REAL (KIND=JPRD), POINTER :: Z
+(  160) P=Z
+(  161) END SUBROUTINE
+(  162) # 166 "./yomalloc.F90"
+(  166) SUBROUTINE ALLOCRD1 (P, Z)
+(  167) # 168 "./yomalloc.F90"
+(  168) REAL (KIND=JPRD), POINTER :: P(:)
+(  169) REAL (KIND=JPRD), POINTER :: Z(:)
+(  170) # 171 "./yomalloc.F90"
+(  171) INTEGER :: ILBOUND(1)
+(  172) INTEGER :: IUBOUND(1)
+(  173) # 174 "./yomalloc.F90"
+(  174) ILBOUND = LBOUND(Z)
+(  175) IUBOUND = UBOUND(Z)
+(  176) # 178 "./yomalloc.F90"
+(  178) ALLOCATE (P (ILBOUND (1):IUBOUND (1)))
+(  179) # 180 "./yomalloc.F90"
+(  180) P=Z
+(  181) # 182 "./yomalloc.F90"
+(  182) END SUBROUTINE
+(  183) # 187 "./yomalloc.F90"
+(  187) SUBROUTINE ALLOCRD2 (P, Z)
+(  188) # 189 "./yomalloc.F90"
+(  189) REAL (KIND=JPRD), POINTER :: P(:,:)
+(  190) REAL (KIND=JPRD), POINTER :: Z(:,:)
+(  191) # 192 "./yomalloc.F90"
+(  192) INTEGER :: ILBOUND(2)
+(  193) INTEGER :: IUBOUND(2)
+(  194) # 195 "./yomalloc.F90"
+(  195) ILBOUND = LBOUND(Z)
+(  196) IUBOUND = UBOUND(Z)
+(  197) # 199 "./yomalloc.F90"
+(  199) ALLOCATE (P (ILBOUND (1):IUBOUND (1),ILBOUND (2):IUBOUND (2)))
+(  200) # 201 "./yomalloc.F90"
+(  201) P=Z
+(  202) # 203 "./yomalloc.F90"
+(  203) END SUBROUTINE
+(  204) # 208 "./yomalloc.F90"
+(  208) SUBROUTINE ALLOCRD3 (P, Z)
+(  209) # 210 "./yomalloc.F90"
+(  210) REAL (KIND=JPRD), POINTER :: P(:,:,:)
+(  211) REAL (KIND=JPRD), POINTER :: Z(:,:,:)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:56      page 13
+
+(  212) # 213 "./yomalloc.F90"
+(  213) INTEGER :: ILBOUND(3)
+(  214) INTEGER :: IUBOUND(3)
+(  215) # 216 "./yomalloc.F90"
+(  216) ILBOUND = LBOUND(Z)
+(  217) IUBOUND = UBOUND(Z)
+(  218) # 220 "./yomalloc.F90"
+(  220) ALLOCATE (P (ILBOUND (1):IUBOUND (1),ILBOUND (2):IUBOUND (2),ILBOUND (3):IUBOUND (3)))
+(  221) # 222 "./yomalloc.F90"
+(  222) P=Z
+(  223) # 224 "./yomalloc.F90"
+(  224) END SUBROUTINE
+(  225) # 229 "./yomalloc.F90"
+(  229) SUBROUTINE ALLOCRD4 (P, Z)
+(  230) # 231 "./yomalloc.F90"
+(  231) REAL (KIND=JPRD), POINTER :: P(:,:,:,:)
+(  232) REAL (KIND=JPRD), POINTER :: Z(:,:,:,:)
+(  233) # 234 "./yomalloc.F90"
+(  234) INTEGER :: ILBOUND(4)
+(  235) INTEGER :: IUBOUND(4)
+(  236) # 237 "./yomalloc.F90"
+(  237) ILBOUND = LBOUND(Z)
+(  238) IUBOUND = UBOUND(Z)
+(  239) # 241 "./yomalloc.F90"
+(  241) ALLOCATE (P (ILBOUND (1):IUBOUND (1),ILBOUND (2):IUBOUND (2),ILBOUND (3):IUBOUND (3),ILBOUND (4):IUBOUND (4)))
+(  242) # 243 "./yomalloc.F90"
+(  243) P=Z
+(  244) # 245 "./yomalloc.F90"
+(  245) END SUBROUTINE
+(  246) # 250 "./yomalloc.F90"
+(  250) SUBROUTINE ALLOCRD5 (P, Z)
+(  251) # 252 "./yomalloc.F90"
+(  252) REAL (KIND=JPRD), POINTER :: P(:,:,:,:,:)
+(  253) REAL (KIND=JPRD), POINTER :: Z(:,:,:,:,:)
+(  254) # 255 "./yomalloc.F90"
+(  255) INTEGER :: ILBOUND(5)
+(  256) INTEGER :: IUBOUND(5)
+(  257) # 258 "./yomalloc.F90"
+(  258) ILBOUND = LBOUND(Z)
+(  259) IUBOUND = UBOUND(Z)
+(  260) # 262 "./yomalloc.F90"
+(  262) ALLOCATE (P (ILBOUND (1):IUBOUND (1),ILBOUND (2):IUBOUND (2),ILBOUND (3):IUBOUND (3),ILBOUND (4):IUBOUND (4),ILBOUND (5):IUBOUND&
+(  263)     & (5)))
+(  264) # 265 "./yomalloc.F90"
+(  265) P=Z
+(  266) # 267 "./yomalloc.F90"
+(  267) END SUBROUTINE
+(  268) # 272 "./yomalloc.F90"
+(  272) SUBROUTINE ALLOCRM0 (P, Z)
+(  273) # 274 "./yomalloc.F90"
+(  274) REAL (KIND=JPRM), POINTER :: P
+(  275) REAL (KIND=JPRM), POINTER :: Z
+(  276) P=Z
+(  277) END SUBROUTINE
+(  278) # 282 "./yomalloc.F90"
+(  282) SUBROUTINE ALLOCRM1 (P, Z)
+(  283) # 284 "./yomalloc.F90"
+(  284) REAL (KIND=JPRM), POINTER :: P(:)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:56      page 14
+
+(  285) REAL (KIND=JPRM), POINTER :: Z(:)
+(  286) # 287 "./yomalloc.F90"
+(  287) INTEGER :: ILBOUND(1)
+(  288) INTEGER :: IUBOUND(1)
+(  289) # 290 "./yomalloc.F90"
+(  290) ILBOUND = LBOUND(Z)
+(  291) IUBOUND = UBOUND(Z)
+(  292) # 294 "./yomalloc.F90"
+(  294) ALLOCATE (P (ILBOUND (1):IUBOUND (1)))
+(  295) # 296 "./yomalloc.F90"
+(  296) P=Z
+(  297) # 298 "./yomalloc.F90"
+(  298) END SUBROUTINE
+(  299) # 303 "./yomalloc.F90"
+(  303) SUBROUTINE ALLOCRM2 (P, Z)
+(  304) # 305 "./yomalloc.F90"
+(  305) REAL (KIND=JPRM), POINTER :: P(:,:)
+(  306) REAL (KIND=JPRM), POINTER :: Z(:,:)
+(  307) # 308 "./yomalloc.F90"
+(  308) INTEGER :: ILBOUND(2)
+(  309) INTEGER :: IUBOUND(2)
+(  310) # 311 "./yomalloc.F90"
+(  311) ILBOUND = LBOUND(Z)
+(  312) IUBOUND = UBOUND(Z)
+(  313) # 315 "./yomalloc.F90"
+(  315) ALLOCATE (P (ILBOUND (1):IUBOUND (1),ILBOUND (2):IUBOUND (2)))
+(  316) # 317 "./yomalloc.F90"
+(  317) P=Z
+(  318) # 319 "./yomalloc.F90"
+(  319) END SUBROUTINE
+(  320) # 324 "./yomalloc.F90"
+(  324) SUBROUTINE ALLOCRM3 (P, Z)
+(  325) # 326 "./yomalloc.F90"
+(  326) REAL (KIND=JPRM), POINTER :: P(:,:,:)
+(  327) REAL (KIND=JPRM), POINTER :: Z(:,:,:)
+(  328) # 329 "./yomalloc.F90"
+(  329) INTEGER :: ILBOUND(3)
+(  330) INTEGER :: IUBOUND(3)
+(  331) # 332 "./yomalloc.F90"
+(  332) ILBOUND = LBOUND(Z)
+(  333) IUBOUND = UBOUND(Z)
+(  334) # 336 "./yomalloc.F90"
+(  336) ALLOCATE (P (ILBOUND (1):IUBOUND (1),ILBOUND (2):IUBOUND (2),ILBOUND (3):IUBOUND (3)))
+(  337) # 338 "./yomalloc.F90"
+(  338) P=Z
+(  339) # 340 "./yomalloc.F90"
+(  340) END SUBROUTINE
+(  341) # 345 "./yomalloc.F90"
+(  345) SUBROUTINE ALLOCRM4 (P, Z)
+(  346) # 347 "./yomalloc.F90"
+(  347) REAL (KIND=JPRM), POINTER :: P(:,:,:,:)
+(  348) REAL (KIND=JPRM), POINTER :: Z(:,:,:,:)
+(  349) # 350 "./yomalloc.F90"
+(  350) INTEGER :: ILBOUND(4)
+(  351) INTEGER :: IUBOUND(4)
+(  352) # 353 "./yomalloc.F90"
+(  353) ILBOUND = LBOUND(Z)
+(  354) IUBOUND = UBOUND(Z)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:56      page 15
+
+(  355) # 357 "./yomalloc.F90"
+(  357) ALLOCATE (P (ILBOUND (1):IUBOUND (1),ILBOUND (2):IUBOUND (2),ILBOUND (3):IUBOUND (3),ILBOUND (4):IUBOUND (4)))
+(  358) # 359 "./yomalloc.F90"
+(  359) P=Z
+(  360) # 361 "./yomalloc.F90"
+(  361) END SUBROUTINE
+(  362) # 366 "./yomalloc.F90"
+(  366) SUBROUTINE ALLOCRM5 (P, Z)
+(  367) # 368 "./yomalloc.F90"
+(  368) REAL (KIND=JPRM), POINTER :: P(:,:,:,:,:)
+(  369) REAL (KIND=JPRM), POINTER :: Z(:,:,:,:,:)
+(  370) # 371 "./yomalloc.F90"
+(  371) INTEGER :: ILBOUND(5)
+(  372) INTEGER :: IUBOUND(5)
+(  373) # 374 "./yomalloc.F90"
+(  374) ILBOUND = LBOUND(Z)
+(  375) IUBOUND = UBOUND(Z)
+(  376) # 378 "./yomalloc.F90"
+(  378) ALLOCATE (P (ILBOUND (1):IUBOUND (1),ILBOUND (2):IUBOUND (2),ILBOUND (3):IUBOUND (3),ILBOUND (4):IUBOUND (4),ILBOUND (5):IUBOUND&
+(  379)     & (5)))
+(  380) # 381 "./yomalloc.F90"
+(  381) P=Z
+(  382) # 383 "./yomalloc.F90"
+(  383) END SUBROUTINE
+(  384) # 388 "./yomalloc.F90"
+(  388) SUBROUTINE ALLOCIM0 (P, Z)
+(  389) # 390 "./yomalloc.F90"
+(  390) INTEGER (KIND=JPIM), POINTER :: P
+(  391) INTEGER (KIND=JPIM), POINTER :: Z
+(  392) P=Z
+(  393) END SUBROUTINE
+(  394) # 398 "./yomalloc.F90"
+(  398) SUBROUTINE ALLOCIM1 (P, Z)
+(  399) # 400 "./yomalloc.F90"
+(  400) INTEGER (KIND=JPIM), POINTER :: P(:)
+(  401) INTEGER (KIND=JPIM), POINTER :: Z(:)
+(  402) # 403 "./yomalloc.F90"
+(  403) INTEGER :: ILBOUND(1)
+(  404) INTEGER :: IUBOUND(1)
+(  405) # 406 "./yomalloc.F90"
+(  406) ILBOUND = LBOUND(Z)
+(  407) IUBOUND = UBOUND(Z)
+(  408) # 410 "./yomalloc.F90"
+(  410) ALLOCATE (P (ILBOUND (1):IUBOUND (1)))
+(  411) # 412 "./yomalloc.F90"
+(  412) P=Z
+(  413) # 414 "./yomalloc.F90"
+(  414) END SUBROUTINE
+(  415) # 419 "./yomalloc.F90"
+(  419) SUBROUTINE ALLOCIM2 (P, Z)
+(  420) # 421 "./yomalloc.F90"
+(  421) INTEGER (KIND=JPIM), POINTER :: P(:,:)
+(  422) INTEGER (KIND=JPIM), POINTER :: Z(:,:)
+(  423) # 424 "./yomalloc.F90"
+(  424) INTEGER :: ILBOUND(2)
+(  425) INTEGER :: IUBOUND(2)
+(  426) # 427 "./yomalloc.F90"
+(  427) ILBOUND = LBOUND(Z)
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:56      page 16
+
+(  428) IUBOUND = UBOUND(Z)
+(  429) # 431 "./yomalloc.F90"
+(  431) ALLOCATE (P (ILBOUND (1):IUBOUND (1),ILBOUND (2):IUBOUND (2)))
+(  432) # 433 "./yomalloc.F90"
+(  433) P=Z
+(  434) # 435 "./yomalloc.F90"
+(  435) END SUBROUTINE
+(  436) # 440 "./yomalloc.F90"
+(  440) SUBROUTINE ALLOCIM3 (P, Z)
+(  441) # 442 "./yomalloc.F90"
+(  442) INTEGER (KIND=JPIM), POINTER :: P(:,:,:)
+(  443) INTEGER (KIND=JPIM), POINTER :: Z(:,:,:)
+(  444) # 445 "./yomalloc.F90"
+(  445) INTEGER :: ILBOUND(3)
+(  446) INTEGER :: IUBOUND(3)
+(  447) # 448 "./yomalloc.F90"
+(  448) ILBOUND = LBOUND(Z)
+(  449) IUBOUND = UBOUND(Z)
+(  450) # 452 "./yomalloc.F90"
+(  452) ALLOCATE (P (ILBOUND (1):IUBOUND (1),ILBOUND (2):IUBOUND (2),ILBOUND (3):IUBOUND (3)))
+(  453) # 454 "./yomalloc.F90"
+(  454) P=Z
+(  455) # 456 "./yomalloc.F90"
+(  456) END SUBROUTINE
+(  457) # 461 "./yomalloc.F90"
+(  461) SUBROUTINE ALLOCIM4 (P, Z)
+(  462) # 463 "./yomalloc.F90"
+(  463) INTEGER (KIND=JPIM), POINTER :: P(:,:,:,:)
+(  464) INTEGER (KIND=JPIM), POINTER :: Z(:,:,:,:)
+(  465) # 466 "./yomalloc.F90"
+(  466) INTEGER :: ILBOUND(4)
+(  467) INTEGER :: IUBOUND(4)
+(  468) # 469 "./yomalloc.F90"
+(  469) ILBOUND = LBOUND(Z)
+(  470) IUBOUND = UBOUND(Z)
+(  471) # 473 "./yomalloc.F90"
+(  473) ALLOCATE (P (ILBOUND (1):IUBOUND (1),ILBOUND (2):IUBOUND (2),ILBOUND (3):IUBOUND (3),ILBOUND (4):IUBOUND (4)))
+(  474) # 475 "./yomalloc.F90"
+(  475) P=Z
+(  476) # 477 "./yomalloc.F90"
+(  477) END SUBROUTINE
+(  478) # 482 "./yomalloc.F90"
+(  482) SUBROUTINE ALLOCIM5 (P, Z)
+(  483) # 484 "./yomalloc.F90"
+(  484) INTEGER (KIND=JPIM), POINTER :: P(:,:,:,:,:)
+(  485) INTEGER (KIND=JPIM), POINTER :: Z(:,:,:,:,:)
+(  486) # 487 "./yomalloc.F90"
+(  487) INTEGER :: ILBOUND(5)
+(  488) INTEGER :: IUBOUND(5)
+(  489) # 490 "./yomalloc.F90"
+(  490) ILBOUND = LBOUND(Z)
+(  491) IUBOUND = UBOUND(Z)
+(  492) # 494 "./yomalloc.F90"
+(  494) ALLOCATE (P (ILBOUND (1):IUBOUND (1),ILBOUND (2):IUBOUND (2),ILBOUND (3):IUBOUND (3),ILBOUND (4):IUBOUND (4),ILBOUND (5):IUBOUND&
+(  495)     & (5)))
+(  496) # 497 "./yomalloc.F90"
+(  497) P=Z
+(  498) # 499 "./yomalloc.F90"
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:54:56      page 17
+
+(  499) END SUBROUTINE
+(  500) # 502 "./yomalloc.F90"
+(  502) END

@@ -1,0 +1,1928 @@
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:05      page 1
+
+Switches: -noasm -nodclchk -debug -nodlines -line -list
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
+          -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/lib
+          -inform severe -opt 1 -nosave -object -noonetrip
+          -depchk on -nostandard     
+          -symbol -noupcase    
+
+Filename: ./xrd_getoptions.F90
+
+(    1) MODULE XRD_GETOPTIONS
+(    2) 
+(    3) !**** *XRD_GETOPTIONS*  - Parse command lines options in long form
+(    4) 
+(    5) !     Author. 
+(    6) !     ------- 
+(    7) !      Philippe Marguinaud *METEO FRANCE*
+(    8) !      Original : 11-09-2012
+(    9) 
+(   10) USE PARKIND1, ONLY: JPIM, JPRB, JPLM
+(   11) 
+(   12) USE XRD_UNIX_ENV, ONLY: XRD_IARGC, XRD_GETARG, &
+(   13)   XRD_BASENAME, XRD_COUNTWORDS, XRD_GETENV,    &
+(   14)   XRD_ISALPHA, XRD_ISDIGIT, XRD_EXIT
+(   15) 
+(   16) IMPLICIT NONE
+(   17) 
+(   18) INTERFACE GETOPTION
+(   19)   MODULE PROCEDURE GETOPTIONS, GETOPTIONSL, &
+(   20)                    GETOPTIONI, GETOPTIONIL, &
+(   21)                    GETOPTIONR, GETOPTIONRL, &
+(   22)                    GETOPTIONB
+(   23)                    
+(   24) END INTERFACE
+(   25) 
+(   26) !! @TODO : LIST WITH FIXED SIZE
+(   27) 
+(   28) PUBLIC :: GETOPTION, INITOPTIONS, CHECKOPTIONS, ADDGROUP
+(   29) 
+(   30) INTEGER, PARAMETER :: ARGSIZEMAX = 256
+(   31) 
+(   32) CHARACTER(LEN=ARGSIZEMAX), POINTER :: MYARGS(:) => NULL()
+(   33) LOGICAL(KIND=JPLM), POINTER :: CHECK_ARGS(:) => NULL()
+(   34) LOGICAL(KIND=JPLM) :: LHELP  = .FALSE., LSHELL = .FALSE.
+(   35) 
+(   36) CHARACTER(LEN=1056) :: MESSAGE_OPT = ""
+(   37) 
+(   38) 
+(   39) TYPE XRD_OPT
+(   40)   CHARACTER(LEN=32) :: KEY, TYPE
+(   41)   CHARACTER(LEN=1024) :: USE
+(   42)   LOGICAL(KIND=JPLM) :: GROUP = .FALSE.
+(   43) END TYPE
+(   44) 
+(   45) INTEGER(KIND=JPIM) :: NOPT_SEEN
+(   46) TYPE(XRD_OPT), POINTER :: OPT_SEEN(:) => NULL()
+(   47) 
+(   48) PRIVATE
+(   49) 
+(   50) CONTAINS
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:05      page 2
+
+(   51) 
+(   52) SUBROUTINE ADDGROUP( USE )
+(   53) CHARACTER(LEN=*), INTENT(IN) :: USE
+(   54) 
+(   55) CALL INIT_OPT_SEEN()
+(   56) NOPT_SEEN = NOPT_SEEN + 1
+(   57) CALL GROW_OPT_SEEN()
+(   58) 
+(   59) OPT_SEEN(NOPT_SEEN)%GROUP = .TRUE.
+(   60) OPT_SEEN(NOPT_SEEN)%USE = USE
+(   61) 
+(   62) 
+(   63) END SUBROUTINE ADDGROUP
+(   64) 
+(   65) CHARACTER(LEN=ARGSIZEMAX) FUNCTION GET_ENV_OPT( KEY )
+(   66) CHARACTER(LEN=*), INTENT(IN) :: KEY
+(   67) CHARACTER(LEN=ARGSIZEMAX) :: KEY_ENV, VAL_ENV
+(   68) INTEGER(KIND=JPIM) :: I, N
+(   69) CHARACTER :: C
+(   70) 
+(   71) KEY_ENV = KEY(3:)
+(   72) 
+(   73) N = LEN(TRIM(KEY_ENV))
+(   74) DO I = 1, N
+(   75)   C = KEY_ENV(I:I)
+(   76)   IF((.NOT.XRD_ISALPHA(C)) .AND. &
+(   77)      (.NOT.XRD_ISDIGIT(C)) .AND. &
+(   78)      (C .NE. '_' )) THEN
+(   79)     KEY_ENV(I:I) = '_'
+(   80)   ENDIF
+(   81) ENDDO
+(   82) 
+(   83) VAL_ENV = ""
+(   84) CALL XRD_GETENV( 'XRD_OPT_'//TRIM(KEY_ENV), VAL_ENV )
+(   85) 
+(   86) !PRINT *, " KEY = ", TRIM(KEY_ENV), " VAL = ", TRIM(VAL_ENV)
+(   87) 
+(   88) GET_ENV_OPT = VAL_ENV
+(   89) 
+(   90) END FUNCTION GET_ENV_OPT
+(   91) 
+(   92) SUBROUTINE MYGETARG( I, S )
+(   93)   INTEGER(KIND=JPIM), INTENT(IN)  :: I
+(   94)   CHARACTER(LEN=*),      INTENT(OUT) :: S
+(   95) !
+(   96)   IF( I .LE. UBOUND( MYARGS, 1 ) ) THEN
+(   97)     S = MYARGS(I)
+(   98)   ELSE
+(   99)     S = ""
+(  100)    ENDIF
+(  101) END SUBROUTINE MYGETARG
+(  102) 
+(  103) INTEGER FUNCTION MYIARGC()
+(  104)   INTEGER :: N
+(  105)   N = UBOUND( MYARGS, 1 )
+(  106)   MYIARGC = N
+(  107) END FUNCTION MYIARGC
+(  108) 
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:05      page 3
+
+(  109) SUBROUTINE ADDOPT_SHELL( KEY, TYPE, MND, USE )
+(  110)   CHARACTER*(*), INTENT(IN) :: KEY, TYPE, USE
+(  111)   LOGICAL(KIND=JPLM), INTENT(IN) :: MND
+(  112)   OPTIONAL :: USE, MND
+(  113) !
+(  114)   CHARACTER(LEN=ARGSIZEMAX) :: STR
+(  115)   INTEGER :: NN, N, N1, I1, I2, K
+(  116)   CHARACTER(LEN=ARGSIZEMAX), POINTER :: MYARGS1(:)
+(  117) 
+(  118)   MYARGS1 => NULL()
+(  119) 
+(  120)   IF( PRESENT( USE ) ) WRITE( *, '("> ",A)' ) TRIM(USE)
+(  121)   IF( PRESENT( MND ) ) THEN
+(  122)     IF( MND ) WRITE( *, * ) "[MANDATORY]"
+(  123)   ENDIF 
+(  124)   WRITE( *, * ) "* OPTION: [", TYPE, "]", " ", TRIM(KEY)
+(  125)   READ( *, '(A)' ) STR
+(  126) 
+(  127) ! PRINT *, "STR = ",TRIM(STR)
+(  128)   IF( TRIM(STR) .NE. "" )  THEN
+(  129)     IF( TYPE .EQ. 'FLAG' ) THEN
+(  130)       NN = 0
+(  131)     ELSE
+(  132)       NN = XRD_COUNTWORDS( STR )
+(  133)     ENDIF
+(  134)     N  = UBOUND( MYARGS, 1 )
+(  135)     N1 = N + NN + 1
+(  136) 
+(  137) !
+(  138) ! REALLOC MYARGS
+(  139) !
+(  140)     ALLOCATE( MYARGS1(0:N1) )
+(  141)     MYARGS1(0:N) = MYARGS(0:N)
+(  142)     DEALLOCATE( MYARGS )
+(  143)     MYARGS => MYARGS1
+(  144)     MYARGS(N+1) = KEY
+(  145) 
+(  146) !
+(  147) ! PARSE ARGUMENT LIST
+(  148) !
+(  149)     IF( TYPE .NE. 'FLAG' ) THEN
+(  150)       K = 1
+(  151)       I1 = 1
+(  152)       LOOP_I1 : DO 
+(  153)         DO
+(  154)           IF( I1 .GT. LEN(STR)) EXIT LOOP_I1
+(  155)           IF( STR(I1:I1) .NE. ' ' ) EXIT
+(  156)           I1 = I1+1
+(  157)         ENDDO
+(  158)         I2 = I1+1
+(  159)         DO
+(  160)           IF( I2 .GT. LEN(STR)) EXIT
+(  161)           IF( STR(I2:I2) .EQ. ' ' ) EXIT
+(  162)           I2 = I2+1
+(  163)         ENDDO
+(  164) !PRINT *, I1, I2
+(  165)         MYARGS(N+1+K) = STR(I1:I2-1)
+(  166) !PRINT *, K, TRIM(MYARGS(N+1+K))
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:05      page 4
+
+(  167)         K = K+1
+(  168)         I1 = I2+1
+(  169)       ENDDO LOOP_I1
+(  170)     ENDIF
+(  171)   ENDIF
+(  172) 
+(  173) END SUBROUTINE ADDOPT_SHELL
+(  174) 
+(  175) SUBROUTINE INIT_OPT_SEEN()
+(  176) 
+(  177)   IF( .NOT. ASSOCIATED( OPT_SEEN ) ) THEN
+(  178)     NOPT_SEEN = 0
+(  179)     ALLOCATE( OPT_SEEN( 32 ) )
+(  180)   ENDIF
+(  181) 
+(  182) END SUBROUTINE INIT_OPT_SEEN
+(  183) 
+(  184) SUBROUTINE GROW_OPT_SEEN()
+(  185)   INTEGER(KIND=JPIM) :: N
+(  186)   TYPE(XRD_OPT), POINTER :: OPT_SEEN1(:)
+(  187) 
+(  188)   N = SIZE( OPT_SEEN )
+(  189)   IF( NOPT_SEEN .GE. N ) THEN ! REALLOC DATA
+(  190)     OPT_SEEN1 => OPT_SEEN
+(  191)     ALLOCATE( OPT_SEEN( 2 * N ) )
+(  192)     OPT_SEEN(1:NOPT_SEEN) = OPT_SEEN1(1:NOPT_SEEN)
+(  193)     DEALLOCATE( OPT_SEEN1 )
+(  194)   ENDIF
+(  195) 
+(  196) END SUBROUTINE GROW_OPT_SEEN
+(  197) 
+(  198) SUBROUTINE ADDOPT( KEY, TYPE, USE )
+(  199)   CHARACTER*(*), INTENT(IN) :: KEY, TYPE, USE
+(  200)   OPTIONAL :: USE
+(  201) 
+(  202)   CALL INIT_OPT_SEEN()
+(  203) 
+(  204)   NOPT_SEEN = NOPT_SEEN + 1
+(  205) 
+(  206)   CALL GROW_OPT_SEEN()
+(  207) 
+(  208)   OPT_SEEN(NOPT_SEEN)%KEY  = KEY
+(  209)   OPT_SEEN(NOPT_SEEN)%TYPE = TYPE
+(  210) 
+(  211)   IF( PRESENT( USE ) ) THEN
+(  212)     OPT_SEEN(NOPT_SEEN)%USE  = USE
+(  213)   ELSE
+(  214)     OPT_SEEN(NOPT_SEEN)%USE  = ''
+(  215)   ENDIF
+(  216) 
+(  217) END SUBROUTINE ADDOPT
+(  218) 
+(  219) SUBROUTINE INITOPTIONS( CDMESSAGE, KOPTMIN, KOPTMAX, CDARGS )
+(  220)  CHARACTER(LEN=*),    OPTIONAL, INTENT (IN) :: CDMESSAGE
+(  221)  INTEGER (KIND=JPIM), OPTIONAL, INTENT (IN) :: KOPTMIN, KOPTMAX
+(  222)  CHARACTER (LEN=*),   OPTIONAL, INTENT (IN) :: CDARGS (0:)
+(  223)  INTEGER(KIND=JPIM) :: N, I
+(  224)  INTEGER(KIND=JPIM) :: IOPTMIN, IOPTMAX
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:05      page 5
+
+(  225)  CHARACTER*32 :: STR
+(  226) 
+(  227)  IF (PRESENT (CDARGS)) THEN
+(  228)    N = UBOUND (CDARGS, 1)
+(  229)  ELSE
+(  230)    N = XRD_IARGC()
+(  231)  ENDIF
+(  232) 
+(  233)  IOPTMIN = 0
+(  234)  IOPTMAX = N
+(  235)  IF (PRESENT (KOPTMIN)) IOPTMIN = KOPTMIN
+(  236)  IF (PRESENT (KOPTMAX)) IOPTMAX = KOPTMAX
+(  237) 
+(  238)  N = IOPTMAX-IOPTMIN
+(  239) 
+(  240)  ALLOCATE( MYARGS(0:N) )
+(  241)  DO I = 0, N
+(  242)    IF (PRESENT (CDARGS)) THEN
+(  243)      MYARGS(I) = CDARGS (IOPTMIN+I)
+(  244)    ELSE
+(  245)      CALL XRD_GETARG( IOPTMIN+I, MYARGS(I) )
+(  246)    ENDIF
+(  247)  ENDDO
+(  248) 
+(  249)  IF( PRESENT( CDMESSAGE ) ) THEN
+(  250)   MESSAGE_OPT = CDMESSAGE
+(  251)  ELSE
+(  252)   MESSAGE_OPT = ""
+(  253)  ENDIF
+(  254) 
+(  255)  IF( N .EQ. 1 ) THEN
+(  256)    CALL MYGETARG( 1_JPIM, STR )
+(  257)    IF( TRIM( STR ) .EQ. '--help' ) THEN
+(  258)      LHELP = .TRUE.
+(  259)      RETURN
+(  260)    ELSE IF( TRIM( STR ) .EQ. '--shell' ) THEN
+(  261)      LSHELL = .TRUE.
+(  262)      RETURN
+(  263)    ENDIF
+(  264)  ENDIF
+(  265) 
+(  266)  LHELP = .FALSE.
+(  267)  ALLOCATE( CHECK_ARGS( N ) )
+(  268)  CHECK_ARGS = .FALSE.
+(  269) 
+(  270) END SUBROUTINE INITOPTIONS
+(  271) 
+(  272) 
+(  273) 
+(  274) SUBROUTINE CHECKOPTIONS()
+(  275)  INTEGER(KIND=JPIM) :: I, N, IS, NS, KS
+(  276)  CHARACTER(LEN=ARGSIZEMAX) :: OPT, PROG
+(  277)  LOGICAL(KIND=JPLM) :: PB
+(  278)  CHARACTER(LEN=10) :: FMT
+(  279)  CHARACTER(LEN=110) :: BUF
+(  280) 
+(  281)  CALL MYGETARG( 0_JPIM, PROG )
+(  282) 
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:05      page 6
+
+(  283)  IF( LHELP ) THEN
+(  284)    PRINT *, "PROGRAM: ", TRIM(XRD_BASENAME( PROG ))
+(  285)    IF( TRIM(MESSAGE_OPT) .NE. "" ) THEN
+(  286)      NS = LEN(MESSAGE_OPT)
+(  287)      DO IS = 1, NS / 96
+(  288)        KS = LEN( TRIM(MESSAGE_OPT(1+(IS-1)*96:IS*96)) )
+(  289)        IF( KS .GT. 0 ) THEN
+(  290)          IF( IS .EQ. 1 ) THEN
+(  291)            WRITE( *, '("    ")', ADVANCE = 'NO' )
+(  292)          ELSE
+(  293)            WRITE( *, '("  > ")', ADVANCE = 'NO' )
+(  294)          ENDIF
+(  295)          WRITE( FMT, '("(A",I2,")")' ) KS
+(  296)          WRITE( *, FMT ) TRIM(MESSAGE_OPT(1+(IS-1)*96:IS*96))
+(  297)        ENDIF
+(  298)      ENDDO
+(  299)    ENDIF
+(  300)    DO I = 1, NOPT_SEEN
+(  301) 
+(  302)      IF(OPT_SEEN(I)%GROUP) THEN
+(  303)        WRITE( *, * ) 
+(  304)        IF( TRIM(OPT_SEEN(I)%USE) .NE. "" ) &
+(  305)          WRITE( *, * ) '* '//TRIM(OPT_SEEN(I)%USE)
+(  306)        CYCLE
+(  307)      ENDIF
+(  308) 
+(  309)      BUF = ""
+(  310) 
+(  311)      WRITE( BUF, '(A32," = ",A15)' ) &
+(  312)          TRIM(OPT_SEEN(I)%KEY), &
+(  313)          TRIM(OPT_SEEN(I)%TYPE)
+(  314) 
+(  315)      IF( TRIM(OPT_SEEN(I)%USE) .NE. '' ) THEN
+(  316)        NS = LEN( OPT_SEEN(I)%USE) 
+(  317)        DO IS = 1, NS / 48
+(  318)          KS = LEN(TRIM(OPT_SEEN(I)%USE(1+(IS-1)*48:IS*48)))
+(  319)          IF( KS .GT. 0 ) THEN
+(  320)            IF( IS .EQ. 1 ) THEN
+(  321)              BUF = TRIM(BUF)//" :   "//TRIM(OPT_SEEN(I)%USE(1+(IS-1)*48:IS*48))
+(  322)            ELSE
+(  323) !                   000000000011111111112222222222333333333344444444445555555555
+(  324) !                   012345678901234567890123456789012345678901234567890123456789
+(  325)              BUF = "                                                     > "&
+(  326)                    //TRIM(OPT_SEEN(I)%USE(1+(IS-1)*48:IS*48))
+(  327)            ENDIF
+(  328)            WRITE( *, '(A120)' ) BUF
+(  329)          ENDIF
+(  330)        ENDDO
+(  331)      ELSE
+(  332)        WRITE( *, '(A120)' ) BUF
+(  333)        WRITE( *, * )
+(  334)      ENDIF
+(  335) 
+(  336)    ENDDO
+(  337)    STOP
+(  338)  ELSE IF( ASSOCIATED( CHECK_ARGS ) ) THEN
+(  339)    N = SIZE( CHECK_ARGS )
+(  340)    PB = .FALSE.
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:05      page 7
+
+(  341)    DO I = 1, N
+(  342)      IF( .NOT. CHECK_ARGS(I) ) THEN
+(  343)        CALL MYGETARG( I, OPT )
+(  344)        IF( OPT(1:2) .EQ. '--' ) THEN
+(  345)          PRINT *, 'INVALID OPTION: ', TRIM(OPT)
+(  346)          PB = .TRUE.
+(  347)          CHECK_ARGS(I) = .TRUE.
+(  348)        ENDIF
+(  349)      ENDIF
+(  350)    ENDDO
+(  351) 
+(  352)    DO I = 1, N
+(  353)      IF( .NOT. CHECK_ARGS(I) ) THEN
+(  354)        CALL MYGETARG( I, OPT )
+(  355)        PRINT *, 'GARBAGE IN OPTIONS:`', TRIM(OPT), "'"
+(  356)        PB = .TRUE.
+(  357)        EXIT
+(  358)      ENDIF
+(  359)    ENDDO
+(  360) 
+(  361)    IF( PB ) CALL XRD_EXIT(1_JPIM)
+(  362) 
+(  363)    DEALLOCATE( CHECK_ARGS )
+(  364)  ELSE IF( LSHELL ) THEN
+(  365)    OPEN( 77, FILE = TRIM(PROG)//'.sh', FORM = 'FORMATTED' )
+(  366)    WRITE( 77, '("#!/bin/sh")' )
+(  367)    WRITE( 77, * )
+(  368)    WRITE( 77, '(A)', ADVANCE = 'NO' ) TRIM(PROG)
+(  369)    N = UBOUND( MYARGS, 1 )
+(  370)    DO I = 1, N
+(  371)      IF( MYARGS(I) .EQ. '--shell' ) CYCLE
+(  372)      IF( MYARGS(I)(1:2) .EQ. '--' ) THEN
+(  373)        WRITE( 77, '(" \")' )
+(  374)        WRITE( 77, '("    ")', ADVANCE = 'NO' )
+(  375)      ENDIF
+(  376)      WRITE( 77, '(" ",A)', ADVANCE = 'NO' ) TRIM(MYARGS(I))
+(  377)    ENDDO
+(  378)    WRITE( 77, * )
+(  379)    CLOSE(77)
+(  380)  ENDIF
+(  381) 
+(  382) 
+(  383) 
+(  384)  IF( ASSOCIATED( OPT_SEEN ) ) DEALLOCATE( OPT_SEEN )
+(  385)  IF( ASSOCIATED( MYARGS ) ) DEALLOCATE( MYARGS )
+(  386) END SUBROUTINE CHECKOPTIONS
+(  387) 
+(  388) 
+(  389) SUBROUTINE CHECK_MND( KEY, MND, USE )
+(  390)  CHARACTER(LEN=*),           INTENT(IN) :: KEY
+(  391)  CHARACTER(LEN=*), OPTIONAL, INTENT(IN) :: USE
+(  392)  LOGICAL(KIND=JPLM), OPTIONAL, INTENT(IN) :: MND
+(  393) !
+(  394)  CHARACTER(LEN=ARGSIZEMAX) :: PROG
+(  395) 
+(  396)  IF( PRESENT( MND ) ) THEN
+(  397)    IF( MND ) THEN
+(  398)      CALL MYGETARG( 0_JPIM, PROG )
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:05      page 8
+
+(  399)      WRITE( *, '("PROGRAM: ",(A))' ) TRIM( PROG )
+(  400)      WRITE( *, '("ERROR:   OPTION `",(A),"'' IS MANDATORY")' ) TRIM( KEY )
+(  401)      IF( PRESENT( USE ) ) WRITE( *, '("         ",(A)," : ",(A))' ) TRIM( KEY ), TRIM( USE )
+(  402)      CALL XRD_EXIT(1_JPIM)
+(  403)    ENDIF
+(  404)  ENDIF
+(  405) 
+(  406) END SUBROUTINE CHECK_MND
+(  407) 
+(  408) SUBROUTINE FINDARGINDEX( KEY, I, N )
+(  409)  CHARACTER(LEN=*),      INTENT(IN)  :: KEY
+(  410)  INTEGER(KIND=JPIM), INTENT(OUT) :: I, N
+(  411)  CHARACTER(LEN=ARGSIZEMAX) :: ARG
+(  412) 
+(  413)  N = MYIARGC()
+(  414)  DO I = 1, N
+(  415)    CALL MYGETARG( I, ARG )
+(  416)    IF( TRIM( ARG ) .EQ. TRIM( KEY ) ) RETURN
+(  417)  ENDDO
+(  418)  I = -1_JPIM
+(  419) END SUBROUTINE FINDARGINDEX
+(  420) 
+(  421) SUBROUTINE FINDNEXTARGINDEX( I, J )
+(  422)  INTEGER(KIND=JPIM), INTENT(IN)  :: I
+(  423)  INTEGER(KIND=JPIM), INTENT(OUT) :: J
+(  424) !
+(  425)  CHARACTER(LEN=ARGSIZEMAX) :: ARG
+(  426)  INTEGER(KIND=JPIM) :: N
+(  427) 
+(  428)  N = MYIARGC()
+(  429)  DO J = I+1, N
+(  430)   CALL MYGETARG( J, ARG )
+(  431)   IF( ARG(1:2) .EQ. '--' ) EXIT
+(  432)  ENDDO
+(  433) 
+(  434) END SUBROUTINE FINDNEXTARGINDEX
+(  435) 
+(  436) SUBROUTINE GETOPTIONS( KEY, VAL, MND, USE )
+(  437) !
+(  438)  CHARACTER(LEN=*), INTENT(IN)  :: KEY
+(  439)  CHARACTER(LEN=*), INTENT(INOUT) :: VAL
+(  440)  LOGICAL(KIND=JPLM), INTENT(IN), OPTIONAL :: MND
+(  441)  CHARACTER(LEN=*), INTENT(IN), OPTIONAL :: USE
+(  442) !
+(  443)  INTEGER(KIND=JPIM) :: I, N
+(  444)  CHARACTER(LEN=ARGSIZEMAX) :: ARG
+(  445)  LOGICAL(KIND=JPLM) :: LSHELL1
+(  446)  LOGICAL(KIND=JPLM) :: FOUND
+(  447) 
+(  448)  LSHELL1 = LSHELL
+(  449) 
+(  450)  IF( LHELP ) THEN
+(  451)    CALL ADDOPT( KEY, 'STRING', USE )
+(  452)    RETURN
+(  453)  ELSE IF( LSHELL ) THEN
+(  454)    LSHELL = .FALSE.
+(  455)    CALL ADDOPT_SHELL( KEY, 'STRING', MND, USE )
+(  456)  ENDIF
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:05      page 9
+
+(  457) 
+(  458)  CALL FINDARGINDEX( KEY, I, N )
+(  459) 
+(  460)  FOUND = ( 0 .LT. I ) .AND. ( I .LT. N )
+(  461) 
+(  462)  IF( FOUND ) THEN
+(  463)    IF( ASSOCIATED( CHECK_ARGS ) ) THEN
+(  464)      CHECK_ARGS(I)   = .TRUE.
+(  465)      CHECK_ARGS(I+1) = .TRUE.
+(  466)    ENDIF
+(  467)    CALL MYGETARG( I+1_JPIM, VAL )
+(  468)  ELSE
+(  469)    ARG = GET_ENV_OPT( KEY )
+(  470)    FOUND = ARG .NE. ""
+(  471)    IF( FOUND ) VAL = ARG
+(  472)  ENDIF
+(  473) 
+(  474)  IF( .NOT. FOUND ) &
+(  475)    CALL CHECK_MND( KEY, MND, USE )
+(  476) 
+(  477)  LSHELL = LSHELL1
+(  478) 
+(  479) END SUBROUTINE GETOPTIONS
+(  480) 
+(  481) SUBROUTINE GETOPTIONI( KEY, VAL, MND, USE )
+(  482) !
+(  483)  CHARACTER(LEN=*),      INTENT(IN)  :: KEY
+(  484)  INTEGER(KIND=JPIM), INTENT(INOUT) :: VAL
+(  485)  LOGICAL(KIND=JPLM), OPTIONAL, INTENT(IN) :: MND
+(  486)  CHARACTER(LEN=*), OPTIONAL, INTENT(IN) :: USE
+(  487) !
+(  488)  CHARACTER(LEN=ARGSIZEMAX) :: SVAL
+(  489)  INTEGER :: ERR
+(  490)  LOGICAL(KIND=JPLM) :: LSHELL1
+(  491) 
+(  492)  LSHELL1 = LSHELL
+(  493)  
+(  494)  IF( LHELP ) THEN
+(  495)    CALL ADDOPT( KEY, 'INTEGER', USE )
+(  496)    RETURN
+(  497)  ELSE IF( LSHELL ) THEN
+(  498)    LSHELL = .FALSE.
+(  499)    CALL ADDOPT_SHELL( KEY, 'INTEGER', MND, USE )
+(  500)  ENDIF
+(  501)  
+(  502)  SVAL = ""
+(  503)  CALL GETOPTIONS( KEY, SVAL, MND, USE )
+(  504)  IF( TRIM( SVAL ) .NE. "" ) THEN
+(  505)    READ( SVAL, *, IOSTAT = ERR ) VAL
+(  506)    IF( ERR .NE. 0 ) THEN
+(  507)      PRINT *, "ERROR WHILE PARSING OPTION "//TRIM(KEY)
+(  508)      CALL XRD_EXIT(1_JPIM)
+(  509)    ENDIF
+(  510)  ENDIF
+(  511) 
+(  512)  LSHELL = LSHELL1
+(  513) 
+(  514) END SUBROUTINE GETOPTIONI
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:05      page 10
+
+(  515) 
+(  516) SUBROUTINE GETOPTIONR( KEY, VAL, MND, USE )
+(  517) !
+(  518)  CHARACTER(LEN=*),   INTENT(IN)  :: KEY
+(  519)  REAL(KIND=JPRB), INTENT(INOUT) :: VAL
+(  520)  LOGICAL(KIND=JPLM), OPTIONAL, INTENT(IN) :: MND
+(  521)  CHARACTER(LEN=*), OPTIONAL, INTENT(IN) :: USE
+(  522) !
+(  523)  CHARACTER(LEN=ARGSIZEMAX) :: SVAL
+(  524)  INTEGER :: ERR
+(  525)  LOGICAL(KIND=JPLM) :: LSHELL1
+(  526) 
+(  527)  LSHELL1 = LSHELL
+(  528)  
+(  529)  IF( LHELP ) THEN
+(  530)    CALL ADDOPT( KEY, 'REAL', USE )
+(  531)    RETURN
+(  532)  ELSE IF( LSHELL ) THEN
+(  533)    LSHELL = .FALSE.
+(  534)    CALL ADDOPT_SHELL( KEY, 'REAL', MND, USE )
+(  535)  ENDIF
+(  536)  
+(  537)  SVAL = ""
+(  538)  CALL GETOPTIONS( KEY, SVAL, MND, USE )
+(  539)  IF( TRIM( SVAL ) .NE. "" ) THEN
+(  540)    READ( SVAL, *, IOSTAT = ERR ) VAL
+(  541)    IF( ERR .NE. 0 ) THEN
+(  542)      PRINT *, "ERROR WHILE PARSING OPTION "//TRIM(KEY)
+(  543)      CALL XRD_EXIT(1_JPIM)
+(  544)    ENDIF
+(  545)  ENDIF
+(  546) 
+(  547)  LSHELL = LSHELL1
+(  548) 
+(  549) END SUBROUTINE GETOPTIONR
+(  550) 
+(  551) SUBROUTINE READASLFROMSTRING( VAL, SVAL )
+(  552)  CHARACTER(LEN=*), INTENT(OUT) :: VAL(:)
+(  553)  CHARACTER(LEN=*), INTENT(IN) :: SVAL
+(  554) !
+(  555)  INTEGER(KIND=JPIM) :: I, J, K, N
+(  556) 
+(  557)  N = LEN( SVAL )
+(  558) 
+(  559)  I = 1
+(  560)  K = 1
+(  561)  DO1 : DO 
+(  562)    DO
+(  563)      IF( I .GT. N ) EXIT DO1
+(  564)      IF( SVAL(I:I) .NE. ' ' ) EXIT
+(  565)      I = I + 1
+(  566)    ENDDO
+(  567)    J = I
+(  568)    DO
+(  569)      IF( J .GT. N ) EXIT 
+(  570)      IF( SVAL(J:J) .EQ. ' ' ) EXIT
+(  571)      J = J + 1
+(  572)    ENDDO
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:05      page 11
+
+(  573) 
+(  574)    VAL(K) = SVAL(I:J-1)
+(  575)    I = J
+(  576)    K = K + 1
+(  577)  ENDDO DO1
+(  578) 
+(  579) 
+(  580) END SUBROUTINE READASLFROMSTRING
+(  581) 
+(  582) SUBROUTINE READSLFROMSTRING( VAL, SVAL )
+(  583)  CHARACTER(LEN=*), POINTER :: VAL(:)
+(  584)  CHARACTER(LEN=*), INTENT(IN) :: SVAL
+(  585) !
+(  586)  INTEGER(KIND=JPIM) :: N
+(  587) 
+(  588)  N = XRD_COUNTWORDS( SVAL )
+(  589)  ALLOCATE( VAL( N ) )
+(  590) 
+(  591)  CALL READASLFROMSTRING( VAL, SVAL )
+(  592) 
+(  593) END SUBROUTINE READSLFROMSTRING
+(  594) 
+(  595) SUBROUTINE READSLFROMFILE( VAL, SVAL )
+(  596)  CHARACTER(LEN=*), POINTER :: VAL(:)
+(  597)  CHARACTER(LEN=*), INTENT(IN) :: SVAL
+(  598) !
+(  599)  INTEGER(KIND=JPIM) :: K, N
+(  600)  INTEGER(KIND=JPIM) :: IOERR
+(  601)  CHARACTER(LEN=4096) :: BUFFER
+(  602) 
+(  603)  OPEN( 77, FILE = TRIM(SVAL), FORM = 'FORMATTED', STATUS = 'OLD', IOSTAT = IOERR )
+(  604)  IF( IOERR .NE. 0 ) THEN
+(  605)    PRINT '( "COULD NOT OPEN ",A, " FOR READING")', TRIM(SVAL)
+(  606)    CALL XRD_EXIT(1_JPIM)
+(  607)  ENDIF
+(  608)  N = 0_JPIM
+(  609)  DO 
+(  610)    READ( 77, '(A)', END = 500 ) BUFFER
+(  611)    N = N + XRD_COUNTWORDS( BUFFER )
+(  612)  ENDDO
+(  613) 
+(  614)  500 CONTINUE
+(  615) 
+(  616)  REWIND( 77 )
+(  617) 
+(  618)  ALLOCATE( VAL( N ) )
+(  619)  
+(  620)  K = 1
+(  621)  DO 
+(  622)    READ( 77, '(A)', END = 600 ) BUFFER
+(  623)    N = XRD_COUNTWORDS( BUFFER )
+(  624)    CALL READASLFROMSTRING( VAL(K:K+N-1), BUFFER )
+(  625)    K = K + N
+(  626)  ENDDO
+(  627) 
+(  628)  600 CONTINUE
+(  629) 
+(  630) 
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:05      page 12
+
+(  631)  CLOSE( 77 )
+(  632)  
+(  633) END SUBROUTINE READSLFROMFILE
+(  634) 
+(  635) SUBROUTINE GETOPTIONSL( KEY, VAL, MND, USE )
+(  636) !
+(  637)  CHARACTER(LEN=*), INTENT(IN) :: KEY
+(  638)  CHARACTER(LEN=*), POINTER :: VAL(:)
+(  639)  LOGICAL(KIND=JPLM), OPTIONAL, INTENT(IN) :: MND
+(  640)  CHARACTER(LEN=*), OPTIONAL, INTENT(IN) :: USE
+(  641) !
+(  642)  INTEGER(KIND=JPIM) :: I, J, K, N
+(  643)  CHARACTER(LEN=ARGSIZEMAX) :: ARG
+(  644)  CHARACTER(LEN=ARGSIZEMAX) :: SVAL
+(  645)  LOGICAL(KIND=JPLM) :: LSHELL1
+(  646)  LOGICAL(KIND=JPLM) :: FOUND
+(  647) 
+(  648)  LSHELL1 = LSHELL
+(  649)  
+(  650)  IF( LHELP ) THEN
+(  651)    CALL ADDOPT( KEY, 'STRING-LIST', USE )
+(  652)    RETURN
+(  653)  ELSE IF( LSHELL ) THEN
+(  654)    LSHELL = .FALSE.
+(  655)    CALL ADDOPT_SHELL( KEY, 'STRING-LIST', MND, USE )
+(  656)  ENDIF
+(  657)  
+(  658)  CALL FINDARGINDEX( KEY, I, N )
+(  659) 
+(  660)  FOUND = I >= 0
+(  661) 
+(  662)  IF( FOUND ) THEN
+(  663) 
+(  664)    CALL FINDNEXTARGINDEX( I, J )
+(  665) 
+(  666)    ALLOCATE( VAL( J - I - 1 ) )
+(  667)    
+(  668)    IF( ASSOCIATED( CHECK_ARGS ) ) &
+(  669)      CHECK_ARGS(I) = .TRUE.
+(  670)    
+(  671)    DO K = I+1, J-1
+(  672)      IF( ASSOCIATED( CHECK_ARGS ) ) &
+(  673)        CHECK_ARGS(K)   = .TRUE.
+(  674)      CALL MYGETARG( K, ARG )
+(  675)      IF ((I+1.EQ.J-1) .AND. (ARG(1:7).EQ.'file://')) THEN
+(  676)        DEALLOCATE (VAL)
+(  677)        ARG = ARG(8:)
+(  678)        CALL READSLFROMFILE( VAL, ARG )
+(  679)      ELSE
+(  680)        VAL(K-I) = ARG
+(  681)      ENDIF
+(  682)    ENDDO
+(  683) 
+(  684)  ENDIF
+(  685)  
+(  686)  IF(.NOT. FOUND) THEN
+(  687)    SVAL = GET_ENV_OPT( KEY )
+(  688)    FOUND = SVAL .NE. ""
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:05      page 13
+
+(  689)    IF( FOUND ) &
+(  690)      CALL READSLFROMSTRING( VAL, SVAL )
+(  691)  ENDIF
+(  692) 
+(  693)  IF( .NOT. FOUND ) &
+(  694)    CALL CHECK_MND( KEY, MND, USE )
+(  695) 
+(  696)  LSHELL = LSHELL1
+(  697) 
+(  698) END SUBROUTINE GETOPTIONSL
+(  699) 
+(  700) SUBROUTINE GETOPTIONIL( KEY, VAL, MND, USE )
+(  701) !
+(  702)  CHARACTER(LEN=*),      INTENT(IN) :: KEY
+(  703)  INTEGER(KIND=JPIM), POINTER    :: VAL(:)
+(  704)  LOGICAL(KIND=JPLM), OPTIONAL, INTENT(IN) :: MND
+(  705)  CHARACTER(LEN=*), OPTIONAL, INTENT(IN) :: USE
+(  706) !
+(  707)  CHARACTER(LEN=ARGSIZEMAX), POINTER :: SVAL(:)
+(  708)  INTEGER(KIND=JPIM) :: I, N
+(  709)  INTEGER :: ERR
+(  710)  LOGICAL(KIND=JPLM) :: LSHELL1
+(  711) 
+(  712)  NULLIFY (SVAL)
+(  713) 
+(  714)  LSHELL1 = LSHELL
+(  715) 
+(  716)  IF( LHELP ) THEN
+(  717)    CALL ADDOPT( KEY, 'INTEGER-LIST', USE )
+(  718)    RETURN
+(  719)  ELSE IF( LSHELL ) THEN
+(  720)    LSHELL = .FALSE.
+(  721)    CALL ADDOPT_SHELL( KEY, 'INTEGER-LIST', MND, USE )
+(  722)  ENDIF
+(  723)  
+(  724)  CALL GETOPTIONSL( KEY, SVAL, MND, USE )
+(  725) 
+(  726)  IF( .NOT. ASSOCIATED( SVAL ) ) GOTO 999
+(  727) 
+(  728)  N = SIZE( SVAL )
+(  729)  ALLOCATE( VAL( N ) )
+(  730)  DO I = 1, N
+(  731)    READ( SVAL( I ), *, IOSTAT = ERR ) VAL( I )
+(  732)    IF( ERR .NE. 0 ) THEN
+(  733)      PRINT *, "ERROR WHILE PARSING OPTION "//TRIM(KEY)
+(  734)      CALL XRD_EXIT(1_JPIM)
+(  735)    ENDIF
+(  736)  ENDDO
+(  737) 
+(  738)  DEALLOCATE( SVAL )
+(  739) 
+(  740) 999 CONTINUE
+(  741)  LSHELL = LSHELL1
+(  742) 
+(  743) END SUBROUTINE GETOPTIONIL
+(  744) 
+(  745) SUBROUTINE GETOPTIONRL( KEY, VAL, MND, USE )
+(  746) !
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:05      page 14
+
+(  747)  CHARACTER(LEN=*),   INTENT(IN) :: KEY
+(  748)  REAL(KIND=JPRB), POINTER    :: VAL(:)
+(  749)  LOGICAL(KIND=JPLM), OPTIONAL, INTENT(IN) :: MND
+(  750)  CHARACTER(LEN=*), OPTIONAL, INTENT(IN) :: USE
+(  751) !
+(  752)  CHARACTER(LEN=ARGSIZEMAX), POINTER :: SVAL(:)
+(  753)  INTEGER(KIND=JPIM) :: I, N
+(  754)  INTEGER :: ERR
+(  755)  LOGICAL(KIND=JPLM) :: LSHELL1
+(  756) 
+(  757)  NULLIFY (SVAL)
+(  758) 
+(  759)  LSHELL1 = LSHELL
+(  760) 
+(  761)  IF( LHELP ) THEN
+(  762)    CALL ADDOPT( KEY, 'REAL-LIST', USE )
+(  763)    RETURN
+(  764)  ELSE IF( LSHELL ) THEN
+(  765)    LSHELL = .FALSE.
+(  766)    CALL ADDOPT_SHELL( KEY, 'REAL-LIST', MND, USE )
+(  767)  ENDIF
+(  768)  
+(  769)  CALL GETOPTIONSL( KEY, SVAL, MND, USE )
+(  770) 
+(  771)  IF( .NOT. ASSOCIATED( SVAL ) ) GOTO 999
+(  772) 
+(  773)  N = SIZE( SVAL )
+(  774)  ALLOCATE( VAL( N ) )
+(  775)  DO I = 1, N
+(  776)    READ( SVAL( I ), *, IOSTAT = ERR ) VAL( I )
+(  777)    IF( ERR .NE. 0 ) THEN
+(  778)      PRINT *, "ERROR WHILE PARSING OPTION "//TRIM(KEY)
+(  779)      CALL XRD_EXIT(1_JPIM)
+(  780)    ENDIF
+(  781)  ENDDO
+(  782) 
+(  783)  DEALLOCATE( SVAL )
+(  784) 
+(  785) 999 CONTINUE
+(  786)  LSHELL = LSHELL1
+(  787) 
+(  788) END SUBROUTINE GETOPTIONRL
+(  789) 
+(  790) SUBROUTINE GETOPTIONB( KEY, VAL, USE )
+(  791) !
+(  792)  CHARACTER(LEN=*), INTENT(IN)  :: KEY
+(  793)  LOGICAL(KIND=JPLM), INTENT(INOUT) :: VAL
+(  794)  CHARACTER(LEN=*), OPTIONAL, INTENT(IN) :: USE
+(  795) !
+(  796)  LOGICAL(KIND=JPLM) :: LSHELL1
+(  797)  LOGICAL(KIND=JPLM) :: FOUND
+(  798)  CHARACTER(LEN=ARGSIZEMAX) :: SVAL
+(  799)  INTEGER(KIND=JPIM) :: I, N
+(  800)  
+(  801)  LSHELL1 = LSHELL
+(  802) 
+(  803)  VAL = .FALSE.
+(  804) 
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:05      page 15
+
+(  805)  IF( LHELP ) THEN
+(  806)    CALL ADDOPT( KEY, 'FLAG', USE )
+(  807)    RETURN
+(  808)  ELSE IF( LSHELL ) THEN
+(  809)    LSHELL = .FALSE.
+(  810)    CALL ADDOPT_SHELL( KEY, 'FLAG', .FALSE._JPLM, USE )
+(  811)  ENDIF
+(  812)  
+(  813)  CALL FINDARGINDEX( KEY, I, N )
+(  814)  FOUND = I > 0
+(  815)  IF( FOUND .AND. ASSOCIATED( CHECK_ARGS ) ) THEN
+(  816)    CHECK_ARGS(I)   = .TRUE.
+(  817)    VAL = .TRUE.
+(  818)  ELSE
+(  819)    SVAL = GET_ENV_OPT( KEY )
+(  820)    IF( SVAL .NE. "" ) &
+(  821)      READ( SVAL, * ) VAL
+(  822)  ENDIF
+(  823) 
+(  824)  LSHELL = LSHELL1
+(  825) 
+(  826) END SUBROUTINE GETOPTIONB
+(  827) 
+(  828) END MODULE XRD_GETOPTIONS
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:05      page 16
+
+(    1) # 1 "./xrd_getoptions.F90"
+(    1) MODULE XRD_GETOPTIONS
+(    2) # 3 "./xrd_getoptions.F90"
+(    3) !**** *XRD_GETOPTIONS*  - Parse command lines options in long form
+(    4) # 5 "./xrd_getoptions.F90"
+(    5) !     Author. 
+(    6) !     ------- 
+(    7) !      Philippe Marguinaud *METEO FRANCE*
+(    8) !      Original : 11-09-2012
+(    9) # 10 "./xrd_getoptions.F90"
+(   10) USE PARKIND1, ONLY: JPIM, JPRB, JPLM
+(   11) # 12 "./xrd_getoptions.F90"
+(   12) USE XRD_UNIX_ENV, ONLY: XRD_IARGC, XRD_GETARG, &
+(   13)   XRD_BASENAME, XRD_COUNTWORDS, XRD_GETENV,    &
+(   14)   XRD_ISALPHA, XRD_ISDIGIT, XRD_EXIT
+(   15) # 16 "./xrd_getoptions.F90"
+(   16) IMPLICIT NONE
+(   17) # 18 "./xrd_getoptions.F90"
+(   18) INTERFACE GETOPTION
+(   19)   MODULE PROCEDURE GETOPTIONS, GETOPTIONSL, &
+(   20)                    GETOPTIONI, GETOPTIONIL, &
+(   21)                    GETOPTIONR, GETOPTIONRL, &
+(   22)                    GETOPTIONB
+(   23)                    
+(   24) END INTERFACE
+(   25) # 26 "./xrd_getoptions.F90"
+(   26) !! @TODO : LIST WITH FIXED SIZE
+(   27) # 28 "./xrd_getoptions.F90"
+(   28) PUBLIC :: GETOPTION, INITOPTIONS, CHECKOPTIONS, ADDGROUP
+(   29) # 30 "./xrd_getoptions.F90"
+(   30) INTEGER, PARAMETER :: ARGSIZEMAX = 256
+(   31) # 32 "./xrd_getoptions.F90"
+(   32) CHARACTER(LEN=ARGSIZEMAX), POINTER :: MYARGS(:) => NULL()
+(   33) LOGICAL(KIND=JPLM), POINTER :: CHECK_ARGS(:) => NULL()
+(   34) LOGICAL(KIND=JPLM) :: LHELP  = .FALSE., LSHELL = .FALSE.
+(   35) # 36 "./xrd_getoptions.F90"
+(   36) CHARACTER(LEN=1056) :: MESSAGE_OPT = ""
+(   37) # 39 "./xrd_getoptions.F90"
+(   39) TYPE XRD_OPT
+(   40)   CHARACTER(LEN=32) :: KEY, TYPE
+(   41)   CHARACTER(LEN=1024) :: USE
+(   42)   LOGICAL(KIND=JPLM) :: GROUP = .FALSE.
+(   43) END TYPE
+(   44) # 45 "./xrd_getoptions.F90"
+(   45) INTEGER(KIND=JPIM) :: NOPT_SEEN
+(   46) TYPE(XRD_OPT), POINTER :: OPT_SEEN(:) => NULL()
+(   47) # 48 "./xrd_getoptions.F90"
+(   48) PRIVATE
+(   49) # 50 "./xrd_getoptions.F90"
+(   50) CONTAINS
+(   51) # 52 "./xrd_getoptions.F90"
+(   52) SUBROUTINE ADDGROUP( USE )
+(   53) CHARACTER(LEN=*), INTENT(IN) :: USE
+(   54) # 55 "./xrd_getoptions.F90"
+(   55) CALL INIT_OPT_SEEN()
+(   56) NOPT_SEEN = NOPT_SEEN + 1
+(   57) CALL GROW_OPT_SEEN()
+(   58) # 59 "./xrd_getoptions.F90"
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:05      page 17
+
+(   59) OPT_SEEN(NOPT_SEEN)%GROUP = .TRUE.
+(   60) OPT_SEEN(NOPT_SEEN)%USE = USE
+(   61) # 63 "./xrd_getoptions.F90"
+(   63) END SUBROUTINE ADDGROUP
+(   64) # 65 "./xrd_getoptions.F90"
+(   65) CHARACTER(LEN=ARGSIZEMAX) FUNCTION GET_ENV_OPT( KEY )
+(   66) CHARACTER(LEN=*), INTENT(IN) :: KEY
+(   67) CHARACTER(LEN=ARGSIZEMAX) :: KEY_ENV, VAL_ENV
+(   68) INTEGER(KIND=JPIM) :: I, N
+(   69) CHARACTER :: C
+(   70) # 71 "./xrd_getoptions.F90"
+(   71) KEY_ENV = KEY(3:)
+(   72) # 73 "./xrd_getoptions.F90"
+(   73) N = LEN(TRIM(KEY_ENV))
+(   74) DO I = 1, N
+(   75)   C = KEY_ENV(I:I)
+(   76)   IF((.NOT.XRD_ISALPHA(C)) .AND. &
+(   77)      (.NOT.XRD_ISDIGIT(C)) .AND. &
+(   78)      (C .NE. '_' )) THEN
+(   79)     KEY_ENV(I:I) = '_'
+(   80)   ENDIF
+(   81) ENDDO
+(   82) # 83 "./xrd_getoptions.F90"
+(   83) VAL_ENV = ""
+(   84) CALL XRD_GETENV( 'XRD_OPT_'//TRIM(KEY_ENV), VAL_ENV )
+(   85) # 86 "./xrd_getoptions.F90"
+(   86) !PRINT *, " KEY = ", TRIM(KEY_ENV), " VAL = ", TRIM(VAL_ENV)
+(   87) # 88 "./xrd_getoptions.F90"
+(   88) GET_ENV_OPT = VAL_ENV
+(   89) # 90 "./xrd_getoptions.F90"
+(   90) END FUNCTION GET_ENV_OPT
+(   91) # 92 "./xrd_getoptions.F90"
+(   92) SUBROUTINE MYGETARG( I, S )
+(   93)   INTEGER(KIND=JPIM), INTENT(IN)  :: I
+(   94)   CHARACTER(LEN=*),      INTENT(OUT) :: S
+(   95) !
+(   96)   IF( I .LE. UBOUND( MYARGS, 1 ) ) THEN
+(   97)     S = MYARGS(I)
+(   98)   ELSE
+(   99)     S = ""
+(  100)    ENDIF
+(  101) END SUBROUTINE MYGETARG
+(  102) # 103 "./xrd_getoptions.F90"
+(  103) INTEGER FUNCTION MYIARGC()
+(  104)   INTEGER :: N
+(  105)   N = UBOUND( MYARGS, 1 )
+(  106)   MYIARGC = N
+(  107) END FUNCTION MYIARGC
+(  108) # 109 "./xrd_getoptions.F90"
+(  109) SUBROUTINE ADDOPT_SHELL( KEY, TYPE, MND, USE )
+(  110)   CHARACTER*(*), INTENT(IN) :: KEY, TYPE, USE
+(  111)   LOGICAL(KIND=JPLM), INTENT(IN) :: MND
+(  112)   OPTIONAL :: USE, MND
+(  113) !
+(  114)   CHARACTER(LEN=ARGSIZEMAX) :: STR
+(  115)   INTEGER :: NN, N, N1, I1, I2, K
+(  116)   CHARACTER(LEN=ARGSIZEMAX), POINTER :: MYARGS1(:)
+(  117) # 118 "./xrd_getoptions.F90"
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:05      page 18
+
+(  118)   MYARGS1 => NULL()
+(  119) # 120 "./xrd_getoptions.F90"
+(  120)   IF( PRESENT( USE ) ) WRITE( *, '("> ",A)' ) TRIM(USE)
+(  121)   IF( PRESENT( MND ) ) THEN
+(  122)     IF( MND ) WRITE( *, * ) "[MANDATORY]"
+(  123)   ENDIF 
+(  124)   WRITE( *, * ) "* OPTION: [", TYPE, "]", " ", TRIM(KEY)
+(  125)   READ( *, '(A)' ) STR
+(  126) # 127 "./xrd_getoptions.F90"
+(  127) ! PRINT *, "STR = ",TRIM(STR)
+(  128)   IF( TRIM(STR) .NE. "" )  THEN
+(  129)     IF( TYPE .EQ. 'FLAG' ) THEN
+(  130)       NN = 0
+(  131)     ELSE
+(  132)       NN = XRD_COUNTWORDS( STR )
+(  133)     ENDIF
+(  134)     N  = UBOUND( MYARGS, 1 )
+(  135)     N1 = N + NN + 1
+(  136) # 137 "./xrd_getoptions.F90"
+(  137) !
+(  138) ! REALLOC MYARGS
+(  139) !
+(  140)     ALLOCATE( MYARGS1(0:N1) )
+(  141)     MYARGS1(0:N) = MYARGS(0:N)
+(  142)     DEALLOCATE( MYARGS )
+(  143)     MYARGS => MYARGS1
+(  144)     MYARGS(N+1) = KEY
+(  145) # 146 "./xrd_getoptions.F90"
+(  146) !
+(  147) ! PARSE ARGUMENT LIST
+(  148) !
+(  149)     IF( TYPE .NE. 'FLAG' ) THEN
+(  150)       K = 1
+(  151)       I1 = 1
+(  152)       LOOP_I1 : DO 
+(  153)         DO
+(  154)           IF( I1 .GT. LEN(STR)) EXIT LOOP_I1
+(  155)           IF( STR(I1:I1) .NE. ' ' ) EXIT
+(  156)           I1 = I1+1
+(  157)         ENDDO
+(  158)         I2 = I1+1
+(  159)         DO
+(  160)           IF( I2 .GT. LEN(STR)) EXIT
+(  161)           IF( STR(I2:I2) .EQ. ' ' ) EXIT
+(  162)           I2 = I2+1
+(  163)         ENDDO
+(  164) !PRINT *, I1, I2
+(  165)         MYARGS(N+1+K) = STR(I1:I2-1)
+(  166) !PRINT *, K, TRIM(MYARGS(N+1+K))
+(  167)         K = K+1
+(  168)         I1 = I2+1
+(  169)       ENDDO LOOP_I1
+(  170)     ENDIF
+(  171)   ENDIF
+(  172) # 173 "./xrd_getoptions.F90"
+(  173) END SUBROUTINE ADDOPT_SHELL
+(  174) # 175 "./xrd_getoptions.F90"
+(  175) SUBROUTINE INIT_OPT_SEEN()
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:05      page 19
+
+(  176) # 177 "./xrd_getoptions.F90"
+(  177)   IF( .NOT. ASSOCIATED( OPT_SEEN ) ) THEN
+(  178)     NOPT_SEEN = 0
+(  179)     ALLOCATE( OPT_SEEN( 32 ) )
+(  180)   ENDIF
+(  181) # 182 "./xrd_getoptions.F90"
+(  182) END SUBROUTINE INIT_OPT_SEEN
+(  183) # 184 "./xrd_getoptions.F90"
+(  184) SUBROUTINE GROW_OPT_SEEN()
+(  185)   INTEGER(KIND=JPIM) :: N
+(  186)   TYPE(XRD_OPT), POINTER :: OPT_SEEN1(:)
+(  187) # 188 "./xrd_getoptions.F90"
+(  188)   N = SIZE( OPT_SEEN )
+(  189)   IF( NOPT_SEEN .GE. N ) THEN ! REALLOC DATA
+(  190)     OPT_SEEN1 => OPT_SEEN
+(  191)     ALLOCATE( OPT_SEEN( 2 * N ) )
+(  192)     OPT_SEEN(1:NOPT_SEEN) = OPT_SEEN1(1:NOPT_SEEN)
+(  193)     DEALLOCATE( OPT_SEEN1 )
+(  194)   ENDIF
+(  195) # 196 "./xrd_getoptions.F90"
+(  196) END SUBROUTINE GROW_OPT_SEEN
+(  197) # 198 "./xrd_getoptions.F90"
+(  198) SUBROUTINE ADDOPT( KEY, TYPE, USE )
+(  199)   CHARACTER*(*), INTENT(IN) :: KEY, TYPE, USE
+(  200)   OPTIONAL :: USE
+(  201) # 202 "./xrd_getoptions.F90"
+(  202)   CALL INIT_OPT_SEEN()
+(  203) # 204 "./xrd_getoptions.F90"
+(  204)   NOPT_SEEN = NOPT_SEEN + 1
+(  205) # 206 "./xrd_getoptions.F90"
+(  206)   CALL GROW_OPT_SEEN()
+(  207) # 208 "./xrd_getoptions.F90"
+(  208)   OPT_SEEN(NOPT_SEEN)%KEY  = KEY
+(  209)   OPT_SEEN(NOPT_SEEN)%TYPE = TYPE
+(  210) # 211 "./xrd_getoptions.F90"
+(  211)   IF( PRESENT( USE ) ) THEN
+(  212)     OPT_SEEN(NOPT_SEEN)%USE  = USE
+(  213)   ELSE
+(  214)     OPT_SEEN(NOPT_SEEN)%USE  = ''
+(  215)   ENDIF
+(  216) # 217 "./xrd_getoptions.F90"
+(  217) END SUBROUTINE ADDOPT
+(  218) # 219 "./xrd_getoptions.F90"
+(  219) SUBROUTINE INITOPTIONS( CDMESSAGE, KOPTMIN, KOPTMAX, CDARGS )
+(  220)  CHARACTER(LEN=*),    OPTIONAL, INTENT (IN) :: CDMESSAGE
+(  221)  INTEGER (KIND=JPIM), OPTIONAL, INTENT (IN) :: KOPTMIN, KOPTMAX
+(  222)  CHARACTER (LEN=*),   OPTIONAL, INTENT (IN) :: CDARGS (0:)
+(  223)  INTEGER(KIND=JPIM) :: N, I
+(  224)  INTEGER(KIND=JPIM) :: IOPTMIN, IOPTMAX
+(  225)  CHARACTER*32 :: STR
+(  226) # 227 "./xrd_getoptions.F90"
+(  227)  IF (PRESENT (CDARGS)) THEN
+(  228)    N = UBOUND (CDARGS, 1)
+(  229)  ELSE
+(  230)    N = XRD_IARGC()
+(  231)  ENDIF
+(  232) # 233 "./xrd_getoptions.F90"
+(  233)  IOPTMIN = 0
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:05      page 20
+
+(  234)  IOPTMAX = N
+(  235)  IF (PRESENT (KOPTMIN)) IOPTMIN = KOPTMIN
+(  236)  IF (PRESENT (KOPTMAX)) IOPTMAX = KOPTMAX
+(  237) # 238 "./xrd_getoptions.F90"
+(  238)  N = IOPTMAX-IOPTMIN
+(  239) # 240 "./xrd_getoptions.F90"
+(  240)  ALLOCATE( MYARGS(0:N) )
+(  241)  DO I = 0, N
+(  242)    IF (PRESENT (CDARGS)) THEN
+(  243)      MYARGS(I) = CDARGS (IOPTMIN+I)
+(  244)    ELSE
+(  245)      CALL XRD_GETARG( IOPTMIN+I, MYARGS(I) )
+(  246)    ENDIF
+(  247)  ENDDO
+(  248) # 249 "./xrd_getoptions.F90"
+(  249)  IF( PRESENT( CDMESSAGE ) ) THEN
+(  250)   MESSAGE_OPT = CDMESSAGE
+(  251)  ELSE
+(  252)   MESSAGE_OPT = ""
+(  253)  ENDIF
+(  254) # 255 "./xrd_getoptions.F90"
+(  255)  IF( N .EQ. 1 ) THEN
+(  256)    CALL MYGETARG( 1_JPIM, STR )
+(  257)    IF( TRIM( STR ) .EQ. '--help' ) THEN
+(  258)      LHELP = .TRUE.
+(  259)      RETURN
+(  260)    ELSE IF( TRIM( STR ) .EQ. '--shell' ) THEN
+(  261)      LSHELL = .TRUE.
+(  262)      RETURN
+(  263)    ENDIF
+(  264)  ENDIF
+(  265) # 266 "./xrd_getoptions.F90"
+(  266)  LHELP = .FALSE.
+(  267)  ALLOCATE( CHECK_ARGS( N ) )
+(  268)  CHECK_ARGS = .FALSE.
+(  269) # 270 "./xrd_getoptions.F90"
+(  270) END SUBROUTINE INITOPTIONS
+(  271) # 274 "./xrd_getoptions.F90"
+(  274) SUBROUTINE CHECKOPTIONS()
+(  275)  INTEGER(KIND=JPIM) :: I, N, IS, NS, KS
+(  276)  CHARACTER(LEN=ARGSIZEMAX) :: OPT, PROG
+(  277)  LOGICAL(KIND=JPLM) :: PB
+(  278)  CHARACTER(LEN=10) :: FMT
+(  279)  CHARACTER(LEN=110) :: BUF
+(  280) # 281 "./xrd_getoptions.F90"
+(  281)  CALL MYGETARG( 0_JPIM, PROG )
+(  282) # 283 "./xrd_getoptions.F90"
+(  283)  IF( LHELP ) THEN
+(  284)    PRINT *, "PROGRAM: ", TRIM(XRD_BASENAME( PROG ))
+(  285)    IF( TRIM(MESSAGE_OPT) .NE. "" ) THEN
+(  286)      NS = LEN(MESSAGE_OPT)
+(  287)      DO IS = 1, NS / 96
+(  288)        KS = LEN( TRIM(MESSAGE_OPT(1+(IS-1)*96:IS*96)) )
+(  289)        IF( KS .GT. 0 ) THEN
+(  290)          IF( IS .EQ. 1 ) THEN
+(  291)            WRITE( *, '("    ")', ADVANCE = 'NO' )
+(  292)          ELSE
+(  293)            WRITE( *, '("  > ")', ADVANCE = 'NO' )
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:05      page 21
+
+(  294)          ENDIF
+(  295)          WRITE( FMT, '("(A",I2,")")' ) KS
+(  296)          WRITE( *, FMT ) TRIM(MESSAGE_OPT(1+(IS-1)*96:IS*96))
+(  297)        ENDIF
+(  298)      ENDDO
+(  299)    ENDIF
+(  300)    DO I = 1, NOPT_SEEN
+(  301) # 302 "./xrd_getoptions.F90"
+(  302)      IF(OPT_SEEN(I)%GROUP) THEN
+(  303)        WRITE( *, * ) 
+(  304)        IF( TRIM(OPT_SEEN(I)%USE) .NE. "" ) &
+(  305)          WRITE( *, * ) '* '//TRIM(OPT_SEEN(I)%USE)
+(  306)        CYCLE
+(  307)      ENDIF
+(  308) # 309 "./xrd_getoptions.F90"
+(  309)      BUF = ""
+(  310) # 311 "./xrd_getoptions.F90"
+(  311)      WRITE( BUF, '(A32," = ",A15)' ) &
+(  312)          TRIM(OPT_SEEN(I)%KEY), &
+(  313)          TRIM(OPT_SEEN(I)%TYPE)
+(  314) # 315 "./xrd_getoptions.F90"
+(  315)      IF( TRIM(OPT_SEEN(I)%USE) .NE. '' ) THEN
+(  316)        NS = LEN( OPT_SEEN(I)%USE) 
+(  317)        DO IS = 1, NS / 48
+(  318)          KS = LEN(TRIM(OPT_SEEN(I)%USE(1+(IS-1)*48:IS*48)))
+(  319)          IF( KS .GT. 0 ) THEN
+(  320)            IF( IS .EQ. 1 ) THEN
+(  321)              BUF = TRIM(BUF)//" :   "//TRIM(OPT_SEEN(I)%USE(1+(IS-1)*48:IS*48))
+(  322)            ELSE
+(  323) !                   000000000011111111112222222222333333333344444444445555555555
+(  324) !                   012345678901234567890123456789012345678901234567890123456789
+(  325)              BUF = "                                                     > "&
+(  326)                    //TRIM(OPT_SEEN(I)%USE(1+(IS-1)*48:IS*48))
+(  327)            ENDIF
+(  328)            WRITE( *, '(A120)' ) BUF
+(  329)          ENDIF
+(  330)        ENDDO
+(  331)      ELSE
+(  332)        WRITE( *, '(A120)' ) BUF
+(  333)        WRITE( *, * )
+(  334)      ENDIF
+(  335) # 336 "./xrd_getoptions.F90"
+(  336)    ENDDO
+(  337)    STOP
+(  338)  ELSE IF( ASSOCIATED( CHECK_ARGS ) ) THEN
+(  339)    N = SIZE( CHECK_ARGS )
+(  340)    PB = .FALSE.
+(  341)    DO I = 1, N
+(  342)      IF( .NOT. CHECK_ARGS(I) ) THEN
+(  343)        CALL MYGETARG( I, OPT )
+(  344)        IF( OPT(1:2) .EQ. '--' ) THEN
+(  345)          PRINT *, 'INVALID OPTION: ', TRIM(OPT)
+(  346)          PB = .TRUE.
+(  347)          CHECK_ARGS(I) = .TRUE.
+(  348)        ENDIF
+(  349)      ENDIF
+(  350)    ENDDO
+(  351) # 352 "./xrd_getoptions.F90"
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:05      page 22
+
+(  352)    DO I = 1, N
+(  353)      IF( .NOT. CHECK_ARGS(I) ) THEN
+(  354)        CALL MYGETARG( I, OPT )
+(  355)        PRINT *, 'GARBAGE IN OPTIONS:`', TRIM(OPT), "'"
+(  356)        PB = .TRUE.
+(  357)        EXIT
+(  358)      ENDIF
+(  359)    ENDDO
+(  360) # 361 "./xrd_getoptions.F90"
+(  361)    IF( PB ) CALL XRD_EXIT(1_JPIM)
+(  362) # 363 "./xrd_getoptions.F90"
+(  363)    DEALLOCATE( CHECK_ARGS )
+(  364)  ELSE IF( LSHELL ) THEN
+(  365)    OPEN( 77, FILE = TRIM(PROG)//'.sh', FORM = 'FORMATTED' )
+(  366)    WRITE( 77, '("#!/bin/sh")' )
+(  367)    WRITE( 77, * )
+(  368)    WRITE( 77, '(A)', ADVANCE = 'NO' ) TRIM(PROG)
+(  369)    N = UBOUND( MYARGS, 1 )
+(  370)    DO I = 1, N
+(  371)      IF( MYARGS(I) .EQ. '--shell' ) CYCLE
+(  372)      IF( MYARGS(I)(1:2) .EQ. '--' ) THEN
+(  373)        WRITE( 77, '(" \")' )
+(  374)        WRITE( 77, '("    ")', ADVANCE = 'NO' )
+(  375)      ENDIF
+(  376)      WRITE( 77, '(" ",A)', ADVANCE = 'NO' ) TRIM(MYARGS(I))
+(  377)    ENDDO
+(  378)    WRITE( 77, * )
+(  379)    CLOSE(77)
+(  380)  ENDIF
+(  381) # 384 "./xrd_getoptions.F90"
+(  384)  IF( ASSOCIATED( OPT_SEEN ) ) DEALLOCATE( OPT_SEEN )
+(  385)  IF( ASSOCIATED( MYARGS ) ) DEALLOCATE( MYARGS )
+(  386) END SUBROUTINE CHECKOPTIONS
+(  387) # 389 "./xrd_getoptions.F90"
+(  389) SUBROUTINE CHECK_MND( KEY, MND, USE )
+(  390)  CHARACTER(LEN=*),           INTENT(IN) :: KEY
+(  391)  CHARACTER(LEN=*), OPTIONAL, INTENT(IN) :: USE
+(  392)  LOGICAL(KIND=JPLM), OPTIONAL, INTENT(IN) :: MND
+(  393) !
+(  394)  CHARACTER(LEN=ARGSIZEMAX) :: PROG
+(  395) # 396 "./xrd_getoptions.F90"
+(  396)  IF( PRESENT( MND ) ) THEN
+(  397)    IF( MND ) THEN
+(  398)      CALL MYGETARG( 0_JPIM, PROG )
+(  399)      WRITE( *, '("PROGRAM: ",(A))' ) TRIM( PROG )
+(  400)      WRITE( *, '("ERROR:   OPTION `",(A),"'' IS MANDATORY")' ) TRIM( KEY )
+(  401)      IF( PRESENT( USE ) ) WRITE( *, '("         ",(A)," : ",(A))' ) TRIM( KEY ), TRIM( USE )
+(  402)      CALL XRD_EXIT(1_JPIM)
+(  403)    ENDIF
+(  404)  ENDIF
+(  405) # 406 "./xrd_getoptions.F90"
+(  406) END SUBROUTINE CHECK_MND
+(  407) # 408 "./xrd_getoptions.F90"
+(  408) SUBROUTINE FINDARGINDEX( KEY, I, N )
+(  409)  CHARACTER(LEN=*),      INTENT(IN)  :: KEY
+(  410)  INTEGER(KIND=JPIM), INTENT(OUT) :: I, N
+(  411)  CHARACTER(LEN=ARGSIZEMAX) :: ARG
+(  412) # 413 "./xrd_getoptions.F90"
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:05      page 23
+
+(  413)  N = MYIARGC()
+(  414)  DO I = 1, N
+(  415)    CALL MYGETARG( I, ARG )
+(  416)    IF( TRIM( ARG ) .EQ. TRIM( KEY ) ) RETURN
+(  417)  ENDDO
+(  418)  I = -1_JPIM
+(  419) END SUBROUTINE FINDARGINDEX
+(  420) # 421 "./xrd_getoptions.F90"
+(  421) SUBROUTINE FINDNEXTARGINDEX( I, J )
+(  422)  INTEGER(KIND=JPIM), INTENT(IN)  :: I
+(  423)  INTEGER(KIND=JPIM), INTENT(OUT) :: J
+(  424) !
+(  425)  CHARACTER(LEN=ARGSIZEMAX) :: ARG
+(  426)  INTEGER(KIND=JPIM) :: N
+(  427) # 428 "./xrd_getoptions.F90"
+(  428)  N = MYIARGC()
+(  429)  DO J = I+1, N
+(  430)   CALL MYGETARG( J, ARG )
+(  431)   IF( ARG(1:2) .EQ. '--' ) EXIT
+(  432)  ENDDO
+(  433) # 434 "./xrd_getoptions.F90"
+(  434) END SUBROUTINE FINDNEXTARGINDEX
+(  435) # 436 "./xrd_getoptions.F90"
+(  436) SUBROUTINE GETOPTIONS( KEY, VAL, MND, USE )
+(  437) !
+(  438)  CHARACTER(LEN=*), INTENT(IN)  :: KEY
+(  439)  CHARACTER(LEN=*), INTENT(INOUT) :: VAL
+(  440)  LOGICAL(KIND=JPLM), INTENT(IN), OPTIONAL :: MND
+(  441)  CHARACTER(LEN=*), INTENT(IN), OPTIONAL :: USE
+(  442) !
+(  443)  INTEGER(KIND=JPIM) :: I, N
+(  444)  CHARACTER(LEN=ARGSIZEMAX) :: ARG
+(  445)  LOGICAL(KIND=JPLM) :: LSHELL1
+(  446)  LOGICAL(KIND=JPLM) :: FOUND
+(  447) # 448 "./xrd_getoptions.F90"
+(  448)  LSHELL1 = LSHELL
+(  449) # 450 "./xrd_getoptions.F90"
+(  450)  IF( LHELP ) THEN
+(  451)    CALL ADDOPT( KEY, 'STRING', USE )
+(  452)    RETURN
+(  453)  ELSE IF( LSHELL ) THEN
+(  454)    LSHELL = .FALSE.
+(  455)    CALL ADDOPT_SHELL( KEY, 'STRING', MND, USE )
+(  456)  ENDIF
+(  457) # 458 "./xrd_getoptions.F90"
+(  458)  CALL FINDARGINDEX( KEY, I, N )
+(  459) # 460 "./xrd_getoptions.F90"
+(  460)  FOUND = ( 0 .LT. I ) .AND. ( I .LT. N )
+(  461) # 462 "./xrd_getoptions.F90"
+(  462)  IF( FOUND ) THEN
+(  463)    IF( ASSOCIATED( CHECK_ARGS ) ) THEN
+(  464)      CHECK_ARGS(I)   = .TRUE.
+(  465)      CHECK_ARGS(I+1) = .TRUE.
+(  466)    ENDIF
+(  467)    CALL MYGETARG( I+1_JPIM, VAL )
+(  468)  ELSE
+(  469)    ARG = GET_ENV_OPT( KEY )
+(  470)    FOUND = ARG .NE. ""
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:05      page 24
+
+(  471)    IF( FOUND ) VAL = ARG
+(  472)  ENDIF
+(  473) # 474 "./xrd_getoptions.F90"
+(  474)  IF( .NOT. FOUND ) &
+(  475)    CALL CHECK_MND( KEY, MND, USE )
+(  476) # 477 "./xrd_getoptions.F90"
+(  477)  LSHELL = LSHELL1
+(  478) # 479 "./xrd_getoptions.F90"
+(  479) END SUBROUTINE GETOPTIONS
+(  480) # 481 "./xrd_getoptions.F90"
+(  481) SUBROUTINE GETOPTIONI( KEY, VAL, MND, USE )
+(  482) !
+(  483)  CHARACTER(LEN=*),      INTENT(IN)  :: KEY
+(  484)  INTEGER(KIND=JPIM), INTENT(INOUT) :: VAL
+(  485)  LOGICAL(KIND=JPLM), OPTIONAL, INTENT(IN) :: MND
+(  486)  CHARACTER(LEN=*), OPTIONAL, INTENT(IN) :: USE
+(  487) !
+(  488)  CHARACTER(LEN=ARGSIZEMAX) :: SVAL
+(  489)  INTEGER :: ERR
+(  490)  LOGICAL(KIND=JPLM) :: LSHELL1
+(  491) # 492 "./xrd_getoptions.F90"
+(  492)  LSHELL1 = LSHELL
+(  493)  
+(  494)  IF( LHELP ) THEN
+(  495)    CALL ADDOPT( KEY, 'INTEGER', USE )
+(  496)    RETURN
+(  497)  ELSE IF( LSHELL ) THEN
+(  498)    LSHELL = .FALSE.
+(  499)    CALL ADDOPT_SHELL( KEY, 'INTEGER', MND, USE )
+(  500)  ENDIF
+(  501)  
+(  502)  SVAL = ""
+(  503)  CALL GETOPTIONS( KEY, SVAL, MND, USE )
+(  504)  IF( TRIM( SVAL ) .NE. "" ) THEN
+(  505)    READ( SVAL, *, IOSTAT = ERR ) VAL
+(  506)    IF( ERR .NE. 0 ) THEN
+(  507)      PRINT *, "ERROR WHILE PARSING OPTION "//TRIM(KEY)
+(  508)      CALL XRD_EXIT(1_JPIM)
+(  509)    ENDIF
+(  510)  ENDIF
+(  511) # 512 "./xrd_getoptions.F90"
+(  512)  LSHELL = LSHELL1
+(  513) # 514 "./xrd_getoptions.F90"
+(  514) END SUBROUTINE GETOPTIONI
+(  515) # 516 "./xrd_getoptions.F90"
+(  516) SUBROUTINE GETOPTIONR( KEY, VAL, MND, USE )
+(  517) !
+(  518)  CHARACTER(LEN=*),   INTENT(IN)  :: KEY
+(  519)  REAL(KIND=JPRB), INTENT(INOUT) :: VAL
+(  520)  LOGICAL(KIND=JPLM), OPTIONAL, INTENT(IN) :: MND
+(  521)  CHARACTER(LEN=*), OPTIONAL, INTENT(IN) :: USE
+(  522) !
+(  523)  CHARACTER(LEN=ARGSIZEMAX) :: SVAL
+(  524)  INTEGER :: ERR
+(  525)  LOGICAL(KIND=JPLM) :: LSHELL1
+(  526) # 527 "./xrd_getoptions.F90"
+(  527)  LSHELL1 = LSHELL
+(  528)  
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:05      page 25
+
+(  529)  IF( LHELP ) THEN
+(  530)    CALL ADDOPT( KEY, 'REAL', USE )
+(  531)    RETURN
+(  532)  ELSE IF( LSHELL ) THEN
+(  533)    LSHELL = .FALSE.
+(  534)    CALL ADDOPT_SHELL( KEY, 'REAL', MND, USE )
+(  535)  ENDIF
+(  536)  
+(  537)  SVAL = ""
+(  538)  CALL GETOPTIONS( KEY, SVAL, MND, USE )
+(  539)  IF( TRIM( SVAL ) .NE. "" ) THEN
+(  540)    READ( SVAL, *, IOSTAT = ERR ) VAL
+(  541)    IF( ERR .NE. 0 ) THEN
+(  542)      PRINT *, "ERROR WHILE PARSING OPTION "//TRIM(KEY)
+(  543)      CALL XRD_EXIT(1_JPIM)
+(  544)    ENDIF
+(  545)  ENDIF
+(  546) # 547 "./xrd_getoptions.F90"
+(  547)  LSHELL = LSHELL1
+(  548) # 549 "./xrd_getoptions.F90"
+(  549) END SUBROUTINE GETOPTIONR
+(  550) # 551 "./xrd_getoptions.F90"
+(  551) SUBROUTINE READASLFROMSTRING( VAL, SVAL )
+(  552)  CHARACTER(LEN=*), INTENT(OUT) :: VAL(:)
+(  553)  CHARACTER(LEN=*), INTENT(IN) :: SVAL
+(  554) !
+(  555)  INTEGER(KIND=JPIM) :: I, J, K, N
+(  556) # 557 "./xrd_getoptions.F90"
+(  557)  N = LEN( SVAL )
+(  558) # 559 "./xrd_getoptions.F90"
+(  559)  I = 1
+(  560)  K = 1
+(  561)  DO1 : DO 
+(  562)    DO
+(  563)      IF( I .GT. N ) EXIT DO1
+(  564)      IF( SVAL(I:I) .NE. ' ' ) EXIT
+(  565)      I = I + 1
+(  566)    ENDDO
+(  567)    J = I
+(  568)    DO
+(  569)      IF( J .GT. N ) EXIT 
+(  570)      IF( SVAL(J:J) .EQ. ' ' ) EXIT
+(  571)      J = J + 1
+(  572)    ENDDO
+(  573) # 574 "./xrd_getoptions.F90"
+(  574)    VAL(K) = SVAL(I:J-1)
+(  575)    I = J
+(  576)    K = K + 1
+(  577)  ENDDO DO1
+(  578) # 580 "./xrd_getoptions.F90"
+(  580) END SUBROUTINE READASLFROMSTRING
+(  581) # 582 "./xrd_getoptions.F90"
+(  582) SUBROUTINE READSLFROMSTRING( VAL, SVAL )
+(  583)  CHARACTER(LEN=*), POINTER :: VAL(:)
+(  584)  CHARACTER(LEN=*), INTENT(IN) :: SVAL
+(  585) !
+(  586)  INTEGER(KIND=JPIM) :: N
+(  587) # 588 "./xrd_getoptions.F90"
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:05      page 26
+
+(  588)  N = XRD_COUNTWORDS( SVAL )
+(  589)  ALLOCATE( VAL( N ) )
+(  590) # 591 "./xrd_getoptions.F90"
+(  591)  CALL READASLFROMSTRING( VAL, SVAL )
+(  592) # 593 "./xrd_getoptions.F90"
+(  593) END SUBROUTINE READSLFROMSTRING
+(  594) # 595 "./xrd_getoptions.F90"
+(  595) SUBROUTINE READSLFROMFILE( VAL, SVAL )
+(  596)  CHARACTER(LEN=*), POINTER :: VAL(:)
+(  597)  CHARACTER(LEN=*), INTENT(IN) :: SVAL
+(  598) !
+(  599)  INTEGER(KIND=JPIM) :: K, N
+(  600)  INTEGER(KIND=JPIM) :: IOERR
+(  601)  CHARACTER(LEN=4096) :: BUFFER
+(  602) # 603 "./xrd_getoptions.F90"
+(  603)  OPEN( 77, FILE = TRIM(SVAL), FORM = 'FORMATTED', STATUS = 'OLD', IOSTAT = IOERR )
+(  604)  IF( IOERR .NE. 0 ) THEN
+(  605)    PRINT '( "COULD NOT OPEN ",A, " FOR READING")', TRIM(SVAL)
+(  606)    CALL XRD_EXIT(1_JPIM)
+(  607)  ENDIF
+(  608)  N = 0_JPIM
+(  609)  DO 
+(  610)    READ( 77, '(A)', END = 500 ) BUFFER
+(  611)    N = N + XRD_COUNTWORDS( BUFFER )
+(  612)  ENDDO
+(  613) # 614 "./xrd_getoptions.F90"
+(  614)  500 CONTINUE
+(  615) # 616 "./xrd_getoptions.F90"
+(  616)  REWIND( 77 )
+(  617) # 618 "./xrd_getoptions.F90"
+(  618)  ALLOCATE( VAL( N ) )
+(  619)  
+(  620)  K = 1
+(  621)  DO 
+(  622)    READ( 77, '(A)', END = 600 ) BUFFER
+(  623)    N = XRD_COUNTWORDS( BUFFER )
+(  624)    CALL READASLFROMSTRING( VAL(K:K+N-1), BUFFER )
+(  625)    K = K + N
+(  626)  ENDDO
+(  627) # 628 "./xrd_getoptions.F90"
+(  628)  600 CONTINUE
+(  629) # 631 "./xrd_getoptions.F90"
+(  631)  CLOSE( 77 )
+(  632)  
+(  633) END SUBROUTINE READSLFROMFILE
+(  634) # 635 "./xrd_getoptions.F90"
+(  635) SUBROUTINE GETOPTIONSL( KEY, VAL, MND, USE )
+(  636) !
+(  637)  CHARACTER(LEN=*), INTENT(IN) :: KEY
+(  638)  CHARACTER(LEN=*), POINTER :: VAL(:)
+(  639)  LOGICAL(KIND=JPLM), OPTIONAL, INTENT(IN) :: MND
+(  640)  CHARACTER(LEN=*), OPTIONAL, INTENT(IN) :: USE
+(  641) !
+(  642)  INTEGER(KIND=JPIM) :: I, J, K, N
+(  643)  CHARACTER(LEN=ARGSIZEMAX) :: ARG
+(  644)  CHARACTER(LEN=ARGSIZEMAX) :: SVAL
+(  645)  LOGICAL(KIND=JPLM) :: LSHELL1
+(  646)  LOGICAL(KIND=JPLM) :: FOUND
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:05      page 27
+
+(  647) # 648 "./xrd_getoptions.F90"
+(  648)  LSHELL1 = LSHELL
+(  649)  
+(  650)  IF( LHELP ) THEN
+(  651)    CALL ADDOPT( KEY, 'STRING-LIST', USE )
+(  652)    RETURN
+(  653)  ELSE IF( LSHELL ) THEN
+(  654)    LSHELL = .FALSE.
+(  655)    CALL ADDOPT_SHELL( KEY, 'STRING-LIST', MND, USE )
+(  656)  ENDIF
+(  657)  
+(  658)  CALL FINDARGINDEX( KEY, I, N )
+(  659) # 660 "./xrd_getoptions.F90"
+(  660)  FOUND = I >= 0
+(  661) # 662 "./xrd_getoptions.F90"
+(  662)  IF( FOUND ) THEN
+(  663) # 664 "./xrd_getoptions.F90"
+(  664)    CALL FINDNEXTARGINDEX( I, J )
+(  665) # 666 "./xrd_getoptions.F90"
+(  666)    ALLOCATE( VAL( J - I - 1 ) )
+(  667)    
+(  668)    IF( ASSOCIATED( CHECK_ARGS ) ) &
+(  669)      CHECK_ARGS(I) = .TRUE.
+(  670)    
+(  671)    DO K = I+1, J-1
+(  672)      IF( ASSOCIATED( CHECK_ARGS ) ) &
+(  673)        CHECK_ARGS(K)   = .TRUE.
+(  674)      CALL MYGETARG( K, ARG )
+(  675)      IF ((I+1.EQ.J-1) .AND. (ARG(1:7).EQ.'file://')) THEN
+(  676)        DEALLOCATE (VAL)
+(  677)        ARG = ARG(8:)
+(  678)        CALL READSLFROMFILE( VAL, ARG )
+(  679)      ELSE
+(  680)        VAL(K-I) = ARG
+(  681)      ENDIF
+(  682)    ENDDO
+(  683) # 684 "./xrd_getoptions.F90"
+(  684)  ENDIF
+(  685)  
+(  686)  IF(.NOT. FOUND) THEN
+(  687)    SVAL = GET_ENV_OPT( KEY )
+(  688)    FOUND = SVAL .NE. ""
+(  689)    IF( FOUND ) &
+(  690)      CALL READSLFROMSTRING( VAL, SVAL )
+(  691)  ENDIF
+(  692) # 693 "./xrd_getoptions.F90"
+(  693)  IF( .NOT. FOUND ) &
+(  694)    CALL CHECK_MND( KEY, MND, USE )
+(  695) # 696 "./xrd_getoptions.F90"
+(  696)  LSHELL = LSHELL1
+(  697) # 698 "./xrd_getoptions.F90"
+(  698) END SUBROUTINE GETOPTIONSL
+(  699) # 700 "./xrd_getoptions.F90"
+(  700) SUBROUTINE GETOPTIONIL( KEY, VAL, MND, USE )
+(  701) !
+(  702)  CHARACTER(LEN=*),      INTENT(IN) :: KEY
+(  703)  INTEGER(KIND=JPIM), POINTER    :: VAL(:)
+(  704)  LOGICAL(KIND=JPLM), OPTIONAL, INTENT(IN) :: MND
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:05      page 28
+
+(  705)  CHARACTER(LEN=*), OPTIONAL, INTENT(IN) :: USE
+(  706) !
+(  707)  CHARACTER(LEN=ARGSIZEMAX), POINTER :: SVAL(:)
+(  708)  INTEGER(KIND=JPIM) :: I, N
+(  709)  INTEGER :: ERR
+(  710)  LOGICAL(KIND=JPLM) :: LSHELL1
+(  711) # 712 "./xrd_getoptions.F90"
+(  712)  NULLIFY (SVAL)
+(  713) # 714 "./xrd_getoptions.F90"
+(  714)  LSHELL1 = LSHELL
+(  715) # 716 "./xrd_getoptions.F90"
+(  716)  IF( LHELP ) THEN
+(  717)    CALL ADDOPT( KEY, 'INTEGER-LIST', USE )
+(  718)    RETURN
+(  719)  ELSE IF( LSHELL ) THEN
+(  720)    LSHELL = .FALSE.
+(  721)    CALL ADDOPT_SHELL( KEY, 'INTEGER-LIST', MND, USE )
+(  722)  ENDIF
+(  723)  
+(  724)  CALL GETOPTIONSL( KEY, SVAL, MND, USE )
+(  725) # 726 "./xrd_getoptions.F90"
+(  726)  IF( .NOT. ASSOCIATED( SVAL ) ) GOTO 999
+(  727) # 728 "./xrd_getoptions.F90"
+(  728)  N = SIZE( SVAL )
+(  729)  ALLOCATE( VAL( N ) )
+(  730)  DO I = 1, N
+(  731)    READ( SVAL( I ), *, IOSTAT = ERR ) VAL( I )
+(  732)    IF( ERR .NE. 0 ) THEN
+(  733)      PRINT *, "ERROR WHILE PARSING OPTION "//TRIM(KEY)
+(  734)      CALL XRD_EXIT(1_JPIM)
+(  735)    ENDIF
+(  736)  ENDDO
+(  737) # 738 "./xrd_getoptions.F90"
+(  738)  DEALLOCATE( SVAL )
+(  739) # 740 "./xrd_getoptions.F90"
+(  740) 999 CONTINUE
+(  741)  LSHELL = LSHELL1
+(  742) # 743 "./xrd_getoptions.F90"
+(  743) END SUBROUTINE GETOPTIONIL
+(  744) # 745 "./xrd_getoptions.F90"
+(  745) SUBROUTINE GETOPTIONRL( KEY, VAL, MND, USE )
+(  746) !
+(  747)  CHARACTER(LEN=*),   INTENT(IN) :: KEY
+(  748)  REAL(KIND=JPRB), POINTER    :: VAL(:)
+(  749)  LOGICAL(KIND=JPLM), OPTIONAL, INTENT(IN) :: MND
+(  750)  CHARACTER(LEN=*), OPTIONAL, INTENT(IN) :: USE
+(  751) !
+(  752)  CHARACTER(LEN=ARGSIZEMAX), POINTER :: SVAL(:)
+(  753)  INTEGER(KIND=JPIM) :: I, N
+(  754)  INTEGER :: ERR
+(  755)  LOGICAL(KIND=JPLM) :: LSHELL1
+(  756) # 757 "./xrd_getoptions.F90"
+(  757)  NULLIFY (SVAL)
+(  758) # 759 "./xrd_getoptions.F90"
+(  759)  LSHELL1 = LSHELL
+(  760) # 761 "./xrd_getoptions.F90"
+(  761)  IF( LHELP ) THEN
+(  762)    CALL ADDOPT( KEY, 'REAL-LIST', USE )
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:05      page 29
+
+(  763)    RETURN
+(  764)  ELSE IF( LSHELL ) THEN
+(  765)    LSHELL = .FALSE.
+(  766)    CALL ADDOPT_SHELL( KEY, 'REAL-LIST', MND, USE )
+(  767)  ENDIF
+(  768)  
+(  769)  CALL GETOPTIONSL( KEY, SVAL, MND, USE )
+(  770) # 771 "./xrd_getoptions.F90"
+(  771)  IF( .NOT. ASSOCIATED( SVAL ) ) GOTO 999
+(  772) # 773 "./xrd_getoptions.F90"
+(  773)  N = SIZE( SVAL )
+(  774)  ALLOCATE( VAL( N ) )
+(  775)  DO I = 1, N
+(  776)    READ( SVAL( I ), *, IOSTAT = ERR ) VAL( I )
+(  777)    IF( ERR .NE. 0 ) THEN
+(  778)      PRINT *, "ERROR WHILE PARSING OPTION "//TRIM(KEY)
+(  779)      CALL XRD_EXIT(1_JPIM)
+(  780)    ENDIF
+(  781)  ENDDO
+(  782) # 783 "./xrd_getoptions.F90"
+(  783)  DEALLOCATE( SVAL )
+(  784) # 785 "./xrd_getoptions.F90"
+(  785) 999 CONTINUE
+(  786)  LSHELL = LSHELL1
+(  787) # 788 "./xrd_getoptions.F90"
+(  788) END SUBROUTINE GETOPTIONRL
+(  789) # 790 "./xrd_getoptions.F90"
+(  790) SUBROUTINE GETOPTIONB( KEY, VAL, USE )
+(  791) !
+(  792)  CHARACTER(LEN=*), INTENT(IN)  :: KEY
+(  793)  LOGICAL(KIND=JPLM), INTENT(INOUT) :: VAL
+(  794)  CHARACTER(LEN=*), OPTIONAL, INTENT(IN) :: USE
+(  795) !
+(  796)  LOGICAL(KIND=JPLM) :: LSHELL1
+(  797)  LOGICAL(KIND=JPLM) :: FOUND
+(  798)  CHARACTER(LEN=ARGSIZEMAX) :: SVAL
+(  799)  INTEGER(KIND=JPIM) :: I, N
+(  800)  
+(  801)  LSHELL1 = LSHELL
+(  802) # 803 "./xrd_getoptions.F90"
+(  803)  VAL = .FALSE.
+(  804) # 805 "./xrd_getoptions.F90"
+(  805)  IF( LHELP ) THEN
+(  806)    CALL ADDOPT( KEY, 'FLAG', USE )
+(  807)    RETURN
+(  808)  ELSE IF( LSHELL ) THEN
+(  809)    LSHELL = .FALSE.
+(  810)    CALL ADDOPT_SHELL( KEY, 'FLAG', .FALSE._JPLM, USE )
+(  811)  ENDIF
+(  812)  
+(  813)  CALL FINDARGINDEX( KEY, I, N )
+(  814)  FOUND = I > 0
+(  815)  IF( FOUND .AND. ASSOCIATED( CHECK_ARGS ) ) THEN
+(  816)    CHECK_ARGS(I)   = .TRUE.
+(  817)    VAL = .TRUE.
+(  818)  ELSE
+(  819)    SVAL = GET_ENV_OPT( KEY )
+(  820)    IF( SVAL .NE. "" ) &
+
+
+
+
+
+
+NVFORTRAN (Version     24.5)          03/19/2025  06:55:05      page 30
+
+(  821)      READ( SVAL, * ) VAL
+(  822)  ENDIF
+(  823) # 824 "./xrd_getoptions.F90"
+(  824)  LSHELL = LSHELL1
+(  825) # 826 "./xrd_getoptions.F90"
+(  826) END SUBROUTINE GETOPTIONB
+(  827) # 828 "./xrd_getoptions.F90"
+(  828) END MODULE XRD_GETOPTIONS
