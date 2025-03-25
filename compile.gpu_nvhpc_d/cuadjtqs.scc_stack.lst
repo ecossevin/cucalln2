@@ -1,7 +1,7 @@
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:56:00      page 1
+NVFORTRAN (Version     24.5)          03/24/2025  13:21:10      page 1
 
 Switches: -noasm -nodclchk -debug -nodlines -line -list
           -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
@@ -68,7 +68,7 @@ Filename: ./cuadjtqs.scc_stack.F90
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:56:00      page 2
+NVFORTRAN (Version     24.5)          03/24/2025  13:21:10      page 2
 
 (   51)     
 (   52)     !     AUTHOR.
@@ -134,7 +134,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:56:00      page 2
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:56:00      page 3
+NVFORTRAN (Version     24.5)          03/24/2025  13:21:10      page 3
 
 (  109)     !     2.           CALCULATE CONDENSATION AND ADJUST T AND Q ACCORDINGLY
 (  110)     !                  -----------------------------------------------------
@@ -200,7 +200,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:56:00      page 3
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:56:00      page 4
+NVFORTRAN (Version     24.5)          03/24/2025  13:21:10      page 4
 
 (  167)       IF (KCALL == 2) THEN
 (  168)         
@@ -266,7 +266,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:56:00      page 4
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:56:00      page 5
+NVFORTRAN (Version     24.5)          03/24/2025  13:21:10      page 5
 
 (  225)         IF (ZQSAT > ZQMAX) THEN
 (  226)           ZQSAT = ZQMAX
@@ -332,7 +332,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:56:00      page 5
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:56:00      page 6
+NVFORTRAN (Version     24.5)          03/24/2025  13:21:10      page 6
 
 (    1) # 1 "./cuadjtqs.scc_stack.F90"
 (    1) MODULE CUADJTQS_LOKI_MOD
@@ -398,7 +398,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:56:00      page 6
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:56:00      page 7
+NVFORTRAN (Version     24.5)          03/24/2025  13:21:10      page 7
 
 (   58)     !      M.Hamrud     01-Oct-2003 CY28 Cleaning
 (   59)     !      20180303 : Gabor: Just a comment line to force recompilation due to
@@ -464,7 +464,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:56:00      page 7
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:56:00      page 8
+NVFORTRAN (Version     24.5)          03/24/2025  13:21:10      page 8
 
 (   20) !       cases water or ice are distinguished by temperature.  This set 
 (   21) !       consists of the functions FOEDELTA,FOEEW,FOEDE and FOELH.
@@ -530,7 +530,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:56:00      page 8
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:56:00      page 9
+NVFORTRAN (Version     24.5)          03/24/2025  13:21:10      page 9
 
 (   78) !                       FOEALFA=0            ice phase
 (   79) !                       0 < FOEALFA < 1      mixed phase
@@ -596,7 +596,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:56:00      page 9
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:56:00      page 10
+NVFORTRAN (Version     24.5)          03/24/2025  13:21:10      page 10
 
 (  139)      &(FOEALFCU(PTARE)*EXP(YDTHF%R3LES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4LES))+&
 (  140)   &(1.0_JPRB-FOEALFCU(PTARE))*EXP(YDTHF%R3IES*(PTARE-YDCST%RTT)/(PTARE-YDTHF%R4IES)))
@@ -662,7 +662,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:56:00      page 10
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:56:00      page 11
+NVFORTRAN (Version     24.5)          03/24/2025  13:21:10      page 11
 
 (  107)     ZQMAX = 0.5_JPRB
 (  108)     
@@ -728,7 +728,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:56:00      page 11
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:56:00      page 12
+NVFORTRAN (Version     24.5)          03/24/2025  13:21:10      page 12
 
 (  165)       END IF
 (  166)       
@@ -794,7 +794,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:56:00      page 12
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:56:00      page 13
+NVFORTRAN (Version     24.5)          03/24/2025  13:21:10      page 13
 
 (  223)         ZFOEEW = YDTHF%R2ES*EXP(Z3ES*(ZTARG - YDCST%RTT) / (ZTARG - Z4ES))
 (  224)         ZQSAT = ZQP*ZFOEEW

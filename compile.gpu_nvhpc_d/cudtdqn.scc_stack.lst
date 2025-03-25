@@ -1,7 +1,7 @@
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:23      page 1
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:26      page 1
 
 Switches: -noasm -nodclchk -debug -nodlines -line -list
           -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
@@ -68,7 +68,7 @@ Filename: ./cudtdqn.scc_stack.F90
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:23      page 2
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:26      page 2
 
 (   51)     !    *PLUDELI*      DETRAINED LIQUID, ICE                         KG/(M2*S)
 (   52)     !    *PSNDE*        DETRAINED SNOW/RAIN                           KG/(M2*S)
@@ -134,7 +134,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:23      page 2
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:23      page 3
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:26      page 3
 
 (  109)     INTEGER(KIND=JPIM), INTENT(IN) :: KLON
 (  110)     INTEGER(KIND=JPIM), INTENT(IN) :: KLEV
@@ -200,7 +200,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:23      page 3
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:23      page 4
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:26      page 4
 
 (  167)     POINTER(IP_ZALV, ZALV)
 (  168)     POINTER(IP_ZALV2, ZALV2)
@@ -266,7 +266,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:23      page 4
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:23      page 5
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:26      page 5
 
 (  225)       ZADVW(JL) = 0.0_JPRB
 (  226)       IF (KTYPE(JL) == 1) ZADVW(JL) = YDECUMF%RMFADVW
@@ -332,7 +332,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:23      page 5
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:23      page 6
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:26      page 6
 
 (  283)             
 (  284)             !half-level environmental values for S and Q
@@ -398,7 +398,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:23      page 6
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:23      page 7
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:26      page 7
 
 (  341)               & PLUDE(JL, JK) - PDMFUP(JL, JK)))
 (  342)               
@@ -464,7 +464,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:23      page 7
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:23      page 8
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:26      page 8
 
 (  399)       
 (  400)       ! Fill bi-diagonal Matrix vectors A=k-1, B=k, C=k+1;
@@ -530,7 +530,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:23      page 8
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:23      page 9
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:26      page 9
 
 (  457)             ELSE
 (  458)               PTENT(JL, JK) = PTENT(JL, JK)*(1.0_JPRB - YDECUMF%RMFSOLRHS) + (ZR1(JL, JK) - PTEN(JL, JK))*ZTSPHY
@@ -596,7 +596,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:23      page 9
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:23      page 10
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:26      page 10
 
 (    1) # 1 "./cudtdqn.scc_stack.F90"
 (    1) MODULE CUDTDQN_LOKI_MOD
@@ -662,7 +662,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:23      page 10
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:23      page 11
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:26      page 11
 
 (   58)     !    *PMFDQ*        FLUX OF SPEC. HUMIDITY IN DOWNDRAFTS          KG/(M2*S)
 (   59)     !    *PMFUL*        FLUX OF LIQUID WATER IN UPDRAFTS              KG/(M2*S)
@@ -728,7 +728,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:23      page 11
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:23      page 12
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:26      page 12
 
 (  116)     INTEGER(KIND=JPIM), INTENT(IN) :: KCBOT(KLON)
 (  117)     INTEGER(KIND=JPIM), INTENT(IN) :: KDTOP(KLON)
@@ -794,7 +794,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:23      page 12
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:23      page 13
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:26      page 13
 
 (   10) !*
 (   11) !     ------------------------------------------------------------------
@@ -860,7 +860,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:23      page 13
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:23      page 14
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:26      page 14
 
 (   68) # 69 "./fcttre.func.h"
 (   69) !     *****************************************************************
@@ -926,7 +926,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:23      page 14
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:23      page 15
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:26      page 15
 
 (  128) # 129 "./fcttre.func.h"
 (  129) !               INPUT : PTARE = TEMPERATURE
@@ -992,7 +992,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:23      page 15
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:23      page 16
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:26      page 16
 
 (  165)     INTEGER(KIND=8) :: YLSTACK_L
 (  166)     INTEGER(KIND=8), INTENT(INOUT) :: YDSTACK_L
@@ -1058,7 +1058,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:23      page 16
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:23      page 17
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:26      page 17
 
 (  224)     DO JL=KIDIA,KFDIA
 (  225)       ZADVW(JL) = 0.0_JPRB
@@ -1124,7 +1124,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:23      page 17
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:23      page 18
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:26      page 18
 
 (  282)             ZGS = (YDCST%RCPD*(PTENH(JL, JK) - PTEN(JL, IK)) + PGEOH(JL, JK) - PGEO(JL, IK)) / ZGH
 (  283)             
@@ -1190,7 +1190,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:23      page 18
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:23      page 19
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:26      page 19
 
 (  340)               & YDCST%RLMLT*PLGLAC(JL, JK) - YDCST%RLMLT*PDPMEL(JL, JK) - ZALV(JL, JK)*(PMFUL(JL, JK + 1) - PMFUL(JL, JK) -  &
 (  341)               & PLUDE(JL, JK) - PDMFUP(JL, JK)))
@@ -1256,7 +1256,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:23      page 19
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:23      page 20
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:26      page 20
 
 (  398)       !                  -----------------
 (  399)       
@@ -1322,7 +1322,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:23      page 20
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:23      page 21
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:26      page 21
 
 (  456)               PTENQ(JL, JK) = PTENQ(JL, JK) + (ZR2(JL, JK) - PQEN(JL, JK))*ZTSPHY
 (  457)             ELSE

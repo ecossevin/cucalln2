@@ -416,6 +416,7 @@ DO JK=KLEV-1,3,-1
 !                  ----------------------------------------------------
 
   IK=JK
+  !$loki inline
   CALL CUBASMCN &
    & (YDCST, YDECUMF, KIDIA,    KFDIA,    KLON,    KLEV,&
    & IK,&
@@ -465,6 +466,7 @@ DO JK=KLEV-1,3,-1
 !                   -------------------------------------
 
   IK=JK
+  !$loki inline
   CALL CUENTR &
    & (YDCST, YDECUMF, YDSPP_CONFIG, KIDIA,    KFDIA,    KLON,     KLEV, &
    & IK,       KCBOT,         KTYPE,&
@@ -563,10 +565,12 @@ DO JK=KLEV-1,3,-1
     IK=JK
     IF(JLM > 0) THEN
       IF (LSCVLIQ) THEN
+      !$loki inline
       CALL CUADJTQ &
        & ( YDTHF, YDCST, YDEPHLI, KIDIA,    KFDIA,    KLON,     KLEV,    IK,&
        &   ZPH,      PTU,      PQU,      LLFLAG,  6,  LSCVFLAG )  
       ELSE
+      !$loki inline
       CALL CUADJTQ &
        & ( YDTHF, YDCST, YDEPHLI, KIDIA,    KFDIA,    KLON,     KLEV,    IK,&
        &   ZPH,      PTU,      PQU,      LLFLAG,  1,  LSCVFLAG )  

@@ -1,7 +1,7 @@
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:20      page 1
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:13      page 1
 
 Switches: -noasm -nodclchk -debug -nodlines -line -list
           -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
@@ -68,7 +68,7 @@ Filename: ./cuflxn.scc_stack.F90
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:20      page 2
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:13      page 2
 
 (   51)     !    *KTYPE*        SET TO ZERO IF LDCUM=.FALSE.
 (   52)     
@@ -134,7 +134,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:20      page 2
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:20      page 3
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:13      page 3
 
 (  109)     USE YOECUMF, ONLY: TECUMF
 (  110)     
@@ -200,7 +200,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:20      page 3
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:20      page 4
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:13      page 4
 
 (  167)     ! Numerical fit to wet bulb temperature
 (  168)     REAL(KIND=JPRB), PARAMETER :: ZTW1 = 1329.31_JPRB
@@ -266,7 +266,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:20      page 4
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:20      page 5
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:13      page 5
 
 (  225)         !DIR$ IVDEP
 (  226)         !OCL NOVREC
@@ -332,7 +332,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:20      page 5
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:20      page 6
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:13      page 6
 
 (  283)         PMFU(JL, IK) = PMFU(JL, IKB)*ZZP
 (  284)         IF (YDEPHLI%LPHYLIN) THEN
@@ -398,7 +398,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:20      page 6
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:20      page 7
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:13      page 7
 
 (  341)           PMFD(JL, JK) = PMFD(JL, JK)*ZMFS
 (  342)           PMFDS(JL, JK) = PMFDS(JL, JK)*ZMFS
@@ -464,7 +464,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:20      page 7
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:20      page 8
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:13      page 8
 
 (  399)           PMFLXR(JL, JK + 1) = PMFLXR(JL, JK) + ZALFAW*(PDMFUP(JL, JK) + PDMFDP(JL, JK)) + PDPMEL(JL, JK) - PSNDE(JL, JK, 1)
 (  400)           PMFLXS(JL, JK + 1) =  &
@@ -530,7 +530,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:20      page 8
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:20      page 9
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:13      page 9
 
 (  457)               PMFLXR(JL, JK + 1) = 0.0_JPRB
 (  458)               PMFLXS(JL, JK + 1) = 0.0_JPRB
@@ -596,7 +596,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:20      page 9
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:20      page 10
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:13      page 10
 
 (    1) # 1 "./cuflxn.scc_stack.F90"
 (    1) !OPTIONS XOPT(HSFUN)
@@ -662,7 +662,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:20      page 10
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:20      page 11
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:13      page 11
 
 (   58)     
 (   59)     !    *PMFU*         MASSFLUX IN UPDRAFTS                          KG/(M2*S)
@@ -728,7 +728,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:20      page 11
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:20      page 12
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:13      page 12
 
 (  116)     TYPE(TEPHLI), INTENT(IN) :: YDEPHLI
 (  117)     INTEGER(KIND=JPIM), INTENT(IN) :: KLON
@@ -794,7 +794,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:20      page 12
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:20      page 13
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:13      page 13
 
 (  174)     
 (  175)     !DIR$ VFUNCTION EXPHF
@@ -860,7 +860,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:20      page 13
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:20      page 14
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:13      page 14
 
 (   55) FOEDE ( PTARE ) = &
 (   56)   &(FOEDELTA(PTARE)*YDTHF%R5ALVCP+(1.0_JPRB-FOEDELTA(PTARE))*YDTHF%R5ALSCP)&
@@ -926,7 +926,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:20      page 14
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:20      page 15
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:13      page 15
 
 (  115) # 116 "./fcttre.func.h"
 (  116) !     ------------------------------------------------------------------
@@ -992,7 +992,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:20      page 15
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:20      page 16
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:13      page 16
 
 (  174) 		     + 2.433502_JPRB * LOG(PTARE))
 (  175) # 176 "./fcttre.func.h"
@@ -1058,7 +1058,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:20      page 16
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:20      page 17
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:13      page 17
 
 (  224)         IKB = MIN(JK + 1, KLEV)
 (  225)         !DIR$ IVDEP
@@ -1124,7 +1124,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:20      page 17
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:20      page 18
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:13      page 18
 
 (  282)         IF (KTYPE(JL) == 3) ZZP = ZZP*ZZP
 (  283)         PMFU(JL, IK) = PMFU(JL, IKB)*ZZP
@@ -1190,7 +1190,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:20      page 18
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:20      page 19
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:13      page 19
 
 (  340)         IF (ZMFS < 1.0_JPRB .and. JK >= -1 + KDTOP(JL)) THEN
 (  341)           PMFD(JL, JK) = PMFD(JL, JK)*ZMFS
@@ -1256,7 +1256,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:20      page 19
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:20      page 20
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:13      page 20
 
 (  398)           END IF
 (  399)           PMFLXR(JL, JK + 1) = PMFLXR(JL, JK) + ZALFAW*(PDMFUP(JL, JK) + PDMFDP(JL, JK)) + PDPMEL(JL, JK) - PSNDE(JL, JK, 1)
@@ -1322,7 +1322,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:20      page 20
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:20      page 21
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:13      page 21
 
 (  456)               PDMFUP(JL, JK) = PDMFUP(JL, JK) - (PMFLXR(JL, JK + 1) + PMFLXS(JL, JK + 1))
 (  457)               PMFLXR(JL, JK + 1) = 0.0_JPRB

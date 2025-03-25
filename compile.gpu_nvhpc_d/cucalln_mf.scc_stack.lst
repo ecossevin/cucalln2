@@ -1,7 +1,7 @@
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 1
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:58      page 1
 
 Switches: -noasm -nodclchk -debug -nodlines -line -list
           -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
@@ -68,7 +68,7 @@ Filename: ./cucalln_mf.scc_stack.F90
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 2
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:58      page 2
 
 (   51)     !    *PVM1*         Y-VELOCITY COMPONENT (T-1)                    M/S
 (   52)     !    *PCM1*         CHEMICAL TRACERS (T-1)                        KG/KG
@@ -134,7 +134,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 2
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 3
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:58      page 3
 
 (  109)     !    *PMFD*         MASSFLUX DOWNDRAFTS                         KG/(M2*S)
 (  110)     !    *PDIFCQ*       CONVECTIVE FLUX OF SPECIFIC HUMIDITY        KG/(M2*S)
@@ -200,7 +200,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 3
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 4
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:58      page 4
 
 (  167)     USE YOETHF, ONLY: TTHF
 (  168)     USE YOMPERTPAR, ONLY: TPERTPAR
@@ -266,7 +266,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 4
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 5
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:58      page 5
 
 (  225)     REAL(KIND=JPRB), INTENT(OUT) :: PARPRC(KLON)
 (  226)     INTEGER(KIND=JPIM), INTENT(OUT) :: KTOPC(KLON)
@@ -332,7 +332,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 5
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 6
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:58      page 6
 
 (  283)     
 (  284)     !DIR$ VFUNCTION EXPHF
@@ -398,7 +398,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 6
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 7
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:58      page 7
 
 (  341) !$acc & YDCHEM, YDSPP_CONFIG, YDPERTPAR )
 (  342)     
@@ -464,7 +464,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 7
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 8
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:58      page 8
 
 (  399)               ZCP1(JL, JK, JN) = PCM1(JL, JK, JN)
 (  400)             END DO
@@ -530,7 +530,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 8
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 9
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:58      page 9
 
 (  457) !$acc loop vector
 (  458)     DO JL=KIDIA,KFDIA
@@ -596,7 +596,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 9
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 10
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:58      page 10
 
 (    1) # 1 "./cucalln_mf.scc_stack.F90"
 (    1) MODULE CUCALLN_MF_LOKI_MOD
@@ -662,7 +662,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 10
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 11
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:58      page 11
 
 (   58)     !    *PAP*          PROVISIONAL PRESSURE ON FULL LEVELS           PA
 (   59)     !    *PAPH*         PROVISIONAL PRESSURE ON HALF LEVELS           PA
@@ -728,7 +728,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 11
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 12
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:58      page 12
 
 (  116)     !    *PLRAIN*       RAIN+SNOW CONTENT IN UPDRAFTS                 KG/KG
 (  117)     !    *PRSUD*        CONVECT MEAN RAIN AND SNOW CONTENT IN COLUMN  KG/KG
@@ -794,7 +794,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 12
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 13
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:58      page 13
 
 (  174)     REAL(KIND=JPRB), INTENT(IN) :: PPLRG
 (  175)     INTEGER(KIND=JPIM), INTENT(IN) :: KSTEP
@@ -860,7 +860,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 13
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 14
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:58      page 14
 
 (  232)     INTEGER(KIND=JPIM), INTENT(OUT) :: KCTOP_LIG(KLON)
 (  233)     INTEGER(KIND=JPIM), INTENT(OUT) :: KBOTSC(KLON)
@@ -926,7 +926,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 14
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 15
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:58      page 15
 
 (    4) ! which can be obtained at http://www.apache.org/licenses/LICENSE-2.0.
 (    5) !
@@ -992,7 +992,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 15
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 16
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:58      page 16
 
 (   62) # 63 "./fcttre.func.h"
 (   63) FOELH ( PTARE ) =&
@@ -1058,7 +1058,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 16
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 17
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:58      page 17
 
 (  122) # 123 "./fcttre.func.h"
 (  123) !     FOEALFCU is calculated to distinguish the three cases:
@@ -1124,7 +1124,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 17
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 18
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:58      page 18
 
 (  181)           & (1.0_JPRB-FOEALFA(PTARE))*EXP2)
 (  182)       FOEEWMCU_V ( PTARE,EXP1,EXP2 ) = YDTHF%R2ES*(FOEALFCU(PTARE)*EXP1+&
@@ -1190,7 +1190,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 18
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 19
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:58      page 19
 
 (   55) !                          1 SI GLACE (QUELQUE SOIT PTARG).
 (   56) REAL(KIND=JPRB) :: FOEW
@@ -1256,7 +1256,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 19
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 20
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:58      page 20
 
 (  287) !$acc routine vector
 (  288)     INTEGER(KIND=8) :: YLSTACK_L
@@ -1322,7 +1322,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 20
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 21
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:58      page 21
 
 (  346)     !*                 ----------------------------------------------
 (  347)     
@@ -1388,7 +1388,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 21
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 22
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:58      page 22
 
 (  404)         IF (KTRAC > 0 .and. YDML_PHY_EC%YREPHY%LMFTRAC) THEN
 (  405) !$acc loop seq
@@ -1454,7 +1454,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 22
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:44      page 23
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:58      page 23
 
 (  462)       PSTRCV(JL, 1) = 0.0_JPRB
 (  463)       PFCQLF(JL, 1) = 0.0_JPRB

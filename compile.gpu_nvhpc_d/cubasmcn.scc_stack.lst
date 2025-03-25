@@ -1,7 +1,7 @@
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 1
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:38      page 1
 
 Switches: -noasm -nodclchk -debug -nodlines -line -list
           -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
@@ -68,7 +68,7 @@ Filename: ./cubasmcn.scc_stack.F90
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 2
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:38      page 2
 
 (   51)     !                       1 = PENETRATIVE CONVECTION
 (   52)     !                       2 = SHALLOW CONVECTION
@@ -134,7 +134,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 2
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 3
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:38      page 3
 
 (  109)     REAL(KIND=JPRB), INTENT(OUT) :: PQU(KLON, KLEV)
 (  110)     REAL(KIND=JPRB), INTENT(OUT) :: PLU(KLON, KLEV)
@@ -144,8 +144,8 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 3
 (  114)     REAL(KIND=JPRB), INTENT(OUT) :: PDMFUP(KLON, KLEV)
 (  115)     INTEGER(KIND=JPIM) :: JL
 (  116)     
-(  117)     REAL(KIND=JPRB) :: ZZZMB, ZRG, ZORCPD
-(  118)     REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+(  117)     REAL(KIND=JPRB) :: ZZZMB, CUBASMCN_ZRG, CUBASMCN_ZORCPD
+(  118)     REAL(KIND=JPHOOK) :: CUBASMCN_ZHOOK_HANDLE
 (  119) !$acc routine vector
 (  120)     INTEGER(KIND=8) :: YLSTACK_L
 (  121)     INTEGER(KIND=8), INTENT(INOUT) :: YDSTACK_L
@@ -160,8 +160,8 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 3
 (  130)     !                  -------------------------------------------
 (  131)     
 (  132)     
-(  133)     ZRG = 1.0_JPRB / YDCST%RG
-(  134)     ZORCPD = 1.0_JPRB / YDCST%RCPD
+(  133)     CUBASMCN_ZRG = 1.0_JPRB / YDCST%RG
+(  134)     CUBASMCN_ZORCPD = 1.0_JPRB / YDCST%RCPD
 (  135)     !DIR$ IVDEP
 (  136)     !OCL NOVREC
 (  137)     
@@ -169,11 +169,11 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 3
 (  139)     DO JL=KIDIA,KFDIA
 (  140)       IF (.not.LDCUM(JL) .and. KLAB(JL, 1 + KK) == 0) THEN
 (  141)         IF (YDECUMF%LMFMID .and. KK > YDECUMF%NJKT7 .and. PQEN(JL, KK) > 0.80_JPRB*PQSEN(JL, KK)) THEN
-(  142)           PTU(JL, KK + 1) = (YDCST%RCPD*PTEN(JL, KK) + PGEO(JL, KK) - PGEOH(JL, KK + 1))*ZORCPD
+(  142)           PTU(JL, KK + 1) = (YDCST%RCPD*PTEN(JL, KK) + PGEO(JL, KK) - PGEOH(JL, KK + 1))*CUBASMCN_ZORCPD
 (  143)           PQU(JL, KK + 1) = PQEN(JL, KK)
 (  144)           PLU(JL, KK + 1) = 0.0_JPRB
 (  145)           ! ZZZMB=MAX(RMFCMIN,-PVERVEL(JL,KK)/RG)
-(  146)           ZZZMB = MAX(1.E-6_JPRB, -PVERVEL(JL, KK)*ZRG)
+(  146)           ZZZMB = MAX(1.E-6_JPRB, -PVERVEL(JL, KK)*CUBASMCN_ZRG)
 (  147)           ZZZMB = MIN(ZZZMB, YDECUMF%RMFLIA)
 (  148)           PMFUB(JL) = ZZZMB
 (  149)           PMFU(JL, KK + 1) = PMFUB(JL)
@@ -200,7 +200,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 3
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 4
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:38      page 4
 
 (    1) # 1 "./cubasmcn.scc_stack.F90"
 (    1) MODULE CUBASMCN_LOKI_MOD
@@ -266,7 +266,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 4
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 5
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:38      page 5
 
 (   58)     !    OUTPUT PARAMETERS (REAL):
 (   59)     
@@ -332,11 +332,11 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 5
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 6
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:38      page 6
 
 (  116)     
-(  117)     REAL(KIND=JPRB) :: ZZZMB, ZRG, ZORCPD
-(  118)     REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+(  117)     REAL(KIND=JPRB) :: ZZZMB, CUBASMCN_ZRG, CUBASMCN_ZORCPD
+(  118)     REAL(KIND=JPHOOK) :: CUBASMCN_ZHOOK_HANDLE
 (  119) !$acc routine vector
 (  120)     INTEGER(KIND=8) :: YLSTACK_L
 (  121)     INTEGER(KIND=8), INTENT(INOUT) :: YDSTACK_L
@@ -350,8 +350,8 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 6
 (  130)     !                  -------------------------------------------
 (  131)     
 (  132)     
-(  133)     ZRG = 1.0_JPRB / YDCST%RG
-(  134)     ZORCPD = 1.0_JPRB / YDCST%RCPD
+(  133)     CUBASMCN_ZRG = 1.0_JPRB / YDCST%RG
+(  134)     CUBASMCN_ZORCPD = 1.0_JPRB / YDCST%RCPD
 (  135)     !DIR$ IVDEP
 (  136)     !OCL NOVREC
 (  137)     
@@ -359,11 +359,11 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 6
 (  139)     DO JL=KIDIA,KFDIA
 (  140)       IF (.not.LDCUM(JL) .and. KLAB(JL, 1 + KK) == 0) THEN
 (  141)         IF (YDECUMF%LMFMID .and. KK > YDECUMF%NJKT7 .and. PQEN(JL, KK) > 0.80_JPRB*PQSEN(JL, KK)) THEN
-(  142)           PTU(JL, KK + 1) = (YDCST%RCPD*PTEN(JL, KK) + PGEO(JL, KK) - PGEOH(JL, KK + 1))*ZORCPD
+(  142)           PTU(JL, KK + 1) = (YDCST%RCPD*PTEN(JL, KK) + PGEO(JL, KK) - PGEOH(JL, KK + 1))*CUBASMCN_ZORCPD
 (  143)           PQU(JL, KK + 1) = PQEN(JL, KK)
 (  144)           PLU(JL, KK + 1) = 0.0_JPRB
 (  145)           ! ZZZMB=MAX(RMFCMIN,-PVERVEL(JL,KK)/RG)
-(  146)           ZZZMB = MAX(1.E-6_JPRB, -PVERVEL(JL, KK)*ZRG)
+(  146)           ZZZMB = MAX(1.E-6_JPRB, -PVERVEL(JL, KK)*CUBASMCN_ZRG)
 (  147)           ZZZMB = MIN(ZZZMB, YDECUMF%RMFLIA)
 (  148)           PMFUB(JL) = ZZZMB
 (  149)           PMFU(JL, KK + 1) = PMFUB(JL)

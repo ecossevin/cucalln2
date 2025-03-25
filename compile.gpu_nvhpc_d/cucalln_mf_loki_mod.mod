@@ -1,6 +1,6 @@
 V34 :0x24 cucalln_mf_loki_mod
 24 cucalln_mf.scc_stack.F90 S624 0
-03/19/2025  06:55:44
+03/24/2025  13:20:58
 use yoe_spectral_planck private
 use yomsphyhist private
 use yomsrftlad private

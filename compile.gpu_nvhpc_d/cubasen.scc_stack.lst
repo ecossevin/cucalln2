@@ -1,7 +1,7 @@
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 1
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:32      page 1
 
 Switches: -noasm -nodclchk -debug -nodlines -line -list
           -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
@@ -68,7 +68,7 @@ Filename: ./cubasen.scc_stack.F90
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 2
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:32      page 2
 
 (   51)     !    *PAHFS*        SENSIBLE HEAT FLUX                            W/M2
 (   52)     !    *PKMFL*        SURFACE KINEMATIC MOMENTUM FLUX              M2/S2
@@ -134,7 +134,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 2
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 3
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:32      page 3
 
 (  109)     !      S.-J. Lock (01 Nov 2016) SPP bug fix for ENTRORG perturbations
 (  110)     !      M. Leutbecher (Oct 2020) SPP abstraction
@@ -200,7 +200,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 3
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 4
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:32      page 4
 
 (  167)     INTEGER(KIND=JPIM), INTENT(OUT) :: KBOTSC(KLON)
 (  168)     INTEGER(KIND=JPIM), INTENT(OUT) :: KCTOP(KLON)
@@ -254,7 +254,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 4
 (  216)     REAL(KIND=JPRB) :: Z1S, Z2S, CUADJTQ_ZCOND, ZCOND1, CUADJTQ_ZCOR, ZFOEEWI, ZFOEEWL, CUADJTQ_ZOEALFA, ZQMAX, ZQSAT,  &
 (  217)     & CUADJTQ_ZTARG, ZQP
 (  218)     REAL(KIND=JPRB) :: ZL, ZI, ZF
-(  219)     LOGICAL :: LLFLAG
+(  219)     LOGICAL :: CUADJTQ_LLFLAG
 (  220)     REAL(KIND=JPHOOK) :: CUADJTQ_ZHOOK_HANDLE
 (  221) #include "abor1.intfb.h"
 (  222) #include "cuadjtq.func.h"
@@ -266,7 +266,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 4
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 5
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:32      page 5
 
 (  225)     INTEGER(KIND=8), INTENT(INOUT) :: YDSTACK_L
 (  226)     POINTER(IP_ILAB, ILAB)
@@ -332,7 +332,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 5
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 6
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:32      page 6
 
 (  283)       
 (  284) !$acc loop seq
@@ -398,7 +398,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 6
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 7
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:32      page 7
 
 (  341)           IS = IS + 1
 (  342)           IDPL = JKK            ! departure level
@@ -464,7 +464,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 7
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 8
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:32      page 8
 
 (  399)                 ELSE
 (  400)                   ZTEXC = MIN(ZTEXC, 1.0_JPRB)
@@ -530,7 +530,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 8
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 9
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:32      page 9
 
 (  457)             
 (  458)             IF (YDSPP_CONFIG%LSPP .and. LLPERT_ENTSTPC1) THEN
@@ -596,7 +596,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 9
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 10
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:32      page 10
 
 (  515)           ! [Loki] inlined child subroutine: CUADJTQ
 (  516)           ! =========================================
@@ -622,9 +622,9 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 10
 (  536)             
 (  537)             !   mixed phase saturation
 (  538)             
-(  539)             LLFLAG = LLGO_ON
+(  539)             CUADJTQ_LLFLAG = LLGO_ON
 (  540)             
-(  541)             IF (LLFLAG) THEN
+(  541)             IF (CUADJTQ_LLFLAG) THEN
 (  542)               ZQP = 1.0_JPRB / ZPH
 (  543)               ZL = 1.0_JPRB / (ZTU(JL, IK) - YDTHF%R4LES)
 (  544)               ZI = 1.0_JPRB / (ZTU(JL, IK) - YDTHF%R4IES)
@@ -662,7 +662,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 10
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 11
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:32      page 11
 
 (  573)             
 (  574)             
@@ -728,7 +728,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 11
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 12
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:32      page 12
 
 (  631)             END IF
 (  632)             
@@ -794,7 +794,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 12
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 13
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:32      page 13
 
 (  689)             ZCAPE(JL, JKK) = ZCAPE(JL, JKK) + MAX(0.0_JPRB, ZBUOF*ZDZ)
 (  690)             
@@ -860,7 +860,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 13
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 14
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:32      page 14
 
 (  747)             ELSE
 (  748)               IF (ZLU(JL, JK) > 0.0_JPRB) THEN
@@ -926,7 +926,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 14
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 15
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:32      page 15
 
 (  805)         IF (JKK < KLEV) THEN
 (  806)           LLRESET = .false.
@@ -992,7 +992,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 15
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 16
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:32      page 16
 
 (  863)       END DO
 (  864)     END DO
@@ -1058,7 +1058,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 16
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 17
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:32      page 17
 
 (    1) # 1 "./cubasen.scc_stack.F90"
 (    1) MODULE CUBASEN_LOKI_MOD
@@ -1124,7 +1124,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 17
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 18
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:32      page 18
 
 (   58)     !    *PQSEN*        PROVISIONAL ENVIRONMENT SATU. HUMIDITY (T+1)  KG/KG
 (   59)     !    *PGEO*         GEOPOTENTIAL                                  M2/S2
@@ -1190,7 +1190,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 18
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 19
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:32      page 19
 
 (  116)     USE, intrinsic :: ISO_FORTRAN_ENV, ONLY: REAL64
 (  117)     USE, intrinsic :: ISO_C_BINDING, ONLY: C_SIZEOF
@@ -1256,7 +1256,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 19
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 20
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:32      page 20
 
 (  174)     LOGICAL :: LLRESET, LLRESETJL
 (  175)     LOGICAL :: LLPERT_ENTRORG, LLPERT_ENTSTPC1    ! SPP perturbation on?
@@ -1322,7 +1322,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 20
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 21
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:32      page 21
 
 (   16) !       partial pressure of water vapour is given by a first order
 (   17) !       Taylor expansion of Qs(T) w.r.t. to Temperature, using constants
@@ -1388,7 +1388,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 21
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 22
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:32      page 22
 
 (   74) # 75 "./fcttre.func.h"
 (   75) !     FOEALFA is calculated to distinguish the three cases:
@@ -1454,7 +1454,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 22
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 23
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:32      page 23
 
 (  135) !     Pressure of water vapour at saturation
 (  136) !        INPUT : PTARE = TEMPERATURE
@@ -1510,7 +1510,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 23
 (  216)     REAL(KIND=JPRB) :: Z1S, Z2S, CUADJTQ_ZCOND, ZCOND1, CUADJTQ_ZCOR, ZFOEEWI, ZFOEEWL, CUADJTQ_ZOEALFA, ZQMAX, ZQSAT,  &
 (  217)     & CUADJTQ_ZTARG, ZQP
 (  218)     REAL(KIND=JPRB) :: ZL, ZI, ZF
-(  219)     LOGICAL :: LLFLAG
+(  219)     LOGICAL :: CUADJTQ_LLFLAG
 (  220)     REAL(KIND=JPHOOK) :: CUADJTQ_ZHOOK_HANDLE
 (  221) # 221 "./cubasen.scc_stack.F90"
 (  221) # 1 "./abor1.intfb.h"
@@ -1520,7 +1520,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 23
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 24
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:32      page 24
 
 (    1) INTERFACE
 (    2) SUBROUTINE ABOR1 (CDMESS)
@@ -1586,7 +1586,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 24
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 25
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:32      page 25
 
 (  266)     !----------------------------------------------------------------------
 (  267)     
@@ -1652,7 +1652,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 25
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 26
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:32      page 26
 
 (  324)         ZS(JL, JK) = YDCST%RCPD*PTEN(JL, JK) + PGEO(JL, JK)
 (  325)         ZQENH(JL, JK) = PQENH(JL, JK)
@@ -1718,7 +1718,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 26
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 27
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:32      page 27
 
 (  382)                 LLGO_ON = .false.                  ! non-convective point
 (  383)               END IF
@@ -1784,7 +1784,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 27
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 28
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:32      page 28
 
 (  440)         
 (  441)         !----------------------------------------------------------------------
@@ -1850,7 +1850,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 28
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 29
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:32      page 29
 
 (  498)               IS = IS + 1
 (  499)               ZMIX = MIN(1.0_JPRB, ZMIX)
@@ -1893,9 +1893,9 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 29
 (  536)             
 (  537)             !   mixed phase saturation
 (  538)             
-(  539)             LLFLAG = LLGO_ON
+(  539)             CUADJTQ_LLFLAG = LLGO_ON
 (  540)             
-(  541)             IF (LLFLAG) THEN
+(  541)             IF (CUADJTQ_LLFLAG) THEN
 (  542)               ZQP = 1.0_JPRB / ZPH
 (  543)               ZL = 1.0_JPRB / (ZTU(JL, IK) - YDTHF%R4LES)
 (  544)               ZI = 1.0_JPRB / (ZTU(JL, IK) - YDTHF%R4IES)
@@ -1916,7 +1916,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 29
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 30
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:32      page 30
 
 (  556)               ZL = 1.0_JPRB / (ZTU(JL, IK) - YDTHF%R4LES)
 (  557)               ZI = 1.0_JPRB / (ZTU(JL, IK) - YDTHF%R4IES)
@@ -1982,7 +1982,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 30
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 31
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:32      page 31
 
 (  614)                 ZFOEEWL = YDTHF%R2ES*EXP(YDTHF%R3LES*(CUADJTQ_ZTARG - YDCST%RTT) / (CUADJTQ_ZTARG - YDTHF%R4LES))
 (  615)                 ZFOEEWI = YDTHF%R2ES*EXP(YDTHF%R3IES*(CUADJTQ_ZTARG - YDCST%RTT) / (CUADJTQ_ZTARG - YDTHF%R4IES))
@@ -2048,7 +2048,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 31
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 32
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:32      page 32
 
 (  672)             ZTVUH = (1.0_JPRB + YDCST%RETV*ZQU(JL, JK) - ZLU(JL, JK))*ZTU(JL, JK) + YDTHF%RALFDCP*ZLGLAC
 (  673)             ZTVENH = (1.0_JPRB + YDCST%RETV*ZQENH(JL, JK))*(ZSENH(JL, JK) - PGEOH(JL, JK))*ZRCPD
@@ -2114,7 +2114,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 32
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 33
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:32      page 33
 
 (  730)                 IBOTSC = JK
 (  731)                 ICBOT = JK
@@ -2180,7 +2180,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 33
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 34
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:32      page 34
 
 (  788)             KCBOT(JL) = -1
 (  789)             KDPL(JL) = KLEV - 1
@@ -2246,7 +2246,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 34
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:29      page 35
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:32      page 35
 
 (  846)             JKB = KCBOT(JL)
 (  847)             PWUBASE(JL) = SQRT(MAX(ZWU2H(JL, JKB), 0.0_JPRB))

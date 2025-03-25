@@ -1,7 +1,7 @@
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:22      page 1
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:15      page 1
 
 Switches: -noasm -nodclchk -debug -nodlines -line -list
           -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
@@ -68,7 +68,7 @@ Filename: ./cududv.scc_stack.F90
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:22      page 2
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:15      page 2
 
 (   51)     !    *PTENV*        TENDENCY OF V-COMP. OF WIND                    M/S2
 (   52)     
@@ -134,7 +134,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:22      page 2
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:22      page 3
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:15      page 3
 
 (  109)     LOGICAL, INTENT(IN) :: LDCUM(KLON)
 (  110)     REAL(KIND=JPRB), INTENT(IN) :: PTSPHY
@@ -200,7 +200,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:22      page 3
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:22      page 4
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:15      page 4
 
 (  167)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
 (  168)     IP_ZADVW = YLSTACK_L
@@ -266,7 +266,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:22      page 4
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:22      page 5
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:15      page 5
 
 (  225)       
 (  226)       ! linear fluxes below cloud
@@ -332,7 +332,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:22      page 5
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:22      page 6
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:15      page 6
 
 (  283)           END IF
 (  284)         END DO
@@ -398,7 +398,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:22      page 6
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:22      page 7
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:15      page 7
 
 (  341)           PN1 = YDSPP_CONFIG%SM%PN(IPN1)
 (  342)           IPCUDU = PN1%MP
@@ -464,7 +464,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:22      page 7
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:22      page 8
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:15      page 8
 
 (  399)             END IF
 (  400)             
@@ -530,7 +530,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:22      page 8
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:22      page 9
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:15      page 9
 
 (    1) # 1 "./cududv.scc_stack.F90"
 (    1) MODULE CUDUDV_LOKI_MOD
@@ -596,7 +596,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:22      page 9
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:22      page 10
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:15      page 10
 
 (   58)     
 (   59)     !       FOR EXPLICIT SOLUTION: ONLY ONE SINGLE ITERATION
@@ -662,7 +662,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:22      page 10
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:22      page 11
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:15      page 11
 
 (  116)     REAL(KIND=JPRB), INTENT(IN) :: PMFD(KLON, KLEV)
 (  117)     REAL(KIND=JPRB), INTENT(IN) :: PMFUO(KLON, KLEV)
@@ -728,7 +728,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:22      page 11
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:22      page 12
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:15      page 12
 
 (  174)     IP_ZDP = YLSTACK_L
 (  175)     YLSTACK_L = YLSTACK_L + ISHFT(ISHFT(KLON*KLEV*C_SIZEOF(REAL(1, kind=JPRB)) + 7, -3), 3)
@@ -794,7 +794,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:22      page 12
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:22      page 13
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:15      page 13
 
 (  233)             IKB = KCBOT(JL)
 (  234)             ZZP = ((PAPH(JL, KLEV + 1) - PAPH(JL, JK)) / (PAPH(JL, KLEV + 1) - PAPH(JL, IKB)))
@@ -860,7 +860,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:22      page 13
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:22      page 14
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:15      page 14
 
 (  291)       !*      1.6          IMPLICIT SOLUTION
 (  292)       !                    -----------------
@@ -926,7 +926,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:22      page 14
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:22      page 15
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:15      page 15
 
 (  349)         IPN2 = YDSPP_CONFIG%PPTR%CUDUDVS
 (  350)         LLPERT_CUDUDVS = IPN2 > 0
@@ -992,7 +992,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:22      page 15
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:22      page 16
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:15      page 16
 
 (  407)             IF (.not.LLPPAR_CUDUV) THEN
 (  408)               ZRDU = ZMDU + ZXU_MAG*ZXU

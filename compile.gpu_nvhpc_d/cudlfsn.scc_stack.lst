@@ -1,7 +1,7 @@
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:25      page 1
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:28      page 1
 
 Switches: -noasm -nodclchk -debug -nodlines -line -list
           -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
@@ -68,7 +68,7 @@ Filename: ./cudlfsn.scc_stack.F90
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:25      page 2
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:28      page 2
 
 (   51)     !    *PTU*          TEMPERATURE IN UPDRAFTS                        K
 (   52)     !    *PQU*          SPEC. HUMIDITY IN UPDRAFTS                   KG/KG
@@ -134,7 +134,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:25      page 2
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:25      page 3
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:28      page 3
 
 (  109)     INTEGER(KIND=JPIM), INTENT(IN) :: KIDIA
 (  110)     INTEGER(KIND=JPIM), INTENT(IN) :: KFDIA
@@ -200,7 +200,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:25      page 3
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:25      page 4
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:28      page 4
 
 (  167)     
 (  168) !$acc loop vector
@@ -266,7 +266,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:25      page 4
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:25      page 5
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:28      page 5
 
 (  225)         IKE = KLEV - 3
 (  226) !$acc loop seq
@@ -332,7 +332,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:25      page 5
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:25      page 6
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:28      page 6
 
 (  283)               ZCOR = 1.0_JPRB / (1.0_JPRB - YDCST%RETV*ZQSAT)
 (  284)               ZQSAT = ZQSAT*ZCOR
@@ -398,7 +398,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:25      page 6
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:25      page 7
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:28      page 7
 
 (  341)                 
 (  342)                 Z2S = CUADJTQ_ZOEALFA*YDTHF%R5ALVCP*(1.0_JPRB / (CUADJTQ_ZTARG - YDTHF%R4LES)**2) + (1.0_JPRB - CUADJTQ_ZOEA
@@ -464,7 +464,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:25      page 7
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:25      page 8
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:28      page 8
 
 (  399)     
 (  400) !$acc end data
@@ -530,7 +530,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:25      page 8
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:25      page 9
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:28      page 9
 
 (    1) # 1 "./cudlfsn.scc_stack.F90"
 (    1) MODULE CUDLFSN_LOKI_MOD
@@ -596,7 +596,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:25      page 9
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:25      page 10
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:28      page 10
 
 (   58)     
 (   59)     !    OUTPUT PARAMETERS (REAL):
@@ -662,7 +662,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:25      page 10
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:25      page 11
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:28      page 11
 
 (  116)     REAL(KIND=JPRB), INTENT(IN) :: PTEN(KLON, KLEV)
 (  117)     REAL(KIND=JPRB), INTENT(IN) :: PQSEN(KLON, KLEV)
@@ -728,7 +728,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:25      page 11
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:25      page 12
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:28      page 12
 
 (   30) !       set (e.g. surface, post-processing) or the second set 
 (   31) !       (e.g. clouds, condensation, convection) should be used.
@@ -794,7 +794,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:25      page 12
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:25      page 13
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:28      page 13
 
 (   89) REAL(KIND=JPRB) :: FOEEWM,FOEDEM,FOELDCPM,FOELHM,FOE_DEWM_DT
 (   90) FOEEWM ( PTARE ) = YDTHF%R2ES *&
@@ -860,7 +860,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:25      page 13
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:25      page 14
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:28      page 14
 
 (  149)          &FOEALFCU(PTARE)*YDCST%RLVTT+(1.0_JPRB-FOEALFCU(PTARE))*YDCST%RLSTT
 (  150) !     ------------------------------------------------------------------
@@ -926,7 +926,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:25      page 14
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:25      page 15
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:28      page 15
 
 (  150) # 150 "./cudlfsn.scc_stack.F90"
 (  150) !$acc routine vector
@@ -992,7 +992,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:25      page 15
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:25      page 16
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:28      page 16
 
 (  208)             ZHSK = YDCST%RCPD*PTEN(JL, JK) + PGEO(JL, JK) + ZOELHM*PQSEN(JL, JK)
 (  209)             IF (ZHSK < ZHSMIN) THEN
@@ -1058,7 +1058,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:25      page 16
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:25      page 17
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:28      page 17
 
 (  266)             
 (  267)             
@@ -1124,7 +1124,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:25      page 17
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:25      page 18
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:28      page 18
 
 (  324)               CUADJTQ_ZCOND = MIN(CUADJTQ_ZCOND, 0.0_JPRB)
 (  325)               
@@ -1190,7 +1190,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:25      page 18
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:25      page 19
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:28      page 19
 
 (  382)               PQD(JL, JK) = ZQTEST
 (  383)               PMFD(JL, JK) = ZMFTOP

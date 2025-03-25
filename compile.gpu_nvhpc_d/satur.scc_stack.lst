@@ -1,7 +1,7 @@
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:17      page 1
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:00      page 1
 
 Switches: -noasm -nodclchk -debug -nodlines -line -list
           -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
@@ -68,7 +68,7 @@ Filename: ./satur.scc_stack.F90
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:17      page 2
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:00      page 2
 
 (   51)     
 (   52)     !                      CONVECTION  KFLAG=1
@@ -134,7 +134,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:17      page 2
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:17      page 3
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:00      page 3
 
 (  109)     
 (  110)     !     *    2.           CALCULATE SATURATION SPECIFIC HUMIDITY
@@ -200,7 +200,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:17      page 3
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:17      page 4
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:00      page 4
 
 (    1) # 1 "./satur.scc_stack.F90"
 (    1) ! (C) Copyright 1996- ECMWF.
@@ -266,7 +266,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:17      page 4
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:17      page 5
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:00      page 5
 
 (   58)     
 (   59)     !     R. El Khatib 22-Jun-2022 A contribution to simplify phasing after the refactoring of YOMCLI/YOMCST/YOETHF.
@@ -332,7 +332,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:17      page 5
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:17      page 6
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:00      page 6
 
 (   23) !       also a mix of both for the temperature range YDTHF%RTICE < T < YDTHF%RTWAT.
 (   24) !       This set contains FOEALFA,FOEEWM,FOEDEM,FOELDCPM and FOELHM.
@@ -398,7 +398,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:17      page 6
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:17      page 7
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:00      page 7
 
 (   81) !               INPUT : PTARE = TEMPERATURE
 (   82) REAL(KIND=JPRB) :: FOEALFA
@@ -464,7 +464,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:17      page 7
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:17      page 8
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:00      page 8
 
 (  142) FOEDEMCU ( PTARE )=FOEALFCU(PTARE)*YDTHF%R5ALVCP*(1.0_JPRB/(PTARE-YDTHF%R4LES)**2)+&
 (  143)              &(1.0_JPRB-FOEALFCU(PTARE))*YDTHF%R5ALSCP*(1.0_JPRB/(PTARE-YDTHF%R4IES)**2)
@@ -530,7 +530,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:17      page 8
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:17      page 9
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:00      page 9
 
 (  107)     !     *
 (  108)     !----------------------------------------------------------------------

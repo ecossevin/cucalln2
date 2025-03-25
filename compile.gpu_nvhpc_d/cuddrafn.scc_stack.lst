@@ -1,7 +1,7 @@
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:27      page 1
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:30      page 1
 
 Switches: -noasm -nodclchk -debug -nodlines -line -list
           -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
@@ -68,7 +68,7 @@ Filename: ./cuddrafn.scc_stack.F90
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:27      page 2
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:30      page 2
 
 (   51)     
 (   52)     !    *PRFL*         PRECIPITATION RATE                           KG/(M2*S)
@@ -134,7 +134,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:27      page 2
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:27      page 3
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:30      page 3
 
 (  109)     REAL(KIND=JPRB), INTENT(IN) :: PGEO(KLON, KLEV)
 (  110)     REAL(KIND=JPRB), INTENT(IN) :: PGEOH(KLON, KLEV + 1)
@@ -200,7 +200,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:27      page 3
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:27      page 4
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:30      page 4
 
 (  167)       ZBUOY = 0.0_JPRB
 (  168)       ZDMFEN = 0.0_JPRB
@@ -266,7 +266,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:27      page 4
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:27      page 5
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:30      page 5
 
 (  225)         
 (  226)         IK = JK
@@ -332,7 +332,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:27      page 5
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:27      page 6
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:30      page 6
 
 (  283)           
 (  284)           
@@ -398,7 +398,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:27      page 6
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:27      page 7
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:30      page 7
 
 (  341)         
 (  342)         ! =========================================
@@ -464,7 +464,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:27      page 7
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:27      page 8
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:30      page 8
 
 (    1) # 1 "./cuddrafn.scc_stack.F90"
 (    1) MODULE CUDDRAFN_LOKI_MOD
@@ -530,7 +530,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:27      page 8
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:27      page 9
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:30      page 9
 
 (   58)     !    *PMFD*         MASSFLUX IN DOWNDRAFTS                       KG/(M2*S)
 (   59)     !    *PMFDS*        FLUX OF DRY STATIC ENERGY IN DOWNDRAFTS       J/(M2*S)
@@ -596,7 +596,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:27      page 9
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:27      page 10
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:30      page 10
 
 (  116)     REAL(KIND=JPRB), INTENT(INOUT) :: PMFD(KLON, KLEV)
 (  117)     REAL(KIND=JPRB), INTENT(INOUT) :: PMFDS(KLON, KLEV)
@@ -662,7 +662,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:27      page 10
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:27      page 11
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:30      page 11
 
 (   27) !       of FOEEWM.
 (   28) # 29 "./fcttre.func.h"
@@ -728,7 +728,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:27      page 11
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:27      page 12
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:30      page 12
 
 (   85) # 87 "./fcttre.func.h"
 (   87) !     Pressure of water vapour at saturation
@@ -794,7 +794,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:27      page 12
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:27      page 13
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:30      page 13
 
 (  146)             &(1.0_JPRB-FOEALFCU(PTARE))*YDTHF%RALSDCP
 (  147) # 148 "./fcttre.func.h"
@@ -860,7 +860,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:27      page 13
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:27      page 14
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:30      page 14
 
 (  151)     
 (  152)     !     1.           CALCULATE MOIST DESCENT FOR CUMULUS DOWNDRAFT BY
@@ -926,7 +926,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:27      page 14
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:27      page 15
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:30      page 15
 
 (  209)           
 (  210)         END IF
@@ -992,7 +992,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:27      page 15
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:27      page 16
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:30      page 16
 
 (  267)             IF (CUADJTQ_ZCOND == 0.0_JPRB) ZCOND1 = MIN(ZCOND1, 0.0_JPRB)
 (  268)             PTD(JL, IK) = PTD(JL, IK) + FOELDCPMCU(PTD(JL, IK))*ZCOND1
@@ -1058,7 +1058,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:27      page 16
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:27      page 17
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:30      page 17
 
 (  325)               
 (  326)               PTD(JL, IK) = PTD(JL, IK) + (ZOEALFA*YDTHF%RALVDCP + (1.0_JPRB - ZOEALFA)*YDTHF%RALSDCP)*ZCOND1
@@ -1124,7 +1124,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:27      page 17
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:27      page 18
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:30      page 18
 
 (  383)           
 (  384)         END IF

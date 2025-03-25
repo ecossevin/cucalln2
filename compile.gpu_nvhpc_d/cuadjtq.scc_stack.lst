@@ -1,7 +1,7 @@
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 1
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:40      page 1
 
 Switches: -noasm -nodclchk -debug -nodlines -line -list
           -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
@@ -68,7 +68,7 @@ Filename: ./cuadjtq.scc_stack.F90
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 2
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:40      page 2
 
 (   51)     
 (   52)     !    *PT*           TEMPERATURE                                     K
@@ -134,7 +134,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 2
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 3
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:40      page 3
 
 (  109)     
 (  110)     !DIR$ VFUNCTION EXPHF
@@ -200,7 +200,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 3
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 4
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:40      page 4
 
 (  167)             CUADJTQ_ZCOND = MAX(CUADJTQ_ZCOND, 0.0_JPRB)
 (  168)             PT(JL, KK) = PT(JL, KK) + FOELDCPMCU(PT(JL, KK))*CUADJTQ_ZCOND
@@ -266,7 +266,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 4
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 5
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:40      page 5
 
 (  225)             CUADJTQ_ZCOND = (PQ(JL, KK) - CUADJTQ_ZQSAT) / (1.0_JPRB + CUADJTQ_ZQSAT*CUADJTQ_ZCOR*FOEDEMCU(PT(JL, KK)))
 (  226)             CUADJTQ_ZCOND = MIN(CUADJTQ_ZCOND, 0.0_JPRB)
@@ -332,7 +332,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 5
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 6
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:40      page 6
 
 (  283)           END IF
 (  284)           
@@ -398,7 +398,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 6
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 7
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:40      page 7
 
 (  341)           IF (LDFLAG(JL)) THEN
 (  342)             CUADJTQ_ZQP = 1.0_JPRB / PSP(JL)
@@ -464,7 +464,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 7
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 8
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:40      page 8
 
 (  399)             ZFOEEWI = YDTHF%R2ES*EXP(YDTHF%R3IES*(CUADJTQ_ZTARG - YDCST%RTT) / (CUADJTQ_ZTARG - YDTHF%R4IES))
 (  400)             CUADJTQ_ZQSAT = CUADJTQ_ZQP*(CUADJTQ_ZOEALFA*ZFOEEWL + (1.0_JPRB - CUADJTQ_ZOEALFA)*ZFOEEWI)
@@ -530,7 +530,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 8
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 9
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:40      page 9
 
 (  457)           CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZCOR
 (  458)           
@@ -596,7 +596,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 9
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 10
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:40      page 10
 
 (  515)             CUADJTQ_ZOEALFA = 0.5_JPRB*(TANH(YDEPHLI%RLPAL1*(CUADJTQ_ZTARG - YDEPHLI%RLPTRC)) + 1.0_JPRB)
 (  516)             ZFOEEWL = YDTHF%R2ES*EXP(YDTHF%R3LES*(CUADJTQ_ZTARG - YDCST%RTT) / (CUADJTQ_ZTARG - YDTHF%R4LES))
@@ -662,7 +662,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 10
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 11
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:40      page 11
 
 (    1) # 1 "./cuadjtq.scc_stack.F90"
 (    1) ! (C) Copyright 1988- ECMWF.
@@ -728,7 +728,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 11
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 12
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:40      page 12
 
 (   58)     !          FOR CONDENSATION CALCULATIONS.
 (   59)     !          THE TABLES ARE INITIALISED IN *SUPHEC*.
@@ -794,7 +794,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 12
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 13
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:40      page 13
 
 (    7) END INTERFACE
 (    8) # 109 "./cuadjtq.scc_stack.F90"
@@ -860,7 +860,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 13
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 14
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:40      page 14
 
 (   52)   &(YDTHF%R3LES*FOEDELTA(PTARE)+YDTHF%R3IES*(1.0_JPRB-FOEDELTA(PTARE)))*(PTARE-YDCST%RTT)&
 (   53) &/ (PTARE-(YDTHF%R4LES*FOEDELTA(PTARE)+YDTHF%R4IES*(1.0_JPRB-FOEDELTA(PTARE)))))
@@ -926,7 +926,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 14
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 15
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:40      page 15
 
 (  112) REAL(KIND=JPRB) :: FOETB
 (  113) FOETB ( PTARE )=FOEALFA(PTARE)*YDTHF%R3LES*(YDCST%RTT-YDTHF%R4LES)*(1.0_JPRB/(PTARE-YDTHF%R4LES)**2)+&
@@ -992,7 +992,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 15
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 16
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:40      page 16
 
 (  171) FOELSON( PTARE ) = EXP( -6096.9385_JPRB/PTARE + 21.2409642_JPRB &
 (  172) 	             - 2.711193E-2_JPRB * PTARE    &
@@ -1058,7 +1058,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 16
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 17
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:40      page 17
 
 (  149)           IF (KCALL == 6) THEN
 (  150)             IF (PRESENT(LDOFLAG)) THEN
@@ -1124,7 +1124,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 17
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 18
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:40      page 18
 
 (  207)               PT(JL, KK) = PT(JL, KK) + YDTHF%RALVDCP*CUADJTQ_ZCOND1
 (  208)               PQ(JL, KK) = PQ(JL, KK) - CUADJTQ_ZCOND1
@@ -1190,7 +1190,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 18
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 19
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:40      page 19
 
 (  265)         IF (KCALL == 4) THEN
 (  266)           
@@ -1256,7 +1256,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 19
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 20
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:40      page 20
 
 (  323)           CUADJTQ_ZQSAT = CUADJTQ_ZQSAT*CUADJTQ_ZCOR
 (  324)           CUADJTQ_ZCOND1 = (PQ(JL, KK) - CUADJTQ_ZQSAT) / (1.0_JPRB + CUADJTQ_ZQSAT*CUADJTQ_ZCOR*FOEDEMCU(PT(JL, KK)))
@@ -1322,7 +1322,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 20
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 21
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:40      page 21
 
 (  381)               & PT(JL, KK) + (CUADJTQ_ZOEALFA*YDTHF%RALVDCP + (1.0_JPRB - CUADJTQ_ZOEALFA)*YDTHF%RALSDCP)*CUADJTQ_ZCOND1
 (  382)               
@@ -1388,7 +1388,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 21
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 22
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:40      page 22
 
 (  439)           
 (  440)         END IF
@@ -1454,7 +1454,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 22
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:32      page 23
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:40      page 23
 
 (  497)             ZFOEEWL = YDTHF%R2ES*EXP(YDTHF%R3LES*(CUADJTQ_ZTARG - YDCST%RTT) / (CUADJTQ_ZTARG - YDTHF%R4LES))
 (  498)             ZFOEEWI = YDTHF%R2ES*EXP(YDTHF%R3IES*(CUADJTQ_ZTARG - YDCST%RTT) / (CUADJTQ_ZTARG - YDTHF%R4IES))

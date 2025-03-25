@@ -1,7 +1,7 @@
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 1
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:36      page 1
 
 Switches: -noasm -nodclchk -debug -nodlines -line -list
           -idir /opt/softs/gcc/9.2.0/hpc_sdk/Linux_x86_64/24.5/comm_libs/12.4/hpcx/hpcx-2.19/ompi/include
@@ -68,7 +68,7 @@ Filename: ./cuentr.scc_stack.F90
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 2
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:36      page 2
 
 (   51)     !    OUTPUT PARAMETERS (REAL):
 (   52)     
@@ -120,26 +120,26 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 2
 (   98)     REAL(KIND=JPRB), INTENT(OUT) :: PDMFEN(KLON)
 (   99)     REAL(KIND=JPRB), INTENT(OUT) :: PDMFDE(KLON)
 (  100)     
-(  101)     LOGICAL :: LLO1
+(  101)     LOGICAL :: CUENTR_LLO1
 (  102)     
 (  103)     INTEGER(KIND=JPIM) :: JL
 (  104)     
 (  105)     ! A bunch of SPP variables that are saved between calls for efficiency reasons
 (  106)     LOGICAL :: LLPERT_DETRPEN    ! SPP perturbation on?
 (  107)     INTEGER(KIND=JPIM) :: IPDETRPEN    ! SPP random field pointer
-(  108)     INTEGER(KIND=JPIM) :: IPN    ! SPP perturbation pointer
+(  108)     INTEGER(KIND=JPIM) :: CUENTR_IPN    ! SPP perturbation pointer
 
 
 
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 3
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:36      page 3
 
 (  109)     TYPE(SPP_PERT) :: PN1    ! SPP pertn. config. for RTAU
 (  110)     
-(  111)     REAL(KIND=JPRB) :: ZDZ, ZENTR, ZMF, ZRG, ZXDETRPEN
-(  112)     REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+(  111)     REAL(KIND=JPRB) :: ZDZ, ZENTR, ZMF, CUENTR_ZRG, ZXDETRPEN
+(  112)     REAL(KIND=JPHOOK) :: CUENTR_ZHOOK_HANDLE
 (  113) !$acc routine vector
 (  114)     INTEGER(KIND=8) :: YLSTACK_L
 (  115)     INTEGER(KIND=8), INTENT(INOUT) :: YDSTACK_L
@@ -156,14 +156,14 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 3
 (  126)     DO JL=KIDIA,KFDIA
 (  127)       IF (LDWORK) THEN
 (  128)         
-(  129)         ZRG = 1.0_JPRB / YDCST%RG
+(  129)         CUENTR_ZRG = 1.0_JPRB / YDCST%RG
 (  130)         
 (  131)         ! prepare SPP perturbations (just once)
 (  132)         IF (YDSPP_CONFIG%LSPP) THEN
-(  133)           IPN = YDSPP_CONFIG%PPTR%DETRPEN
-(  134)           LLPERT_DETRPEN = IPN > 0
+(  133)           CUENTR_IPN = YDSPP_CONFIG%PPTR%DETRPEN
+(  134)           LLPERT_DETRPEN = CUENTR_IPN > 0
 (  135)           IF (LLPERT_DETRPEN) THEN
-(  136)             PN1 = YDSPP_CONFIG%SM%PN(IPN)
+(  136)             PN1 = YDSPP_CONFIG%SM%PN(CUENTR_IPN)
 (  137)             IPDETRPEN = PN1%MP
 (  138)           END IF
 (  139)         ELSE
@@ -178,10 +178,10 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 3
 (  148)         !                  -------------------------
 (  149)         
 (  150)         IF (LDCUM(JL)) THEN
-(  151)           ZDZ = (PGEOH(JL, KK) - PGEOH(JL, KK + 1))*ZRG
+(  151)           ZDZ = (PGEOH(JL, KK) - PGEOH(JL, KK + 1))*CUENTR_ZRG
 (  152)           ZMF = PMFU(JL, KK + 1)*ZDZ
-(  153)           LLO1 = KK < KCBOT(JL)
-(  154)           IF (LLO1) THEN
+(  153)           CUENTR_LLO1 = KK < KCBOT(JL)
+(  154)           IF (CUENTR_LLO1) THEN
 (  155)             IF (YDSPP_CONFIG%LSPP .and. LLPERT_DETRPEN) THEN
 (  156)               ZXDETRPEN = YDECUMF%DETRPEN*EXP(PN1%MU(1) + PN1%XMAG(1)*PGP2DSPP(JL, IPDETRPEN))
 (  157)             ELSE
@@ -200,7 +200,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 3
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 4
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:36      page 4
 
 (  167)     
 (  168)     
@@ -266,7 +266,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 4
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 5
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:36      page 5
 
 (    1) # 1 "./cuentr.scc_stack.F90"
 (    1) MODULE CUENTR_LOKI_MOD
@@ -332,7 +332,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 5
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 6
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:36      page 6
 
 (   58)     !          NONE
 (   59)     !
@@ -377,18 +377,18 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 6
 (   98)     REAL(KIND=JPRB), INTENT(OUT) :: PDMFEN(KLON)
 (   99)     REAL(KIND=JPRB), INTENT(OUT) :: PDMFDE(KLON)
 (  100)     
-(  101)     LOGICAL :: LLO1
+(  101)     LOGICAL :: CUENTR_LLO1
 (  102)     
 (  103)     INTEGER(KIND=JPIM) :: JL
 (  104)     
 (  105)     ! A bunch of SPP variables that are saved between calls for efficiency reasons
 (  106)     LOGICAL :: LLPERT_DETRPEN    ! SPP perturbation on?
 (  107)     INTEGER(KIND=JPIM) :: IPDETRPEN    ! SPP random field pointer
-(  108)     INTEGER(KIND=JPIM) :: IPN    ! SPP perturbation pointer
+(  108)     INTEGER(KIND=JPIM) :: CUENTR_IPN    ! SPP perturbation pointer
 (  109)     TYPE(SPP_PERT) :: PN1    ! SPP pertn. config. for RTAU
 (  110)     
-(  111)     REAL(KIND=JPRB) :: ZDZ, ZENTR, ZMF, ZRG, ZXDETRPEN
-(  112)     REAL(KIND=JPHOOK) :: ZHOOK_HANDLE
+(  111)     REAL(KIND=JPRB) :: ZDZ, ZENTR, ZMF, CUENTR_ZRG, ZXDETRPEN
+(  112)     REAL(KIND=JPHOOK) :: CUENTR_ZHOOK_HANDLE
 (  113) !$acc routine vector
 (  114)     INTEGER(KIND=8) :: YLSTACK_L
 (  115)     INTEGER(KIND=8), INTENT(INOUT) :: YDSTACK_L
@@ -398,7 +398,7 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 6
 
 
 
-NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 7
+NVFORTRAN (Version     24.5)          03/24/2025  13:20:36      page 7
 
 (  116)     YLSTACK_L = YDSTACK_L
 (  117) !$acc data present( KCBOT, KTYPE, LDCUM, PQSEN, PAPH, PGEOH, PMFU, PGP2DSPP, PDMFEN, PDMFDE, YDCST, YDECUMF, YDSPP_CONFIG )
@@ -413,14 +413,14 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 7
 (  126)     DO JL=KIDIA,KFDIA
 (  127)       IF (LDWORK) THEN
 (  128)         
-(  129)         ZRG = 1.0_JPRB / YDCST%RG
+(  129)         CUENTR_ZRG = 1.0_JPRB / YDCST%RG
 (  130)         
 (  131)         ! prepare SPP perturbations (just once)
 (  132)         IF (YDSPP_CONFIG%LSPP) THEN
-(  133)           IPN = YDSPP_CONFIG%PPTR%DETRPEN
-(  134)           LLPERT_DETRPEN = IPN > 0
+(  133)           CUENTR_IPN = YDSPP_CONFIG%PPTR%DETRPEN
+(  134)           LLPERT_DETRPEN = CUENTR_IPN > 0
 (  135)           IF (LLPERT_DETRPEN) THEN
-(  136)             PN1 = YDSPP_CONFIG%SM%PN(IPN)
+(  136)             PN1 = YDSPP_CONFIG%SM%PN(CUENTR_IPN)
 (  137)             IPDETRPEN = PN1%MP
 (  138)           END IF
 (  139)         ELSE
@@ -435,10 +435,10 @@ NVFORTRAN (Version     24.5)          03/19/2025  06:55:31      page 7
 (  148)         !                  -------------------------
 (  149)         
 (  150)         IF (LDCUM(JL)) THEN
-(  151)           ZDZ = (PGEOH(JL, KK) - PGEOH(JL, KK + 1))*ZRG
+(  151)           ZDZ = (PGEOH(JL, KK) - PGEOH(JL, KK + 1))*CUENTR_ZRG
 (  152)           ZMF = PMFU(JL, KK + 1)*ZDZ
-(  153)           LLO1 = KK < KCBOT(JL)
-(  154)           IF (LLO1) THEN
+(  153)           CUENTR_LLO1 = KK < KCBOT(JL)
+(  154)           IF (CUENTR_LLO1) THEN
 (  155)             IF (YDSPP_CONFIG%LSPP .and. LLPERT_DETRPEN) THEN
 (  156)               ZXDETRPEN = YDECUMF%DETRPEN*EXP(PN1%MU(1) + PN1%XMAG(1)*PGP2DSPP(JL, IPDETRPEN))
 (  157)             ELSE
